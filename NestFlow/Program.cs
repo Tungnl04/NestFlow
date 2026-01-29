@@ -1,4 +1,6 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using NestFlow.Application.Services.Interfaces;
+using NestFlow.Application.Services;
 using NestFlow.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +12,18 @@ builder.Services.AddControllers();
 // Add db context service
 builder.Services.AddDbContext<NestFlowSystemContext>(options
     => options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+// Add Session
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(24); // Session timeout 24 giờ
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+});
+
+// Register services
+builder.Services.AddScoped<IAuthService, AuthService>();
+
 // Swagger (OpenAPI)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -53,6 +67,8 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+app.UseSession();
 
 app.MapControllers();
 

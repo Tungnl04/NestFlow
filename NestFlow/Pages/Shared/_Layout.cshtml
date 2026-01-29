@@ -3,150 +3,69 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Nestflow</title>
-
+    <title>@ViewData["Title"] - NestFlow</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
-
-    <header class="nf-header">
-        <nav class="navbar navbar-expand-lg navbar-light">
-            <div class="container-fluid px-4">
-
-                <!-- Logo -->
-                <a class="navbar-brand" href="/">
-                    <div class="nf-logo">
-                        <span class="nf-logo-icon">N</span>
-                        <span class="nf-logo-text">Nestflow</span>
-                    </div>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-page="/Home/Index">
+                    <span class="nf-brand-blue">Nest</span>flow
                 </a>
-
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#navbarNav" aria-controls="navbarNav"
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" zdata-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
-                <div class="collapse navbar-collapse" id="navbarNav">
-
-                    <!-- Menu -->
-                    <ul class="navbar-nav me-auto" id="mainNavMenu">
-
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link" href="/">
-                                <i class="fas fa-list"></i> Các bài đăng
-                            </a>
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Home/Index">Trang chủ</a>
                         </li>
-
-                        <li class="nav-item d-none" id="savedMenuItem">
-                            <a class="nav-link" href="/saved">
-                                <i class="fas fa-heart"></i> Tin đã lưu
-                                <span class="nf-saved-count d-none" id="savedCountBadge">0</span>
-                            </a>
-                        </li>
-
-                        <li class="nav-item d-none" id="managementMenuItem">
-                            <a class="nav-link" href="/landlord/dashboard">
-                                <i class="fas fa-home"></i> Trang quản lý
-                            </a>
-                        </li>
-
                         <li class="nav-item">
-                            <a class="nav-link" href="/support">
-                                <i class="fas fa-question-circle"></i> Hỗ trợ
-                            </a>
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Room/List">Tìm phòng</a>
                         </li>
-
+                        <li class="nav-item d-none" id="landlordBtn">
+                            <a class="nav-link text-dark" asp-area="" asp-page="/Landlord/Dashboard">Quản lý trọ</a>
+                        </li>
                     </ul>
 
-                    <!-- Right -->
-                    <div class="d-flex align-items-center gap-3">
-
-                        <button class="btn btn-link p-0 nf-search-btn d-none d-sm-flex"
-                                type="button" data-bs-toggle="modal" data-bs-target="#searchModal">
-                            <i class="fas fa-search"></i>
+                    <!-- Auth Buttons (when not logged in) -->
+                    <div class="d-flex gap-2" id="authButtons">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#loginModal">
+                            Đăng nhập
                         </button>
-
-                        <!-- Auth buttons -->
-                        <div class="d-none d-sm-flex align-items-center gap-2" id="authButtons">
-                            <button class="btn nf-btn-login" type="button"
-                                    data-bs-toggle="modal" data-bs-target="#loginModal">
-                                Đăng nhập
-                            </button>
-                            <button class="btn nf-btn-signup" type="button"
-                                    data-bs-toggle="modal" data-bs-target="#loginModal">
-                                Đăng ký
-                            </button>
-                        </div>
-
-                        <!-- User info -->
-                        <div class="d-none d-sm-flex align-items-center gap-2" id="userInfo" style="display:none;">
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="fas fa-user-circle" style="color:#4FB3B3;font-size:1.5rem;"></i>
-                                <div class="d-flex flex-column">
-                                    <span class="fw-bold" id="userNameDisplay" style="font-size:0.9rem;"></span>
-                                    <span class="nf-role-badge" id="userRoleDisplay"></span>
-                                </div>
-                            </div>
-
-                            <a class="btn nf-btn-landlord d-none" id="landlordBtn" href="/landlord/dashboard">
-                                <i class="fas fa-home"></i> Quản lý trọ của bạn
-                            </a>
-
-                            <button class="btn btn-outline-danger btn-sm" onclick="handleLogout()">
-                                <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                            </button>
-                        </div>
-
-                        <button class="btn btn-link p-0 d-md-none" type="button"
-                                data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                            <i class="fas fa-bars"></i>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">
+                            Đăng ký
                         </button>
+                    </div>
 
+                    <!-- User Dropdown (when logged in) -->
+                    <div class="dropdown d-none" id="userDropdown">
+                        <button class="btn btn-light dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="/images/default-avatar.png" alt="Avatar" class="rounded-circle" width="32" height="32" id="userAvatar">
+                            <span id="userName">User</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                            <li><a class="dropdown-item" asp-page="/Profile/Index">Tài khoản</a></li>
+                            <li><a class="dropdown-item" asp-page="/Home/Saved">Tin đã lưu</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="handleLogout()">Đăng xuất</a></li>
+                        </ul>
                     </div>
                 </div>
             </div>
         </nav>
-
-        <!-- Filters -->
-        <div class="nf-search-filters">
-            <div class="container-fluid px-4">
-                <div class="row g-3 py-2">
-                    <div class="col-md-4">
-                        <select class="form-select form-select-sm">
-                            <option>Khu vực</option>
-                            <option>Hòa Lạc</option>
-                            <option>Khu vực khác</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <select class="form-select form-select-sm">
-                            <option>Mức giá</option>
-                            <option>Dưới 1 triệu</option>
-                            <option>1-2 triệu</option>
-                            <option>2-3 triệu</option>
-                            <option>Trên 3 triệu</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <select class="form-select form-select-sm">
-                            <option>Loại phòng</option>
-                            <option>Phòng trọ sinh viên</option>
-                            <option>Căn hộ mini</option>
-                            <option>Nhà nguyên căn</option>
-                            <option>Ở ghép</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-        </div>
     </header>
 
-    <main role="main">
-        @RenderBody()
-    </main>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
     <footer class="nf-footer">
         <div class="container">
             <div class="row g-4">
@@ -205,153 +124,26 @@
         </div>
     </footer>
 
-    <!-- Modal Đăng nhập/Đăng ký -->
-    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="loginModalLabel">Đăng nhập hoặc đăng ký</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="loginModalBody">
-                    <!-- Nội dung sẽ được thay đổi bằng JS -->
-                    <h3 class="nf-modal-welcome">Chào mừng đến với Nestflow</h3>
-                    <form id="loginForm">
-                        <div class="mb-3">
-                            <label for="loginEmail" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="loginEmail" placeholder="email@example.com" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="loginPassword" class="form-label">Mật khẩu</label>
-                            <input type="password" class="form-control" id="loginPassword" required>
-                        </div>
-                        <button type="submit" class="btn nf-btn-primary w-100 mb-3">Tiếp tục</button>
-                        <div class="nf-modal-separator">
-                            <span>Hoặc</span>
-                        </div>
-                        <div class="d-grid gap-2 mt-3">
-                            <button type="button" class="btn nf-btn-social">
-                                <i class="fab fa-google"></i> Tiếp tục với Google
-                            </button>
-                            <button type="button" class="btn nf-btn-social">
-                                <i class="fab fa-facebook-f"></i> Tiếp tục với Facebook
-                            </button>
-                            <button type="button" class="btn nf-btn-social">
-                                <i class="fas fa-envelope"></i> Tiếp tục với Email
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Include Auth Modals -->
+    <partial name="_AuthModals" />
 
-    <!-- Modal Tìm kiếm -->
-    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="searchModalLabel">Tìm kiếm</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <input type="text" class="form-control form-control-lg" placeholder="Tìm kiếm phòng trọ, địa điểm...">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/auth.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
+    <!-- Auth Script MUST be loaded before page-specific scripts -->
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+
     <script>
-
-        function checkAndUpdateAuthUI() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
-            const userRole = localStorage.getItem('userRole');
-            const userName = localStorage.getItem('userName');
-
-            const authButtons = document.getElementById('authButtons');
-            const userInfo = document.getElementById('userInfo');
-            const userNameDisplay = document.getElementById('userNameDisplay');
-            const userRoleDisplay = document.getElementById('userRoleDisplay');
-            const landlordBtn = document.getElementById('landlordBtn');
-
-            if (isLoggedIn === 'true' && userName && userRole) {
-
-                // hide auth buttons
-                authButtons?.classList.add('d-none');
-
-                // show user info
-                userInfo?.classList.remove('d-none');
-                userInfo.style.display = 'flex';
-
-                if (userNameDisplay) userNameDisplay.textContent = userName;
-
-                if (userRoleDisplay) {
-                    let roleText = 'Người dùng';
-                    let roleClass = 'nf-role-default-badge';
-
-                    if (userRole === 'tenant') {
-                        roleText = 'Người thuê';
-                        roleClass = 'nf-role-tenant-badge';
-                    } else if (userRole === 'landlord') {
-                        roleText = 'Chủ trọ';
-                        roleClass = 'nf-role-landlord-badge';
-                    } else if (userRole === 'admin') {
-                        roleText = 'Quản trị viên';
-                        roleClass = 'nf-role-admin-badge';
-                    }
-
-                    userRoleDisplay.textContent = roleText;
-                    userRoleDisplay.className = 'nf-role-badge ' + roleClass;
-                }
-
-                if ((userRole === 'landlord' || userRole === 'admin') && landlordBtn) {
-                    landlordBtn.classList.remove('d-none');
-                }
-
-                updateMenuByRole(userRole);
-
+        // Global logout handler
+        async function handleLogout() {
+            const result = await window.NestFlowAuth.logout();
+            if (result.success) {
+                window.location.href = '/';
             } else {
-
-                authButtons?.classList.remove('d-none');
-                userInfo?.classList.add('d-none');
-
-                landlordBtn?.classList.add('d-none');
-                updateMenuByRole(null);
+                alert(result.message);
             }
         }
-
-        function updateMenuByRole(role) {
-            const savedMenuItem = document.getElementById('savedMenuItem');
-            const managementMenuItem = document.getElementById('managementMenuItem');
-
-            if (role === 'tenant') {
-                savedMenuItem?.classList.remove('d-none');
-                managementMenuItem?.classList.add('d-none');
-            }
-            else if (role === 'landlord' || role === 'admin') {
-                savedMenuItem?.classList.add('d-none');
-                managementMenuItem?.classList.remove('d-none');
-            }
-            else {
-                savedMenuItem?.classList.add('d-none');
-                managementMenuItem?.classList.add('d-none');
-            }
-        }
-
-        function handleLogout() {
-            localStorage.clear();
-            window.location.href = '/';
-        }
-
-        /* init */
-        document.addEventListener('DOMContentLoaded', checkAndUpdateAuthUI);
-        window.addEventListener('load', checkAndUpdateAuthUI);
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)
