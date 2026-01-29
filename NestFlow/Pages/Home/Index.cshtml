@@ -4,38 +4,6 @@
     ViewData["Title"] = "Nestflow - Tìm phòng trọ tại Hòa Lạc";
 }
 
-<!-- Shader chọn role - Design mới -->
-<div class="nf-role-selector d-none" id="roleSelector">
-    <div class="nf-role-overlay"></div>
-    <div class="nf-welcome-container">
-        <h1 class="nf-welcome-title">
-            Chào mừng đến với <span class="nf-brand-blue">Nestflow</span>
-        </h1>
-        <p class="nf-welcome-subtitle">Nền tảng cho thuê phòng trọ tại Hòa Lạc</p>
-
-        <div class="nf-role-card">
-            <h2 class="nf-role-question">Bạn là ai?</h2>
-            <div class="nf-role-options-new">
-                <button class="nf-role-btn-new nf-role-tenant" data-role="tenant">
-                    <div class="nf-role-icon-circle">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="nf-role-title">Người thuê</div>
-                    <div class="nf-role-desc">Tìm kiếm phòng trọ phù hợp với nhu cầu của bạn</div>
-                </button>
-                <button class="nf-role-btn-new nf-role-landlord" data-role="landlord">
-                    <div class="nf-role-icon-circle">
-                        <i class="fas fa-home"></i>
-                    </div>
-                    <div class="nf-role-title">Chủ trọ</div>
-                    <div class="nf-role-desc">Quản lý phòng trọ và đăng tin cho thuê</div>
-                </button>
-            </div>
-            <p class="nf-role-note">Bạn có thể thay đổi vai trò bất kỳ lúc nào trong trang cài đặt</p>
-        </div>
-    </div>
-</div>
-
 <!-- Banner slider -->
 <div class="nf-banner-slider">
     <div id="bannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
@@ -273,85 +241,34 @@
 
 @section Scripts {
     <script>
-        // Xử lý chọn role
-        document.querySelectorAll('.nf-role-btn-new').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const role = this.dataset.role;
-                localStorage.setItem('userRole', role);
-                document.getElementById('roleSelector').style.display = 'none';
-
-                if (role === 'landlord') {
-                    const landlordBtn = document.getElementById('landlordBtn');
-                    if (landlordBtn) {
-                        landlordBtn.classList.remove('d-none');
-                    }
-                } else {
-                    const landlordBtn = document.getElementById('landlordBtn');
-                    if (landlordBtn) {
-                        landlordBtn.classList.add('d-none');
-                    }
-                }
-            });
-        });
-
-        // Kiểm tra nếu đã chọn role thì ẩn selector
-        // Nếu đang ở landlord view mode thì ẩn role selector và thêm class
-        const userRole = localStorage.getItem('userRole');
-        const landlordViewMode = localStorage.getItem('landlordViewMode');
-        const isLoggedIn = localStorage.getItem('isLoggedIn');
-
-        // Nếu đã đăng nhập hoặc đã chọn role thì ẩn selector
-        if (isLoggedIn === 'true' || userRole) {
-            document.getElementById('roleSelector').classList.add('d-none');
-        }
-
-        // Chỉ thêm landlord-view-mode class nếu là admin, landlord hoặc đang ở landlord view mode
-        // Tenant không bị ảnh hưởng
-        if (landlordViewMode === 'true' || userRole === 'admin' || userRole === 'landlord') {
-            document.body.classList.add('landlord-view-mode');
-        } else {
-            document.body.classList.remove('landlord-view-mode');
-        }
-
-        // Xử lý lưu tin
+        // Xử lý lưu tin - Giờ cần login
         document.querySelectorAll('.nf-save-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
+            btn.addEventListener('click', async function(e) {
                 e.preventDefault();
                 e.stopPropagation();
+
+                // Kiểm tra đăng nhập
+                if (!window.NestFlowAuth.isLoggedIn()) {
+                    alert('Vui lòng đăng nhập để lưu tin');
+                    // Open login modal
+                    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                    loginModal.show();
+                    return;
+                }
+
                 const icon = this.querySelector('i');
                 const roomId = this.dataset.roomId;
-                const roomCard = this.closest('.nf-room-card');
-                const roomName = roomCard.querySelector('.nf-room-name').textContent;
-                const roomPrice = roomCard.querySelector('.nf-room-price').textContent;
-                const roomImage = roomCard.querySelector('img').src;
-                const roomRating = roomCard.querySelector('.nf-rating').textContent.trim();
-                const postTime = roomCard.querySelector('.nf-post-time').textContent;
 
                 if (icon.classList.contains('far')) {
+                    // TODO: Call API to save room
                     icon.classList.remove('far');
                     icon.classList.add('fas');
                     this.classList.add('saved');
-
-                    // Lưu vào localStorage
-                    let savedRooms = JSON.parse(localStorage.getItem('savedRooms') || '[]');
-                    savedRooms.push({
-                        id: roomId,
-                        name: roomName,
-                        price: roomPrice,
-                        image: roomImage,
-                        rating: roomRating,
-                        postTime: postTime
-                    });
-                    localStorage.setItem('savedRooms', JSON.stringify(savedRooms));
                 } else {
+                    // TODO: Call API to unsave room
                     icon.classList.remove('fas');
                     icon.classList.add('far');
                     this.classList.remove('saved');
-
-                    // Xóa khỏi localStorage
-                    let savedRooms = JSON.parse(localStorage.getItem('savedRooms') || '[]');
-                    savedRooms = savedRooms.filter(room => room.id !== roomId);
-                    localStorage.setItem('savedRooms', JSON.stringify(savedRooms));
                 }
             });
         });

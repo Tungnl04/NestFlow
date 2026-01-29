@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace NestFlow.Pages.Landlord
 {
-    public class TenantsModel : PageModel
+    public class RentersModel : PageModel
     {
         public void OnGet()
         {

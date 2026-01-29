@@ -1,0 +1,168 @@
+<!-- Login Modal -->
+<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="loginModalLabel">Đăng nhập</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="loginForm">
+                    <div class="mb-3">
+                        <label for="loginEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="loginEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="loginPassword" class="form-label">Mật khẩu</label>
+                        <input type="password" class="form-control" id="loginPassword" required>
+                    </div>
+                    <div class="alert alert-danger d-none" id="loginError"></div>
+                    <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
+                </form>
+                <div class="text-center mt-3">
+                    <p class="mb-0">Chưa có tài khoản? <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal">Đăng ký ngay</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Register Modal -->
+<div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="registerModalLabel">Đăng ký</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="registerForm">
+                    <div class="mb-3">
+                        <label for="registerFullName" class="form-label">Họ và tên</label>
+                        <input type="text" class="form-control" id="registerFullName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="registerEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerPhone" class="form-label">Số điện thoại</label>
+                        <input type="tel" class="form-control" id="registerPhone">
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerPassword" class="form-label">Mật khẩu</label>
+                        <input type="password" class="form-control" id="registerPassword" required minlength="6">
+                        <small class="text-muted">Mật khẩu phải có ít nhất 6 ký tự</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="registerConfirmPassword" class="form-label">Xác nhận mật khẩu</label>
+                        <input type="password" class="form-control" id="registerConfirmPassword" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bạn là:</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="userType" id="userTypeTenant" value="renter" checked>
+                                <label class="form-check-label" for="userTypeTenant">
+                                    Người thuê
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="userType" id="userTypeLandlord" value="landlord">
+                                <label class="form-check-label" for="userTypeLandlord">
+                                    Chủ trọ
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-danger d-none" id="registerError"></div>
+                    <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
+                </form>
+                <div class="text-center mt-3">
+                    <p class="mb-0">Đã có tài khoản? <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Đăng nhập</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Handle Login Form
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const errorDiv = document.getElementById('loginError');
+        
+        const result = await window.NestFlowAuth.login(email, password);
+        
+        if (result.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+            modal.hide();
+            
+            // Show success message
+            alert(result.message);
+            
+            // Reload page to update UI
+            window.location.reload();
+        } else {
+            errorDiv.textContent = result.message;
+            errorDiv.classList.remove('d-none');
+        }
+    });
+
+    // Handle Register Form
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const password = document.getElementById('registerPassword').value;
+        const confirmPassword = document.getElementById('registerConfirmPassword').value;
+        const errorDiv = document.getElementById('registerError');
+        
+        // Validate password match
+        if (password !== confirmPassword) {
+            errorDiv.textContent = 'Mật khẩu không khớp';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+        
+        const registerData = {
+            email: document.getElementById('registerEmail').value,
+            password: password,
+            confirmPassword: confirmPassword,
+            fullName: document.getElementById('registerFullName').value,
+            phone: document.getElementById('registerPhone').value,
+            userType: document.querySelector('input[name="userType"]:checked').value
+        };
+        
+        const result = await window.NestFlowAuth.register(registerData);
+        
+        if (result.success) {
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+            modal.hide();
+            
+            // Show success message
+            alert(result.message);
+            
+            // Reload page to update UI
+            window.location.reload();
+        } else {
+            errorDiv.textContent = result.message;
+            errorDiv.classList.remove('d-none');
+        }
+    });
+
+    // Clear error messages when modal is closed
+    document.getElementById('loginModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('loginError').classList.add('d-none');
+        document.getElementById('loginForm').reset();
+    });
+
+    document.getElementById('registerModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('registerError').classList.add('d-none');
+        document.getElementById('registerForm').reset();
+    });
+</script>
