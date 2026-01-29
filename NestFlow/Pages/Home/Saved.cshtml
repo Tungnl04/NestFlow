@@ -1,0 +1,56 @@
+﻿@page
+@model NestFlow.Pages.Home.SavedModel
+@{
+    ViewData["Title"] = "Tin đã lưu - Nestflow";
+}
+
+<div class="container-fluid px-4 py-5">
+    <h2 class="mb-4">Tin đã lưu</h2>
+    <div class="row g-4" id="savedRooms">
+        <!-- Các phòng đã lưu sẽ được hiển thị ở đây -->
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> Bạn chưa lưu phòng trọ nào. Hãy lưu các phòng bạn quan tâm để xem lại sau!
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Lấy danh sách phòng đã lưu từ localStorage
+        function loadSavedRooms() {
+            const savedRooms = JSON.parse(localStorage.getItem('savedRooms') || '[]');
+            const container = document.getElementById('savedRooms');
+
+            if (savedRooms.length === 0) {
+                return;
+            }
+
+            container.innerHTML = savedRooms.map(room => `
+                <div class="col-md-3">
+                    <div class="nf-room-card">
+                        <div class="nf-room-image">
+                            <img src="${room.image}" alt="${room.name}" />
+                            <button class="nf-save-btn saved" data-room-id="${room.id}">
+                                <i class="fas fa-heart"></i>
+                            </button>
+                        </div>
+                        <div class="nf-room-info">
+                            <h5 class="nf-room-name">${room.name}</h5>
+                            <div class="nf-room-price">${room.price}</div>
+                            <div class="nf-room-meta">
+                                <span class="nf-rating">
+                                    <i class="fas fa-star"></i> ${room.rating}
+                                </span>
+                                <span class="nf-post-time">${room.postTime}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        loadSavedRooms();
+    </script>
+}

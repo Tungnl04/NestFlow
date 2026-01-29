@@ -1,0 +1,163 @@
+﻿@page
+@model NestFlow.Pages.Landlord.NotificationsModel
+@{
+    ViewData["Title"] = "Thông báo - Nestflow";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="nf-sidebar">
+                <h4 class="mb-4">Menu quản lý</h4>
+                <ul class="nf-sidebar-menu">
+                    <li>
+                        <a asp-page="/Landlord/Dashboard">
+                            <i class="fas fa-home"></i> Trang tổng quan
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Rooms">
+                            <i class="fas fa-door-open"></i> Quản lý phòng trọ
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Posts">
+                            <i class="fas fa-newspaper"></i> Quản lý tin đăng
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Tenants">
+                            <i class="fas fa-users"></i> Người thuê
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Contracts">
+                            <i class="fas fa-file-contract"></i> Hợp đồng & thanh toán
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Packages">
+                            <i class="fas fa-box"></i> Gói đăng tin
+                        </a>
+                    </li>
+
+                    <li class="active">
+                        <a asp-page="/Landlord/Notifications">
+                            <i class="fas fa-bell"></i> Thông báo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <h2 class="mb-4">Thông báo</h2>
+            <div class="card">
+                <div class="card-body">
+                    <div class="nf-notification-item mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="nf-notification-icon bg-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Tin đăng sắp hết hạn</h6>
+                                <p class="mb-1">Tin đăng "Phòng trọ sinh viên tại Hòa Lạc" sẽ hết hạn vào ngày 15/01/2026</p>
+                                <small class="text-muted">2 giờ trước</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nf-notification-item mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="nf-notification-icon bg-primary">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Có người quan tâm</h6>
+                                <p class="mb-1">Nguyễn Văn A đã liên hệ về phòng trọ #001</p>
+                                <small class="text-muted">5 giờ trước</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nf-notification-item mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="nf-notification-icon bg-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Thanh toán thành công</h6>
+                                <p class="mb-1">Người thuê đã thanh toán tiền phòng tháng 2/2026</p>
+                                <small class="text-muted">1 ngày trước</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nf-notification-item">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="nf-notification-icon bg-info">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">Cập nhật gói dịch vụ</h6>
+                                <p class="mb-1">Gói VIP của bạn sẽ hết hạn vào ngày 01/02/2026</p>
+                                <small class="text-muted">2 ngày trước</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nf-sidebar {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+    }
+
+    .nf-sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+        .nf-sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+            .nf-sidebar-menu li a {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+                color: #333;
+                text-decoration: none;
+                border-radius: 8px;
+                transition: all 0.3s;
+            }
+
+                .nf-sidebar-menu li a:hover,
+                .nf-sidebar-menu li.active a {
+                    background: #4A90E2;
+                    color: #fff;
+                }
+
+    .nf-notification-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        flex-shrink: 0;
+    }
+</style>

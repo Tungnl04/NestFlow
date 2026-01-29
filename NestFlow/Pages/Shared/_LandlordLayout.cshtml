@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Nestflow</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body>
+
+    <header class="nf-landlord-header">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+            <div class="container-fluid px-4">
+
+                <!-- Logo -->
+                <a class="navbar-brand" href="/landlord/dashboard">
+                    <div class="nf-logo">
+                        <span class="nf-logo-icon">N</span>
+                        <span class="nf-logo-text">Nestflow</span>
+                    </div>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#navbarNav" aria-controls="navbarNav"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+
+                    <!-- Menu trái -->
+                    <ul class="navbar-nav me-auto">
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/" id="viewPostsLink">
+                                <i class="fas fa-list"></i> Các bài đăng
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/landlord/dashboard">
+                                <i class="fas fa-home"></i> Trang quản lý
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/support">
+                                <i class="fas fa-question-circle"></i> Hỗ trợ
+                            </a>
+                        </li>
+
+                    </ul>
+
+                    <!-- User info -->
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="nf-user-info d-flex align-items-center gap-2">
+                            <i class="fas fa-user-circle" style="color:#4FB3B3;font-size:1.5rem;"></i>
+                            <div class="d-flex flex-column">
+                                <span class="fw-bold" id="landlordUserName" style="font-size:0.9rem;"></span>
+                                <span class="nf-role-badge nf-role-landlord-badge" id="landlordRoleDisplay"></span>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-outline-danger btn-sm" onclick="logout()">
+                            <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main -->
+    <main role="main" class="nf-landlord-main">
+        @RenderBody()
+    </main>
+
+    <!-- Footer -->
+    <footer class="nf-footer">
+        <div class="container">
+            <div class="row g-4">
+
+                <div class="col-md-3">
+                    <h6>Về Nestflow</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/help" class="nf-footer-link">Trung tâm trợ giúp</a></li>
+                        <li><a href="/feedback" class="nf-footer-link">Feedback khách hàng</a></li>
+                        <li><a href="/landlord-info" class="nf-footer-link">Giới thiệu chủ nhà</a></li>
+                        <li><a href="/about" class="nf-footer-link">Về chúng tôi</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-md-3">
+                    <h6>Khác</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/invite" class="nf-footer-link">Giới thiệu bạn bè</a></li>
+                        <li><a href="/privacy-policy" class="nf-footer-link">Chính sách quyền riêng tư</a></li>
+                        <li><a href="/terms" class="nf-footer-link">Điều khoản và điều kiện</a></li>
+                        <li><a href="/copyright" class="nf-footer-link">Thông tin bản quyền</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-md-3">
+                    <h6>Pháp lý</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="/privacy" class="nf-footer-link">Quyền riêng tư</a></li>
+                        <li><a href="/legal-terms" class="nf-footer-link">Điều khoản</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="nf-footer-brand">
+                        <div class="nf-footer-logo">
+                            <span class="nf-logo-icon">N</span>
+                            <span>Nestflow</span>
+                        </div>
+                        <p class="nf-footer-tagline">Nền tảng cho thuê phòng trọ tại Hòa Lạc</p>
+                        <div class="nf-social-icons">
+                            <a href="#" class="nf-social-icon"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="nf-social-icon"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="nf-social-icon"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="nf-social-icon"><i class="fab fa-youtube"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="nf-footer-copyright">
+                <p class="mb-0">&copy; 2024 Nestflow. Tất cả quyền được bảo lưu.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/auth.js" asp-append-version="true"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const userRole = localStorage.getItem('userRole');
+            const userName = localStorage.getItem('userName');
+
+            // Guard landlord/admin
+            if (userRole !== 'landlord' && userRole !== 'admin') {
+                window.location.href = '/';
+                return;
+            }
+
+            // Show user info
+            const landlordUserName = document.getElementById('landlordUserName');
+            const landlordRoleDisplay = document.getElementById('landlordRoleDisplay');
+
+            if (landlordUserName && userName) {
+                landlordUserName.textContent = userName;
+            }
+
+            if (landlordRoleDisplay) {
+                if (userRole === 'admin') {
+                    landlordRoleDisplay.textContent = 'Quản trị viên';
+                    landlordRoleDisplay.className = 'nf-role-badge nf-role-admin-badge';
+                } else {
+                    landlordRoleDisplay.textContent = 'Chủ trọ';
+                    landlordRoleDisplay.className = 'nf-role-badge nf-role-landlord-badge';
+                }
+            }
+
+            // landlord view flag
+            const viewPostsLink = document.getElementById('viewPostsLink');
+            if (viewPostsLink) {
+                viewPostsLink.addEventListener('click', function () {
+                    localStorage.setItem('landlordViewMode', 'true');
+                });
+            }
+        });
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/';
+        }
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>

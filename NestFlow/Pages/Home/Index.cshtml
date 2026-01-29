@@ -1,0 +1,359 @@
+﻿@page
+@model NestFlow.Pages.Home.IndexModel
+@{
+    ViewData["Title"] = "Nestflow - Tìm phòng trọ tại Hòa Lạc";
+}
+
+<!-- Shader chọn role - Design mới -->
+<div class="nf-role-selector d-none" id="roleSelector">
+    <div class="nf-role-overlay"></div>
+    <div class="nf-welcome-container">
+        <h1 class="nf-welcome-title">
+            Chào mừng đến với <span class="nf-brand-blue">Nestflow</span>
+        </h1>
+        <p class="nf-welcome-subtitle">Nền tảng cho thuê phòng trọ tại Hòa Lạc</p>
+
+        <div class="nf-role-card">
+            <h2 class="nf-role-question">Bạn là ai?</h2>
+            <div class="nf-role-options-new">
+                <button class="nf-role-btn-new nf-role-tenant" data-role="tenant">
+                    <div class="nf-role-icon-circle">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="nf-role-title">Người thuê</div>
+                    <div class="nf-role-desc">Tìm kiếm phòng trọ phù hợp với nhu cầu của bạn</div>
+                </button>
+                <button class="nf-role-btn-new nf-role-landlord" data-role="landlord">
+                    <div class="nf-role-icon-circle">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <div class="nf-role-title">Chủ trọ</div>
+                    <div class="nf-role-desc">Quản lý phòng trọ và đăng tin cho thuê</div>
+                </button>
+            </div>
+            <p class="nf-role-note">Bạn có thể thay đổi vai trò bất kỳ lúc nào trong trang cài đặt</p>
+        </div>
+    </div>
+</div>
+
+<!-- Banner slider -->
+<div class="nf-banner-slider">
+    <div id="bannerCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="5000">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <div class="nf-banner-slide" style="background-image: url('https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1920&h=600&fit=crop&q=80');">
+                    <div class="nf-banner-overlay"></div>
+                    <div class="nf-banner-content">
+                        <h1 class="nf-banner-title">Tìm phòng trọ lý tưởng</h1>
+                        <p class="nf-banner-subtitle">Nơi lưu trú hoàn hảo tại Hòa Lạc</p>
+                    </div>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="nf-banner-slide" style="background-image: url('https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1920&h=600&fit=crop&q=80');">
+                    <div class="nf-banner-overlay"></div>
+                    <div class="nf-banner-content">
+                        <h1 class="nf-banner-title">Tìm phòng trọ lý tưởng</h1>
+                        <p class="nf-banner-subtitle">Nơi lưu trú hoàn hảo tại Hòa Lạc</p>
+                    </div>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <div class="nf-banner-slide" style="background-image: url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1920&h=600&fit=crop&q=80');">
+                    <div class="nf-banner-overlay"></div>
+                    <div class="nf-banner-content">
+                        <h1 class="nf-banner-title">Tìm phòng trọ lý tưởng</h1>
+                        <p class="nf-banner-subtitle">Nơi lưu trú hoàn hảo tại Hòa Lạc</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Thanh tìm kiếm -->
+<div class="nf-search-bar-section">
+    <div class="container-fluid px-4">
+        <div class="nf-search-bar">
+            <div class="nf-search-filter">
+                <label>Khu vực</label>
+                <select class="form-select">
+                    <option>Chọn khu vực</option>
+                    <option>Thạch Thất</option>
+                    <option>Thạch Hòa</option>
+                    <option>Tất cả khu vực</option>
+                </select>
+            </div>
+            <div class="nf-search-filter">
+                <label>Mức giá</label>
+                <select class="form-select">
+                    <option>Chọn mức giá</option>
+                    <option>Dưới 2 triệu</option>
+                    <option>2 - 3 triệu</option>
+                    <option>3 - 5 triệu</option>
+                    <option>Trên 5 triệu</option>
+                </select>
+            </div>
+            <div class="nf-search-filter">
+                <label>Loại phòng</label>
+                <select class="form-select">
+                    <option>Chọn loại phòng</option>
+                    <option>Phòng đơn</option>
+                    <option>Phòng đôi</option>
+                    <option>Căn hộ mini</option>
+                    <option>Nhà nguyên căn</option>
+                    <option>Phòng ở ghép</option>
+                </select>
+            </div>
+            <button class="nf-search-btn-main">
+                <i class="fas fa-search"></i> Tìm kiếm
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Nội dung chính -->
+<div class="container-fluid px-4 py-5">
+    @{
+        // Mock data từ mockData.ts
+        var newRooms = new[] {
+    new { Id = "1", Name = "Phòng trọ cao cấp gần FPT", Price = 2500000, Location = "Thạch Thất, Hòa Lạc", Rating = 4.8, ReviewCount = 24, PostedDate = new DateTime(2026, 1, 20), IsFeatured = true, Image = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=300&h=200&fit=crop&q=80" },
+    new { Id = "2", Name = "Căn hộ mini Hòa Lạc", Price = 3500000, Location = "Thạch Hòa, Hòa Lạc", Rating = 4.6, ReviewCount = 18, PostedDate = new DateTime(2026, 1, 19), IsFeatured = true, Image = "https://images.unsplash.com/photo-1502672023488-70e25813eb80?w=300&h=200&fit=crop&q=80" },
+    new { Id = "4", Name = "Nhà nguyên căn Hòa Lạc", Price = 8000000, Location = "Thạch Hòa, Hòa Lạc", Rating = 4.9, ReviewCount = 12, PostedDate = new DateTime(2026, 1, 18), IsFeatured = true, Image = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=300&h=200&fit=crop&q=80" },
+    new { Id = "8", Name = "Homestay kiểu Nhật", Price = 4500000, Location = "Thạch Thất, Hòa Lạc", Rating = 4.9, ReviewCount = 6, PostedDate = new DateTime(2026, 1, 10), IsFeatured = true, Image = "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=300&h=200&fit=crop&q=80" }
+    };
+
+        var oneMonthRooms = new[] {
+    new { Id = "3", Name = "Phòng trọ sinh viên giá rẻ", Price = 1500000, Location = "Thạch Thất, Hòa Lạc", Rating = 4.2, ReviewCount = 31, PostedDate = new DateTime(2025, 12, 20), IsFeatured = false, Image = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=300&h=200&fit=crop&q=80" },
+    new { Id = "7", Name = "Phòng trọ nữ sinh viên", Price = 1800000, Location = "Thạch Hòa, Hòa Lạc", Rating = 4.5, ReviewCount = 22, PostedDate = new DateTime(2025, 12, 5), IsFeatured = false, Image = "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=300&h=200&fit=crop&q=80" }
+    };
+
+        var threeMonthRooms = new[] {
+    new { Id = "5", Name = "Phòng trọ có gác lửng", Price = 2200000, Location = "Thạch Thất, Hòa Lạc", Rating = 4.4, ReviewCount = 15, PostedDate = new DateTime(2025, 11, 15), IsFeatured = false, Image = "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=300&h=200&fit=crop&q=80" },
+    new { Id = "6", Name = "Căn hộ dịch vụ cao cấp", Price = 5000000, Location = "Hòa Lạc, Thạch Thất", Rating = 4.7, ReviewCount = 8, PostedDate = new DateTime(2025, 10, 20), IsFeatured = false, Image = "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=300&h=200&fit=crop&q=80" }
+    };
+
+        Func<DateTime, string> GetDaysAgo = (date) =>
+        {
+            var days = (DateTime.Now - date).Days;
+            if (days == 0) return "Hôm nay";
+            if (days == 1) return "Hôm qua";
+            if (days < 7) return $"{days} ngày trước";
+            if (days < 30) return $"{days / 7} tuần trước";
+            return $"{days / 30} tháng trước";
+        };
+
+        Func<int, string> FormatPrice = (price) =>
+        {
+            return price.ToString("N0") + "đ";
+        };
+    }
+
+    <!-- Dòng 1: Tin mới nhất -->
+    <section class="mb-5">
+        <h3 class="nf-section-title mb-4">Tin mới nhất</h3>
+        <div class="row g-4">
+            @foreach (var room in newRooms)
+            {
+                <div class="col-md-3">
+                    <div class="nf-room-card" onclick="window.location.href='@Url.Page("/Room/Detail", new { id = room.Id })'">
+                        <div class="nf-room-image">
+                            @if (room.IsFeatured)
+                            {
+                                <span class="nf-featured-badge">Nổi bật</span>
+                            }
+                            <img src="@room.Image" alt="@room.Name" />
+                            <button class="nf-save-btn" data-room-id="@room.Id" onclick="event.stopPropagation();">
+                                <i class="far fa-heart"></i>
+                            </button>
+                        </div>
+                        <div class="nf-room-info">
+                            <h5 class="nf-room-name">@room.Name</h5>
+                            <p class="nf-room-location">@room.Location</p>
+                            <div class="nf-room-price">@FormatPrice(room.Price)/tháng</div>
+                            <div class="nf-room-meta">
+                                <span class="nf-rating">
+                                    <i class="fas fa-star"></i> @room.Rating
+                                    <span class="nf-review-count">(@room.ReviewCount đánh giá)</span>
+                                </span>
+                                <span class="nf-post-time">@GetDaysAgo(room.PostedDate)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Dòng 2: Tin đăng cách 1 tháng -->
+    <section class="mb-5">
+        <h3 class="nf-section-title mb-4">Tin đăng cách 1 tháng</h3>
+        <div class="row g-4">
+            @foreach (var room in oneMonthRooms)
+            {
+                <div class="col-md-3">
+                    <div class="nf-room-card" onclick="window.location.href='@Url.Page("/Room/Detail", new { id = room.Id })'">
+                        <div class="nf-room-image">
+                            @if (room.IsFeatured)
+                            {
+                                <span class="nf-featured-badge">Nổi bật</span>
+                            }
+                            <img src="@room.Image" alt="@room.Name" />
+                            <button class="nf-save-btn" data-room-id="@room.Id" onclick="event.stopPropagation();">
+                                <i class="far fa-heart"></i>
+                            </button>
+                        </div>
+                        <div class="nf-room-info">
+                            <h5 class="nf-room-name">@room.Name</h5>
+                            <p class="nf-room-location">@room.Location</p>
+                            <div class="nf-room-price">@FormatPrice(room.Price)/tháng</div>
+                            <div class="nf-room-meta">
+                                <span class="nf-rating">
+                                    <i class="fas fa-star"></i> @room.Rating
+                                    <span class="nf-review-count">(@room.ReviewCount đánh giá)</span>
+                                </span>
+                                <span class="nf-post-time">@GetDaysAgo(room.PostedDate)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Dòng 3: Tin đăng cách 3 tháng -->
+    <section class="mb-5">
+        <h3 class="nf-section-title mb-4">Tin đăng cách 3 tháng</h3>
+        <div class="row g-4">
+            @foreach (var room in threeMonthRooms)
+            {
+                <div class="col-md-3">
+                    <div class="nf-room-card" onclick="window.location.href='@Url.Page("/Room/Detail", new { id = room.Id })'">
+                        <div class="nf-room-image">
+                            @if (room.IsFeatured)
+                            {
+                                <span class="nf-featured-badge">Nổi bật</span>
+                            }
+                            <img src="@room.Image" alt="@room.Name" />
+                            <button class="nf-save-btn" data-room-id="@room.Id" onclick="event.stopPropagation();">
+                                <i class="far fa-heart"></i>
+                            </button>
+                        </div>
+                        <div class="nf-room-info">
+                            <h5 class="nf-room-name">@room.Name</h5>
+                            <p class="nf-room-location">@room.Location</p>
+                            <div class="nf-room-price">@FormatPrice(room.Price)/tháng</div>
+                            <div class="nf-room-meta">
+                                <span class="nf-rating">
+                                    <i class="fas fa-star"></i> @room.Rating
+                                    <span class="nf-review-count">(@room.ReviewCount đánh giá)</span>
+                                </span>
+                                <span class="nf-post-time">@GetDaysAgo(room.PostedDate)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        // Xử lý chọn role
+        document.querySelectorAll('.nf-role-btn-new').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const role = this.dataset.role;
+                localStorage.setItem('userRole', role);
+                document.getElementById('roleSelector').style.display = 'none';
+
+                if (role === 'landlord') {
+                    const landlordBtn = document.getElementById('landlordBtn');
+                    if (landlordBtn) {
+                        landlordBtn.classList.remove('d-none');
+                    }
+                } else {
+                    const landlordBtn = document.getElementById('landlordBtn');
+                    if (landlordBtn) {
+                        landlordBtn.classList.add('d-none');
+                    }
+                }
+            });
+        });
+
+        // Kiểm tra nếu đã chọn role thì ẩn selector
+        // Nếu đang ở landlord view mode thì ẩn role selector và thêm class
+        const userRole = localStorage.getItem('userRole');
+        const landlordViewMode = localStorage.getItem('landlordViewMode');
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+
+        // Nếu đã đăng nhập hoặc đã chọn role thì ẩn selector
+        if (isLoggedIn === 'true' || userRole) {
+            document.getElementById('roleSelector').classList.add('d-none');
+        }
+
+        // Chỉ thêm landlord-view-mode class nếu là admin, landlord hoặc đang ở landlord view mode
+        // Tenant không bị ảnh hưởng
+        if (landlordViewMode === 'true' || userRole === 'admin' || userRole === 'landlord') {
+            document.body.classList.add('landlord-view-mode');
+        } else {
+            document.body.classList.remove('landlord-view-mode');
+        }
+
+        // Xử lý lưu tin
+        document.querySelectorAll('.nf-save-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const icon = this.querySelector('i');
+                const roomId = this.dataset.roomId;
+                const roomCard = this.closest('.nf-room-card');
+                const roomName = roomCard.querySelector('.nf-room-name').textContent;
+                const roomPrice = roomCard.querySelector('.nf-room-price').textContent;
+                const roomImage = roomCard.querySelector('img').src;
+                const roomRating = roomCard.querySelector('.nf-rating').textContent.trim();
+                const postTime = roomCard.querySelector('.nf-post-time').textContent;
+
+                if (icon.classList.contains('far')) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    this.classList.add('saved');
+
+                    // Lưu vào localStorage
+                    let savedRooms = JSON.parse(localStorage.getItem('savedRooms') || '[]');
+                    savedRooms.push({
+                        id: roomId,
+                        name: roomName,
+                        price: roomPrice,
+                        image: roomImage,
+                        rating: roomRating,
+                        postTime: postTime
+                    });
+                    localStorage.setItem('savedRooms', JSON.stringify(savedRooms));
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    this.classList.remove('saved');
+
+                    // Xóa khỏi localStorage
+                    let savedRooms = JSON.parse(localStorage.getItem('savedRooms') || '[]');
+                    savedRooms = savedRooms.filter(room => room.id !== roomId);
+                    localStorage.setItem('savedRooms', JSON.stringify(savedRooms));
+                }
+            });
+        });
+    </script>
+}

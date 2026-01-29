@@ -1,0 +1,275 @@
+﻿@page
+@model NestFlow.Pages.Landlord.DashboardModel
+@{
+    ViewData["Title"] = "Quản lý trọ của bạn - Nestflow";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="nf-sidebar">
+                <h4 class="mb-4">Menu quản lý</h4>
+                <ul class="nf-sidebar-menu">
+                    <li class="active">
+                        <a asp-page="/Landlord/Dashboard">
+                            <i class="fas fa-home"></i> Trang tổng quan
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Rooms">
+                            <i class="fas fa-door-open"></i> Quản lý phòng trọ
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Posts">
+                            <i class="fas fa-newspaper"></i> Quản lý tin đăng
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Tenants">
+                            <i class="fas fa-users"></i> Người thuê
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Contracts">
+                            <i class="fas fa-file-contract"></i> Hợp đồng & thanh toán
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Packages">
+                            <i class="fas fa-box"></i> Gói đăng tin
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Notifications">
+                            <i class="fas fa-bell"></i> Thông báo
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Nội dung chính -->
+        <div class="col-md-9">
+            <h2 class="mb-4">Trang tổng quan</h2>
+
+            <!-- Thống kê tổng quan -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="nf-stat-card">
+                        <div class="nf-stat-icon" style="background: #4A90E2;">
+                            <i class="fas fa-door-open"></i>
+                        </div>
+                        <div class="nf-stat-content">
+                            <div class="nf-stat-value">25</div>
+                            <div class="nf-stat-label">Tổng số phòng</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="nf-stat-card">
+                        <div class="nf-stat-icon" style="background: #50C878;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="nf-stat-content">
+                            <div class="nf-stat-value">18</div>
+                            <div class="nf-stat-label">Phòng đang cho thuê</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="nf-stat-card">
+                        <div class="nf-stat-icon" style="background: #FF6B6B;">
+                            <i class="fas fa-home"></i>
+                        </div>
+                        <div class="nf-stat-content">
+                            <div class="nf-stat-value">7</div>
+                            <div class="nf-stat-label">Phòng còn trống</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="nf-stat-card">
+                        <div class="nf-stat-icon" style="background: #FFA500;">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="nf-stat-content">
+                            <div class="nf-stat-value">12</div>
+                            <div class="nf-stat-label">Tin đăng đang hiển thị</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tin đăng sắp hết hạn -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> Tin đăng sắp hết hạn</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Tiêu đề</th>
+                                    <th>Ngày hết hạn</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Phòng trọ sinh viên tại Hòa Lạc</td>
+                                    <td>15/01/2026</td>
+                                    <td><span class="badge bg-warning">Sắp hết hạn</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Gia hạn</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Căn hộ mini giá rẻ</td>
+                                    <td>20/01/2026</td>
+                                    <td><span class="badge bg-warning">Sắp hết hạn</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Gia hạn</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hoạt động gần đây -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Hoạt động gần đây</h5>
+                </div>
+                <div class="card-body">
+                    <div class="nf-activity-item mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="nf-activity-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <strong>Nguyễn Văn A</strong> đã liên hệ về phòng trọ #123
+                                <small class="text-muted d-block">2 giờ trước</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nf-activity-item mb-3 pb-3 border-bottom">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="nf-activity-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <strong>Phòng #05</strong> đã được đặt thành công
+                                <small class="text-muted d-block">5 giờ trước</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="nf-activity-item">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="nf-activity-icon">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                Bạn đã cập nhật thông tin phòng trọ #08
+                                <small class="text-muted d-block">1 ngày trước</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nf-sidebar {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+    }
+
+    .nf-sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+        .nf-sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+            .nf-sidebar-menu li a {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+                color: #333;
+                text-decoration: none;
+                border-radius: 8px;
+                transition: all 0.3s;
+            }
+
+                .nf-sidebar-menu li a:hover,
+                .nf-sidebar-menu li.active a {
+                    background: #4A90E2;
+                    color: #fff;
+                }
+
+    .nf-stat-card {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .nf-stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.5rem;
+    }
+
+    .nf-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .nf-stat-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .nf-activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4A90E2;
+    }
+</style>

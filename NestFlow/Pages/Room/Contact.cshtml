@@ -1,0 +1,325 @@
+﻿@page
+@model NestFlow.Pages.Room.ContactModel
+@{
+    ViewData["Title"] = "Liên hệ chủ trọ - Nestflow";
+    // Mock data
+    var landlord = new { Name = "Anh Minh", Avatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200", Phone = "0123 456 789" };
+    var room = new { Name = "Nhà nguyên căn Hòa Lạc", RoomType = "2 phòng ngủ", Price = 8000000, Image = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=250&fit=crop&q=80" };
+
+    Func<int, string> FormatPrice = (price) => price.ToString("N0") + "đ";
+}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Chat Modal Style -->
+            <div class="card">
+                <div class="card-header border-bottom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="@landlord.Avatar" alt="@landlord.Name" class="nf-chat-avatar-img" />
+                        <div>
+                            <h5 class="mb-0 fw-bold">@landlord.Name</h5>
+                            <p class="text-muted small mb-0">Thường trả lời trong vài phút</p>
+                        </div>
+                    </div>
+                    <button class="btn btn-link p-0" onclick="window.history.back()">
+                        <i class="fas fa-times fa-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Room Info -->
+                <div class="bg-blue-50 p-4 border-bottom">
+                    <div class="d-flex gap-3">
+                        <img src="@room.Image" alt="@room.Name" class="nf-room-thumb" />
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold mb-1">@room.Name</h6>
+                            <p class="text-muted small mb-1">Loại: @room.RoomType</p>
+                            <p class="fw-bold text-primary mb-0">@FormatPrice(room.Price)/tháng</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="bg-green-50 p-4 border-bottom">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <p class="text-muted small mb-1">Số điện thoại chủ trọ:</p>
+                            <p class="fw-bold fs-5 mb-0">@landlord.Phone</p>
+                        </div>
+                        <a href="tel:@landlord.Phone" class="btn btn-success nf-call-btn" id="callBtn">
+                            <i class="fas fa-phone"></i> Gọi ngay
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Messages -->
+                <div class="nf-chat-messages-container" id="chatMessages">
+                    <div class="nf-chat-message">
+                        <div class="nf-chat-avatar"></div>
+                        <div class="nf-chat-bubble">
+                            <p class="mb-0">Xin chào! Tôi có thể giúp gì cho bạn?</p>
+                            <small class="text-muted">17:15</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Input -->
+                <div class="border-top p-4">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Nhập tin nhắn..." id="chatInput">
+                        <button class="btn nf-btn-primary" type="button" id="sendBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    <button class="btn btn-success w-100 nf-book-btn" id="bookBtn1">
+                        <i class="fas fa-calendar-check"></i> Đặt phòng
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 100px;">
+                <div class="card-body">
+                    <div class="mb-3">
+                        <img src="@room.Image" class="img-fluid rounded mb-3" alt="Phòng trọ" />
+                    </div>
+                    <h5 class="card-title mb-3">@room.Name</h5>
+                    <div class="mb-3">
+                        <small class="text-muted">Loại: @room.RoomType</small>
+                    </div>
+                    <div class="mb-3">
+                        <div class="nf-room-price-large">@FormatPrice(room.Price)/tháng</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Loại phòng:</label>
+                        <select class="form-select" id="roomTypeSelect">
+                            <option>2 phòng ngủ - @FormatPrice(8000000)/tháng</option>
+                            <option>3 phòng ngủ - @FormatPrice(9000000)/tháng</option>
+                        </select>
+                    </div>
+                    <button class="btn nf-btn-primary w-100 nf-book-btn" id="bookBtn2" data-bs-toggle="modal" data-bs-target="#bookingModal">
+                        <i class="fas fa-calendar-check"></i> Đặt phòng
+                    </button>
+                    <p class="text-muted small mt-2 mb-0">Bạn vẫn chưa bị trừ tiền</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Đặt phòng -->
+<div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bookingModalLabel">Đặt phòng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bookingForm">
+                    <div class="mb-3">
+                        <label class="form-label">Họ và tên</label>
+                        <input type="text" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Số điện thoại</label>
+                        <input type="tel" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ngày bắt đầu thuê</label>
+                        <input type="date" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Thời gian thuê</label>
+                        <select class="form-select" required>
+                            <option>3 tháng</option>
+                            <option>6 tháng</option>
+                            <option>12 tháng</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn nf-btn-primary w-100">Xác nhận đặt phòng</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nf-chat-avatar-img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .nf-room-thumb {
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        object-fit: cover;
+    }
+
+    .nf-chat-messages-container {
+        height: 400px;
+        overflow-y: auto;
+        padding: 1rem;
+        background: #f8f9fa;
+    }
+
+    .nf-chat-message {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+        .nf-chat-message.user {
+            flex-direction: row-reverse;
+        }
+
+    .nf-chat-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #4A90E2, #50C878);
+        flex-shrink: 0;
+    }
+
+    .nf-chat-bubble {
+        background: #f0f0f0;
+        padding: 0.75rem 1rem;
+        border-radius: 15px;
+        max-width: 70%;
+    }
+
+    .nf-chat-message.user .nf-chat-bubble {
+        background: #4A90E2;
+        color: #fff;
+    }
+
+    .nf-room-price-large {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #4A90E2;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Xử lý gửi tin nhắn
+        document.getElementById('sendBtn').addEventListener('click', function() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            if (message) {
+                const messagesContainer = document.getElementById('chatMessages');
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'nf-chat-message user';
+                const now = new Date();
+                const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                messageDiv.innerHTML = `
+                    <div class="nf-chat-avatar"></div>
+                    <div class="nf-chat-bubble">
+                        <p class="mb-0">${message}</p>
+                        <small style="color: rgba(255,255,255,0.8);">${time}</small>
+                    </div>
+                `;
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                input.value = '';
+
+                // Simulate response
+                setTimeout(() => {
+                    const responseDiv = document.createElement('div');
+                    responseDiv.className = 'nf-chat-message';
+                    const responseTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                    responseDiv.innerHTML = `
+                        <div class="nf-chat-avatar"></div>
+                        <div class="nf-chat-bubble">
+                            <p class="mb-0">Cảm ơn bạn đã quan tâm! Tôi sẽ trả lời bạn sớm nhất có thể.</p>
+                            <small class="text-muted">${responseTime}</small>
+                        </div>
+                    `;
+                    messagesContainer.appendChild(responseDiv);
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 1000);
+            }
+        });
+
+        document.getElementById('chatInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('sendBtn').click();
+            }
+        });
+
+        // Kiểm tra role và disable booking nếu không phải tenant
+        const userRole = localStorage.getItem('userRole');
+        const landlordViewMode = localStorage.getItem('landlordViewMode');
+
+        // Chỉ disable booking nếu là admin, landlord hoặc đang ở landlord view mode
+        // Tenant có thể đặt phòng bình thường
+        if (userRole && (userRole === 'admin' || userRole === 'landlord' || landlordViewMode === 'true')) {
+            const callBtn = document.getElementById('callBtn');
+            const bookBtn1 = document.getElementById('bookBtn1');
+            const bookBtn2 = document.getElementById('bookBtn2');
+            const bookingModal = document.getElementById('bookingModal');
+
+            function disableBooking(element, message) {
+                if (element) {
+                    element.style.pointerEvents = 'none';
+                    element.style.opacity = '0.6';
+                    element.style.cursor = 'not-allowed';
+                    element.title = message;
+                    element.onclick = function(e) {
+                        e.preventDefault();
+                        alert('Chỉ người thuê mới có thể đặt phòng. Vui lòng đăng nhập với tài khoản người thuê.');
+                        return false;
+                    };
+                }
+            }
+
+            disableBooking(callBtn, 'Chỉ người thuê mới có thể gọi điện');
+            disableBooking(bookBtn1, 'Chỉ người thuê mới có thể đặt phòng');
+            disableBooking(bookBtn2, 'Chỉ người thuê mới có thể đặt phòng');
+
+            // Disable modal booking
+            if (bookingModal) {
+                bookingModal.addEventListener('show.bs.modal', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    alert('Chỉ người thuê mới có thể đặt phòng. Vui lòng đăng nhập với tài khoản người thuê.');
+                    const modal = bootstrap.Modal.getInstance(bookingModal);
+                    if (modal) {
+                        modal.hide();
+                    }
+                    return false;
+                }, { once: false });
+            }
+        } else {
+            // Đảm bảo tenant có thể đặt phòng - remove any disabled state
+            const callBtn = document.getElementById('callBtn');
+            const bookBtn1 = document.getElementById('bookBtn1');
+            const bookBtn2 = document.getElementById('bookBtn2');
+
+            function enableBooking(element) {
+                if (element) {
+                    element.style.pointerEvents = 'auto';
+                    element.style.opacity = '1';
+                    element.style.cursor = 'pointer';
+                    element.title = '';
+                    element.onclick = null;
+                }
+            }
+
+            enableBooking(callBtn);
+            enableBooking(bookBtn1);
+            enableBooking(bookBtn2);
+
+            // Remove landlord-view-mode class
+            document.body.classList.remove('landlord-view-mode');
+        }
+    </script>
+}

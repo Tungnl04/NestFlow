@@ -1,0 +1,154 @@
+﻿@page
+@model NestFlow.Pages.Landlord.ContractsModel
+@{
+    ViewData["Title"] = "Hợp đồng & thanh toán - Nestflow";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="nf-sidebar">
+                <h4 class="mb-4">Menu quản lý</h4>
+                <ul class="nf-sidebar-menu">
+                    <li><a asp-page="/Landlord/Dashboard"><i class="fas fa-home"></i> Trang tổng quan</a></li>
+                    <li><a asp-page="/Landlord/Rooms"><i class="fas fa-door-open"></i> Quản lý phòng trọ</a></li>
+                    <li><a asp-page="/Landlord/Posts"><i class="fas fa-newspaper"></i> Quản lý tin đăng</a></li>
+                    <li><a asp-page="/Landlord/Tenants"><i class="fas fa-users"></i> Người thuê</a></li>
+                    <li class="active"><a asp-page="/Landlord/Contracts"><i class="fas fa-file-contract"></i> Hợp đồng & thanh toán</a></li>
+                    <li><a asp-page="/Landlord/Packages"><i class="fas fa-box"></i> Gói đăng tin</a></li>
+                    <li><a asp-page="/Landlord/Notifications"><i class="fas fa-bell"></i> Thông báo</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <h2 class="mb-4">Hợp đồng & thanh toán</h2>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Lịch thanh toán</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Phòng</th>
+                                    <th>Người thuê</th>
+                                    <th>Ngày thanh toán</th>
+                                    <th>Số tiền</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Phòng #001</td>
+                                    <td>Nguyễn Văn A</td>
+                                    <td>01/02/2026</td>
+                                    <td>1.500.000đ</td>
+                                    <td><span class="badge bg-success">Đã thanh toán</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Xem hóa đơn</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Phòng #002</td>
+                                    <td>Trần Thị B</td>
+                                    <td>15/01/2026</td>
+                                    <td>1.800.000đ</td>
+                                    <td><span class="badge bg-warning">Chưa thanh toán</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Nhắc nhở</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Hợp đồng thuê phòng</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Phòng</th>
+                                    <th>Người thuê</th>
+                                    <th>Ngày bắt đầu</th>
+                                    <th>Ngày kết thúc</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Phòng #001</td>
+                                    <td>Nguyễn Văn A</td>
+                                    <td>01/01/2026</td>
+                                    <td>01/04/2026</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Xem hợp đồng</button>
+                                        <button class="btn btn-sm btn-outline-primary">Tải xuống</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Phòng #002</td>
+                                    <td>Trần Thị B</td>
+                                    <td>15/12/2025</td>
+                                    <td>15/03/2026</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Xem hợp đồng</button>
+                                        <button class="btn btn-sm btn-outline-primary">Tải xuống</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.nf-sidebar {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    height: fit-content;
+    position: sticky;
+    top: 100px;
+}
+
+.nf-sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nf-sidebar-menu li {
+    margin-bottom: 0.5rem;
+}
+
+.nf-sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: #333;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.3s;
+}
+
+.nf-sidebar-menu li a:hover,
+.nf-sidebar-menu li.active a {
+    background: #4A90E2;
+    color: #fff;
+}
+</style>

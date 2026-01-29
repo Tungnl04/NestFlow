@@ -1,0 +1,582 @@
+﻿@page
+@model NestFlow.Pages.Landlord.PackagesModel
+@{
+    ViewData["Title"] = "Gói đăng tin - Nestflow";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="nf-sidebar">
+                <h4 class="mb-4">Menu quản lý</h4>
+                <ul class="nf-sidebar-menu">
+                    <li>
+                        <a asp-page="/Landlord/Dashboard"><i class="fas fa-home"></i> Trang tổng quan</a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Rooms"><i class="fas fa-door-open"></i> Quản lý phòng trọ</a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Posts"><i class="fas fa-newspaper"></i> Quản lý tin đăng</a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Tenants"><i class="fas fa-users"></i> Người thuê</a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Contracts"><i class="fas fa-file-contract"></i> Hợp đồng & thanh toán</a>
+                    </li>
+
+                    <li class="active">
+                        <a asp-page="/Landlord/Packages"><i class="fas fa-box"></i> Gói đăng tin</a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Landlord/Notifications"><i class="fas fa-bell"></i> Thông báo</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <h2 class="mb-2">Gói đăng tin</h2>
+            <p class="text-muted mb-4">Chọn gói phù hợp để tăng hiển thị và thu hút khách thuê nhanh chóng</p>
+
+            <!-- Package Cards -->
+            <div class="row g-4 mb-5">
+                <div class="col-md-4">
+                    <div class="nf-package-card">
+                        <div class="nf-package-header">
+                            <h5 class="mb-0">Gói Thường</h5>
+                        </div>
+                        <div class="nf-package-body">
+                            <div class="nf-package-price">
+                                <div class="nf-price-main">2.000₫</div>
+                                <div class="nf-price-period">/ngày</div>
+                                <div class="nf-price-month">54.000₫/tháng</div>
+                                <div class="nf-price-discount">Giảm 10%</div>
+                            </div>
+                            <ul class="nf-package-features">
+                                <li><i class="fas fa-check text-success"></i> Đăng tin trên trang web</li>
+                                <li><i class="fas fa-times text-danger"></i> Không ưu tiên hiển thị</li>
+                                <li><i class="fas fa-check text-success"></i> Hiển thị 30 ngày</li>
+                            </ul>
+                            <button class="btn nf-btn-primary w-100 mt-3">Mua gói</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="nf-package-card nf-package-vip">
+                        <div class="nf-package-badge">PHỔ BIẾN NHẤT</div>
+                        <div class="nf-package-header">
+                            <h5 class="mb-0">Gói VIP1</h5>
+                        </div>
+                        <div class="nf-package-body">
+                            <div class="nf-package-price">
+                                <div class="nf-price-main">20.000₫</div>
+                                <div class="nf-price-period">/ngày</div>
+                                <div class="nf-price-month">510.000₫/tháng</div>
+                                <div class="nf-price-discount">Giảm 15%</div>
+                            </div>
+                            <ul class="nf-package-features">
+                                <li><i class="fas fa-check text-success"></i> Đăng tin trên trang web</li>
+                                <li><i class="fas fa-check text-success"></i> TOP tìm kiếm</li>
+                                <li><i class="fas fa-check text-success"></i> Màu sắc tiêu đề nổi bật</li>
+                                <li><i class="fas fa-check text-success"></i> Hiển thị 30 ngày</li>
+                            </ul>
+                            <button class="btn btn-success w-100 mt-3">Mua gói này</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="nf-package-card nf-package-vip-plus">
+                        <div class="nf-package-header">
+                            <h5 class="mb-0">Gói VIP2</h5>
+                        </div>
+                        <div class="nf-package-body">
+                            <div class="nf-package-price">
+                                <div class="nf-price-main">35.000₫</div>
+                                <div class="nf-price-period">/ngày</div>
+                                <div class="nf-price-month">840.000₫/tháng</div>
+                                <div class="nf-price-discount">Giảm 20%</div>
+                            </div>
+                            <ul class="nf-package-features">
+                                <li><i class="fas fa-check text-success"></i> Đăng tin trên trang web</li>
+                                <li><i class="fas fa-check text-success"></i> TOP tìm kiếm</li>
+                                <li><i class="fas fa-check text-success"></i> Hình ảnh NỔI BẬT</li>
+                                <li><i class="fas fa-check text-success"></i> Nút gọi điện trực tiếp</li>
+                                <li><i class="fas fa-check text-success"></i> Ưu tiên tư vấn (VIP3)</li>
+                            </ul>
+                            <button class="btn nf-btn-primary w-100 mt-3">Mua gói này</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="nf-package-card nf-package-management">
+                        <div class="nf-package-header">
+                            <h5 class="mb-0">Sử dụng quản lý</h5>
+                        </div>
+                        <div class="nf-package-body">
+                            <div class="nf-package-price">
+                                <div class="nf-price-main">1.400.000₫</div>
+                                <div class="nf-price-period">/tháng</div>
+                            </div>
+                            <ul class="nf-package-features">
+                                <li><i class="fas fa-check text-success"></i> Đăng tin (tương đương VIP3)</li>
+                                <li><i class="fas fa-check text-success"></i> TOP tìm kiếm</li>
+                                <li><i class="fas fa-check text-success"></i> Hình ảnh NỔI BẬT</li>
+                                <li><i class="fas fa-check text-success"></i> Nút gọi điện trực tiếp</li>
+                                <li><i class="fas fa-check text-success"></i> Ưu tiên tư vấn (VIP3)</li>
+                                <li><i class="fas fa-check text-success"></i> Chương trình quản lý phòng trọ</li>
+                                <li><i class="fas fa-check text-success"></i> Quản lý số phòng trọ</li>
+                                <li><i class="fas fa-check text-success"></i> Theo dõi khách hàng</li>
+                                <li><i class="fas fa-check text-success"></i> Tính toán điện/nước</li>
+                            </ul>
+                            <button class="btn btn-info w-100 mt-3">Mua gói này</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="nf-package-card nf-package-management-only">
+                        <div class="nf-package-header">
+                            <h5 class="mb-0">Chỉ sử dụng quản lý</h5>
+                        </div>
+                        <div class="nf-package-body">
+                            <div class="nf-package-price">
+                                <div class="nf-price-main">560.000₫</div>
+                                <div class="nf-price-period">/tháng</div>
+                            </div>
+                            <ul class="nf-package-features">
+                                <li><i class="fas fa-times text-danger"></i> Không đăng tin</li>
+                                <li><i class="fas fa-check text-success"></i> Chương trình quản lý phòng trọ</li>
+                                <li><i class="fas fa-check text-success"></i> Quản lý số phòng trọ</li>
+                                <li><i class="fas fa-check text-success"></i> Theo dõi khách hàng</li>
+                                <li><i class="fas fa-check text-success"></i> Tính toán điện/nước</li>
+                                <li><i class="fas fa-check text-success"></i> Tiện ích quản lý kèm theo</li>
+                            </ul>
+                            <button class="btn btn-secondary w-100 mt-3">Mua gói này</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparison Table -->
+            <div class="card mb-4">
+                <div class="card-header" style="background: #4FB3B3; color: #fff;">
+                    <h4 class="mb-0">So sánh các gói</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered mb-0 nf-comparison-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tính năng</th>
+                                    <th>Gói Thường</th>
+                                    <th>Gói VIP1</th>
+                                    <th>Gói VIP2</th>
+                                    <th>Sử dụng quản lý</th>
+                                    <th>Chỉ sử dụng quản lý</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Giá cả -->
+                                <tr class="table-info">
+                                    <td colspan="6"><strong>GIÁ CẢ VÀ ƯU ĐÃI</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Giá ngày</strong></td>
+                                    <td>2.000₫<br><small class="text-muted">(Tối thiểu 3 ngày)</small></td>
+                                    <td>20.000₫<br><small class="text-muted">(Tối thiểu 3 ngày)</small></td>
+                                    <td>35.000₫<br><small class="text-muted">(Tối thiểu 3 ngày)</small></td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Giá tháng</strong></td>
+                                    <td>54.000₫</td>
+                                    <td>510.000₫</td>
+                                    <td>840.000₫</td>
+                                    <td>1.400.000₫</td>
+                                    <td>560.000₫</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ưu đãi tháng</strong></td>
+                                    <td>Giảm 10%</td>
+                                    <td>Giảm 15%</td>
+                                    <td>Giảm 20%</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-center">-</td>
+                                </tr>
+
+                                <!-- Dịch vụ đăng tin -->
+                                <tr class="table-info">
+                                    <td colspan="6"><strong>DỊCH VỤ ĐĂNG TIN</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Đăng tin trên trang web</strong></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i><br><small class="text-muted">(tương đương VIP3)</small></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tin đăng nằm trên TOP TÌM KIẾM</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Hình ảnh trọ thêm vào mục NỔI BẬT</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Màu sắc tiêu đề to và nổi bật</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Hiển thị nút gọi điện trực tiếp</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Khách hàng được ưu tiên tư vấn</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i><br><small class="text-muted">(Gói VIP3)</small></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i><br><small class="text-muted">(Gói VIP3)</small></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Thời hạn tin đăng (Ngày)</strong></td>
+                                    <td colspan="3">Tồn tại 24h (nếu không gia hạn bị xóa)</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-center">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Thời hạn tin đăng (Tháng)</strong></td>
+                                    <td colspan="3">Tồn tại 1 tháng (nếu không gia hạn bị xóa)</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-center">-</td>
+                                </tr>
+
+                                <!-- Dịch vụ quản lý -->
+                                <tr class="table-info">
+                                    <td colspan="6"><strong>DỊCH VỤ QUẢN LÝ</strong></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Sử dụng chương trình quản lý phòng trọ</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Quản lý số phòng trọ</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Theo dõi thông tin khách hàng</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tính toán số điện/nước hàng tháng</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tiện ích quản lý kèm theo</strong></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-times text-danger"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                    <td class="text-center"><i class="fas fa-check text-success"></i></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Thời hạn chức năng quản lý</strong></td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-center">-</td>
+                                    <td class="text-center">-</td>
+                                    <td colspan="2">Chấm dứt khi hết tháng (giữ lại dữ liệu)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Why Upgrade Section -->
+            <div class="card bg-light border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <i class="fas fa-lightbulb fa-lg" style="color: #4FB3B3;"></i>
+                        <h4 class="mb-0">Tại sao nên nâng cấp gói VIP?</h4>
+                    </div>
+                    <ul class="nf-benefits-list">
+                        <li>Tin của bạn sẽ xuất hiện đầu tiên trong kết quả tìm kiếm</li>
+                        <li>Tăng 300% lượt xem so với gói thường</li>
+                        <li>Thu hút khách thuê nhanh chóng hơn</li>
+                        <li>Badge "Nổi bật" giúp tin đăng nổi bật hơn</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nf-sidebar {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+    }
+
+    .nf-sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+        .nf-sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+            .nf-sidebar-menu li a {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+                color: #333;
+                text-decoration: none;
+                border-radius: 8px;
+                transition: all 0.3s;
+            }
+
+                .nf-sidebar-menu li a:hover,
+                .nf-sidebar-menu li.active a {
+                    background: #4FB3B3;
+                    color: #fff;
+                }
+
+    .nf-package-card {
+        background: #fff;
+        border: 2px solid #e9ecef;
+        border-radius: 15px;
+        overflow: hidden;
+        transition: all 0.3s;
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+        .nf-package-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+    .nf-package-vip {
+        border-color: #EFBF4D;
+        background: linear-gradient(to bottom, rgba(239, 191, 77, 0.1) 0%, #fff 20%);
+    }
+
+    .nf-package-vip-plus {
+        border-color: #333;
+    }
+
+    .nf-package-management {
+        border-color: #4FB3B3;
+        background: linear-gradient(to bottom, rgba(79, 179, 179, 0.1) 0%, #fff 20%);
+    }
+
+    .nf-package-management-only {
+        border-color: #6c757d;
+        background: linear-gradient(to bottom, #f8f9fa 0%, #fff 20%);
+    }
+
+    .nf-package-badge {
+        position: absolute;
+        top: 0;
+        right: 0;
+        background: #EFBF4D;
+        color: #2B3448;
+        padding: 0.5rem 1rem;
+        border-radius: 0 15px 0 15px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        z-index: 1;
+    }
+
+    .nf-package-header {
+        padding: 1.5rem 1.5rem 1rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+        .nf-package-header h5 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+    .nf-package-body {
+        padding: 1.5rem;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .nf-package-price {
+        text-align: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .nf-price-main {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #4FB3B3;
+        line-height: 1;
+    }
+
+    .nf-package-vip .nf-price-main {
+        color: #EFBF4D;
+    }
+
+    .nf-package-management .nf-price-main {
+        color: #4FB3B3;
+    }
+
+    .nf-package-management-only .nf-price-main {
+        color: #1D5A6E;
+    }
+
+    .nf-price-period {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 0.25rem;
+    }
+
+    .nf-price-month {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #333;
+        margin-top: 0.5rem;
+    }
+
+    .nf-price-discount {
+        font-size: 0.85rem;
+        color: #EFBF4D;
+        font-weight: 600;
+        margin-top: 0.25rem;
+    }
+
+    .nf-package-features {
+        list-style: none;
+        padding: 0;
+        margin: 0 0 1.5rem;
+        flex: 1;
+    }
+
+        .nf-package-features li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+    .nf-benefits-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+        .nf-benefits-list li {
+            padding: 0.75rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: #4A90E2;
+            font-weight: 500;
+        }
+
+            .nf-benefits-list li::before {
+                content: '•';
+                position: absolute;
+                left: 0;
+                font-size: 1.5rem;
+                line-height: 1;
+            }
+
+    .nf-comparison-table {
+        font-size: 0.9rem;
+    }
+
+        .nf-comparison-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            vertical-align: middle;
+            text-align: center;
+        }
+
+            .nf-comparison-table th:first-child {
+                text-align: left;
+            }
+
+        .nf-comparison-table td {
+            vertical-align: middle;
+            text-align: center;
+        }
+
+            .nf-comparison-table td:first-child {
+                text-align: left;
+                font-weight: 500;
+            }
+
+            .nf-comparison-table td small {
+                display: block;
+                margin-top: 0.25rem;
+                font-size: 0.8rem;
+            }
+
+        .nf-comparison-table .table-info {
+            background: #e7f3ff;
+            font-weight: 700;
+        }
+
+            .nf-comparison-table .table-info td {
+                padding: 0.75rem;
+                text-align: left;
+            }
+</style>
