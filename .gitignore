@@ -416,3 +416,6 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# Ignore các file chứa secret cá nhân
+appsettings.Development.json
+appsettings.Local.json
