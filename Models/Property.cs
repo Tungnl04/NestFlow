@@ -47,6 +47,8 @@ public partial class Property
 
     public virtual User Landlord { get; set; } = null!;
 
+    public virtual ICollection<Listing> Listings { get; set; } = new List<Listing>();
+
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
     public virtual ICollection<PropertyImage> PropertyImages { get; set; } = new List<PropertyImage>();

@@ -23,15 +23,29 @@ public partial class NestFlowSystemContext : DbContext
 
     public virtual DbSet<Invoice> Invoices { get; set; }
 
+    public virtual DbSet<LandlordSubscription> LandlordSubscriptions { get; set; }
+
+    public virtual DbSet<Listing> Listings { get; set; }
+
+    public virtual DbSet<ListingFavorite> ListingFavorites { get; set; }
+
     public virtual DbSet<Message> Messages { get; set; }
 
     public virtual DbSet<Notification> Notifications { get; set; }
+
+    public virtual DbSet<Payment> Payments { get; set; }
+
+    public virtual DbSet<Plan> Plans { get; set; }
 
     public virtual DbSet<Property> Properties { get; set; }
 
     public virtual DbSet<PropertyImage> PropertyImages { get; set; }
 
+    public virtual DbSet<RentSchedule> RentSchedules { get; set; }
+
     public virtual DbSet<Rental> Rentals { get; set; }
+
+    public virtual DbSet<RentalOccupant> RentalOccupants { get; set; }
 
     public virtual DbSet<Report> Reports { get; set; }
 
@@ -39,17 +53,16 @@ public partial class NestFlowSystemContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<Wallet> Wallets { get; set; }
+
+    public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
+
+    public virtual DbSet<WithdrawRequest> WithdrawRequests { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            IConfigurationRoot configuration = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json")
-                .Build();
-            optionsBuilder.UseSqlServer(configuration.GetConnectionString("Default"));
-        }
-    }
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=TungLaptop;uid=sa;password=sa;database=NestFlowSystem;Encrypt=True;TrustServerCertificate=True;");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Amenity>(entity =>
@@ -190,6 +203,124 @@ public partial class NestFlowSystemContext : DbContext
                 .HasConstraintName("fk_invoices_rental");
         });
 
+        modelBuilder.Entity<LandlordSubscription>(entity =>
+        {
+            entity.HasKey(e => e.SubscriptionId).HasName("PK__Landlord__863A7EC1D068B802");
+
+            entity.HasIndex(e => e.LandlordId, "ix_subscriptions_landlord");
+
+            entity.HasIndex(e => e.Status, "ix_subscriptions_status");
+
+            entity.Property(e => e.SubscriptionId).HasColumnName("subscription_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.EndAt)
+                .HasColumnType("datetime")
+                .HasColumnName("end_at");
+            entity.Property(e => e.LandlordId).HasColumnName("landlord_id");
+            entity.Property(e => e.PlanId).HasColumnName("plan_id");
+            entity.Property(e => e.QuotaRemaining).HasColumnName("quota_remaining");
+            entity.Property(e => e.StartAt)
+                .HasColumnType("datetime")
+                .HasColumnName("start_at");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("active")
+                .HasColumnName("status");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Landlord).WithMany(p => p.LandlordSubscriptions)
+                .HasForeignKey(d => d.LandlordId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_subscriptions_landlord");
+
+            entity.HasOne(d => d.Plan).WithMany(p => p.LandlordSubscriptions)
+                .HasForeignKey(d => d.PlanId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_subscriptions_plan");
+        });
+
+        modelBuilder.Entity<Listing>(entity =>
+        {
+            entity.HasKey(e => e.ListingId).HasName("PK__Listings__89D81774EF122552");
+
+            entity.HasIndex(e => e.LandlordId, "ix_listings_landlord");
+
+            entity.HasIndex(e => e.PropertyId, "ix_listings_property");
+
+            entity.HasIndex(e => e.Status, "ix_listings_status");
+
+            entity.Property(e => e.ListingId).HasColumnName("listing_id");
+            entity.Property(e => e.Content).HasColumnName("content");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ExpiresAt)
+                .HasColumnType("datetime")
+                .HasColumnName("expires_at");
+            entity.Property(e => e.LandlordId).HasColumnName("landlord_id");
+            entity.Property(e => e.LikeCount).HasColumnName("like_count");
+            entity.Property(e => e.PropertyId).HasColumnName("property_id");
+            entity.Property(e => e.PublishedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("published_at");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("draft")
+                .HasColumnName("status");
+            entity.Property(e => e.Title)
+                .HasMaxLength(255)
+                .HasColumnName("title");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.ViewCount).HasColumnName("view_count");
+
+            entity.HasOne(d => d.Landlord).WithMany(p => p.Listings)
+                .HasForeignKey(d => d.LandlordId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_listings_landlord");
+
+            entity.HasOne(d => d.Property).WithMany(p => p.Listings)
+                .HasForeignKey(d => d.PropertyId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_listings_property");
+        });
+
+        modelBuilder.Entity<ListingFavorite>(entity =>
+        {
+            entity.HasKey(e => e.ListingFavoriteId).HasName("PK__ListingF__55A0774524E8A0C1");
+
+            entity.HasIndex(e => e.RenterId, "ix_listingfavorites_renter");
+
+            entity.HasIndex(e => new { e.ListingId, e.RenterId }, "uq_listingfavorites").IsUnique();
+
+            entity.Property(e => e.ListingFavoriteId).HasColumnName("listing_favorite_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.ListingId).HasColumnName("listing_id");
+            entity.Property(e => e.RenterId).HasColumnName("renter_id");
+
+            entity.HasOne(d => d.Listing).WithMany(p => p.ListingFavorites)
+                .HasForeignKey(d => d.ListingId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_listingfavorites_listing");
+
+            entity.HasOne(d => d.Renter).WithMany(p => p.ListingFavorites)
+                .HasForeignKey(d => d.RenterId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_listingfavorites_renter");
+        });
+
         modelBuilder.Entity<Message>(entity =>
         {
             entity.HasKey(e => e.MessageId).HasName("PK__Messages__0BBF6EE64A3BF7CF");
@@ -250,6 +381,103 @@ public partial class NestFlowSystemContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_notifications_user");
+        });
+
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__ED1FC9EACC3DBF5D");
+
+            entity.HasIndex(e => e.PayerUserId, "ix_payments_payer");
+
+            entity.HasIndex(e => e.ProviderOrderCode, "ix_payments_provider_order_code");
+
+            entity.HasIndex(e => new { e.PaymentType, e.Status }, "ix_payments_type_status");
+
+            entity.Property(e => e.PaymentId).HasColumnName("payment_id");
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(14, 2)")
+                .HasColumnName("amount");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
+            entity.Property(e => e.LandlordId).HasColumnName("landlord_id");
+            entity.Property(e => e.PaidAt)
+                .HasColumnType("datetime")
+                .HasColumnName("paid_at");
+            entity.Property(e => e.PayUrl)
+                .HasMaxLength(1000)
+                .HasColumnName("pay_url");
+            entity.Property(e => e.PayerUserId).HasColumnName("payer_user_id");
+            entity.Property(e => e.PaymentType)
+                .HasMaxLength(20)
+                .HasColumnName("payment_type");
+            entity.Property(e => e.Provider)
+                .HasMaxLength(20)
+                .HasDefaultValue("payos")
+                .HasColumnName("provider");
+            entity.Property(e => e.ProviderOrderCode)
+                .HasMaxLength(100)
+                .HasColumnName("provider_order_code");
+            entity.Property(e => e.RawWebhook).HasColumnName("raw_webhook");
+            entity.Property(e => e.RentalId).HasColumnName("rental_id");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("created")
+                .HasColumnName("status");
+            entity.Property(e => e.SubscriptionId).HasColumnName("subscription_id");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.InvoiceId)
+                .HasConstraintName("fk_payments_invoice");
+
+            entity.HasOne(d => d.Landlord).WithMany(p => p.PaymentLandlords)
+                .HasForeignKey(d => d.LandlordId)
+                .HasConstraintName("fk_payments_landlord");
+
+            entity.HasOne(d => d.PayerUser).WithMany(p => p.PaymentPayerUsers)
+                .HasForeignKey(d => d.PayerUserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_payments_payer");
+
+            entity.HasOne(d => d.Rental).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.RentalId)
+                .HasConstraintName("fk_payments_rental");
+
+            entity.HasOne(d => d.Subscription).WithMany(p => p.Payments)
+                .HasForeignKey(d => d.SubscriptionId)
+                .HasConstraintName("fk_payments_subscription");
+        });
+
+        modelBuilder.Entity<Plan>(entity =>
+        {
+            entity.HasKey(e => e.PlanId).HasName("PK__Plans__BE9F8F1DDAD13903");
+
+            entity.Property(e => e.PlanId).HasColumnName("plan_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.DurationDays).HasColumnName("duration_days");
+            entity.Property(e => e.IsActive)
+                .HasDefaultValue(true)
+                .HasColumnName("is_active");
+            entity.Property(e => e.PlanName)
+                .HasMaxLength(100)
+                .HasColumnName("plan_name");
+            entity.Property(e => e.Price)
+                .HasColumnType("decimal(12, 2)")
+                .HasColumnName("price");
+            entity.Property(e => e.PriorityLevel).HasColumnName("priority_level");
+            entity.Property(e => e.QuotaActiveListings)
+                .HasDefaultValue(1)
+                .HasColumnName("quota_active_listings");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
         });
 
         modelBuilder.Entity<Property>(entity =>
@@ -355,6 +583,52 @@ public partial class NestFlowSystemContext : DbContext
                 .HasConstraintName("fk_images_property");
         });
 
+        modelBuilder.Entity<RentSchedule>(entity =>
+        {
+            entity.HasKey(e => e.ScheduleId).HasName("PK__RentSche__C46A8A6F1FDFE5B5");
+
+            entity.HasIndex(e => e.Status, "ix_rentschedules_status");
+
+            entity.HasIndex(e => new { e.RentalId, e.PeriodMonth }, "uq_rentschedules").IsUnique();
+
+            entity.Property(e => e.ScheduleId).HasColumnName("schedule_id");
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(14, 2)")
+                .HasColumnName("amount");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DueDate).HasColumnName("due_date");
+            entity.Property(e => e.PaidAt)
+                .HasColumnType("datetime")
+                .HasColumnName("paid_at");
+            entity.Property(e => e.PaymentId).HasColumnName("payment_id");
+            entity.Property(e => e.PeriodMonth)
+                .HasMaxLength(7)
+                .IsUnicode(false)
+                .IsFixedLength()
+                .HasColumnName("period_month");
+            entity.Property(e => e.RentalId).HasColumnName("rental_id");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("pending")
+                .HasColumnName("status");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Payment).WithMany(p => p.RentSchedules)
+                .HasForeignKey(d => d.PaymentId)
+                .HasConstraintName("fk_rentschedules_payment");
+
+            entity.HasOne(d => d.Rental).WithMany(p => p.RentSchedules)
+                .HasForeignKey(d => d.RentalId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_rentschedules_rental");
+        });
+
         modelBuilder.Entity<Rental>(entity =>
         {
             entity.HasKey(e => e.RentalId).HasName("PK__Rentals__67DB611BA22B0456");
@@ -412,6 +686,45 @@ public partial class NestFlowSystemContext : DbContext
                 .HasForeignKey(d => d.RenterId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_rentals_renter");
+        });
+
+        modelBuilder.Entity<RentalOccupant>(entity =>
+        {
+            entity.HasKey(e => e.OccupantId).HasName("PK__RentalOc__6F2B18EB1B4516F1");
+
+            entity.HasIndex(e => e.RentalId, "ix_occupants_rental");
+
+            entity.Property(e => e.OccupantId).HasColumnName("occupant_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.FullName)
+                .HasMaxLength(255)
+                .HasColumnName("full_name");
+            entity.Property(e => e.IdNumber)
+                .HasMaxLength(50)
+                .HasColumnName("id_number");
+            entity.Property(e => e.MoveInDate).HasColumnName("move_in_date");
+            entity.Property(e => e.MoveOutExpected).HasColumnName("move_out_expected");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(20)
+                .HasColumnName("phone");
+            entity.Property(e => e.RentalId).HasColumnName("rental_id");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("active")
+                .HasColumnName("status");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.HasOne(d => d.Rental).WithMany(p => p.RentalOccupants)
+                .HasForeignKey(d => d.RentalId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_occupants_rental");
+
+            entity.HasOne(d => d.User).WithMany(p => p.RentalOccupants)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("fk_occupants_user");
         });
 
         modelBuilder.Entity<Report>(entity =>
@@ -518,6 +831,131 @@ public partial class NestFlowSystemContext : DbContext
             entity.Property(e => e.UserType)
                 .HasMaxLength(20)
                 .HasColumnName("user_type");
+        });
+
+        modelBuilder.Entity<Wallet>(entity =>
+        {
+            entity.HasKey(e => e.WalletId).HasName("PK__Wallets__0EE6F041F22D1DFE");
+
+            entity.HasIndex(e => e.LandlordId, "UQ__Wallets__0AA6026FDE85EA05").IsUnique();
+
+            entity.Property(e => e.WalletId).HasColumnName("wallet_id");
+            entity.Property(e => e.AvailableBalance)
+                .HasColumnType("decimal(14, 2)")
+                .HasColumnName("available_balance");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Currency)
+                .HasMaxLength(10)
+                .HasDefaultValue("VND")
+                .HasColumnName("currency");
+            entity.Property(e => e.LandlordId).HasColumnName("landlord_id");
+            entity.Property(e => e.LockedBalance)
+                .HasColumnType("decimal(14, 2)")
+                .HasColumnName("locked_balance");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Landlord).WithOne(p => p.Wallet)
+                .HasForeignKey<Wallet>(d => d.LandlordId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_wallets_landlord");
+        });
+
+        modelBuilder.Entity<WalletTransaction>(entity =>
+        {
+            entity.HasKey(e => e.WalletTxnId).HasName("PK__WalletTr__3C5FF6AC57126483");
+
+            entity.HasIndex(e => new { e.RelatedType, e.RelatedId }, "ix_wallettx_related");
+
+            entity.HasIndex(e => e.WalletId, "ix_wallettx_wallet");
+
+            entity.Property(e => e.WalletTxnId).HasColumnName("wallet_txn_id");
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(14, 2)")
+                .HasColumnName("amount");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Direction)
+                .HasMaxLength(10)
+                .HasColumnName("direction");
+            entity.Property(e => e.Note)
+                .HasMaxLength(500)
+                .HasColumnName("note");
+            entity.Property(e => e.RelatedId).HasColumnName("related_id");
+            entity.Property(e => e.RelatedType)
+                .HasMaxLength(20)
+                .HasColumnName("related_type");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("posted")
+                .HasColumnName("status");
+            entity.Property(e => e.WalletId).HasColumnName("wallet_id");
+
+            entity.HasOne(d => d.Wallet).WithMany(p => p.WalletTransactions)
+                .HasForeignKey(d => d.WalletId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_wallettx_wallet");
+        });
+
+        modelBuilder.Entity<WithdrawRequest>(entity =>
+        {
+            entity.HasKey(e => e.WithdrawId).HasName("PK__Withdraw__2F1C7929664B9018");
+
+            entity.HasIndex(e => e.LandlordId, "ix_withdraw_landlord");
+
+            entity.HasIndex(e => e.Status, "ix_withdraw_status");
+
+            entity.Property(e => e.WithdrawId).HasColumnName("withdraw_id");
+            entity.Property(e => e.AccountHolder)
+                .HasMaxLength(100)
+                .HasColumnName("account_holder");
+            entity.Property(e => e.Amount)
+                .HasColumnType("decimal(14, 2)")
+                .HasColumnName("amount");
+            entity.Property(e => e.BankAccount)
+                .HasMaxLength(50)
+                .HasColumnName("bank_account");
+            entity.Property(e => e.BankName)
+                .HasMaxLength(100)
+                .HasColumnName("bank_name");
+            entity.Property(e => e.LandlordId).HasColumnName("landlord_id");
+            entity.Property(e => e.Note)
+                .HasMaxLength(500)
+                .HasColumnName("note");
+            entity.Property(e => e.ProcessedAt)
+                .HasColumnType("datetime")
+                .HasColumnName("processed_at");
+            entity.Property(e => e.ProcessedByAdminId).HasColumnName("processed_by_admin_id");
+            entity.Property(e => e.RequestedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("requested_at");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasDefaultValue("pending")
+                .HasColumnName("status");
+            entity.Property(e => e.WalletId).HasColumnName("wallet_id");
+
+            entity.HasOne(d => d.Landlord).WithMany(p => p.WithdrawRequestLandlords)
+                .HasForeignKey(d => d.LandlordId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_withdraw_landlord");
+
+            entity.HasOne(d => d.ProcessedByAdmin).WithMany(p => p.WithdrawRequestProcessedByAdmins)
+                .HasForeignKey(d => d.ProcessedByAdminId)
+                .HasConstraintName("fk_withdraw_admin");
+
+            entity.HasOne(d => d.Wallet).WithMany(p => p.WithdrawRequests)
+                .HasForeignKey(d => d.WalletId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_withdraw_wallet");
         });
 
         OnModelCreatingPartial(modelBuilder);

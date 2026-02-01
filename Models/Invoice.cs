@@ -51,5 +51,7 @@ public partial class Invoice
 
     public DateTime? UpdatedAt { get; set; }
 
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
     public virtual Rental Rental { get; set; } = null!;
 }

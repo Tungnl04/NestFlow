@@ -47,7 +47,13 @@ public partial class Rental
 
     public virtual User Landlord { get; set; } = null!;
 
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
     public virtual Property Property { get; set; } = null!;
+
+    public virtual ICollection<RentSchedule> RentSchedules { get; set; } = new List<RentSchedule>();
+
+    public virtual ICollection<RentalOccupant> RentalOccupants { get; set; } = new List<RentalOccupant>();
 
     public virtual User Renter { get; set; } = null!;
 }
