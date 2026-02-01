@@ -1,0 +1,157 @@
+/* Dev 3 Custom Styles & Color Palette Override */
+:root {
+    --nf-cream: #EFEBE2;
+    --nf-gold: #EFBF4D;
+    --nf-teal: #4FB3B3;
+    --nf-dark-teal: #1D5A6E;
+    --nf-navy: #2B3448;
+    --nf-white: #ffffff;
+    --nf-text-main: #2B3448;
+    --nf-text-light: #666;
+}
+
+/* Apply variables to body if we want to override site.css defaults globally */
+body {
+    color: var(--nf-text-main) !important;
+    background-color: #f8fcfc !important;
+    /* Cool white tint */
+}
+
+/* Overriding Header */
+.nf-header {
+    background: var(--nf-white) !important;
+    box-shadow: 0 2px 15px rgba(43, 52, 72, 0.05) !important;
+}
+
+.nf-logo {
+    font-weight: 800 !important;
+    color: var(--nf-navy) !important;
+}
+
+.nf-logo-icon {
+    width: 36px !important;
+    height: 36px !important;
+    background: linear-gradient(135deg, var(--nf-teal), var(--nf-dark-teal)) !important;
+    box-shadow: 0 4px 10px rgba(79, 179, 179, 0.3);
+}
+
+.nf-logo-text {
+    color: var(--nf-navy) !important;
+    letter-spacing: -0.5px;
+}
+
+/* Nav Links */
+.navbar-nav .nav-link {
+    color: var(--nf-navy) !important;
+    font-weight: 600 !important;
+}
+
+.navbar-nav .nav-link:hover {
+    color: var(--nf-teal) !important;
+}
+
+/* Buttons */
+.nf-btn-login {
+    color: var(--nf-navy) !important;
+    border-color: #ddd !important;
+}
+
+.nf-btn-login:hover {
+    background: var(--nf-cream) !important;
+    border-color: var(--nf-gold) !important;
+    color: var(--nf-navy) !important;
+}
+
+.nf-btn-signup {
+    background: var(--nf-teal) !important;
+    border-color: var(--nf-teal) !important;
+    box-shadow: 0 4px 10px rgba(79, 179, 179, 0.3);
+}
+
+.nf-btn-signup:hover {
+    background: var(--nf-dark-teal) !important;
+    border-color: var(--nf-dark-teal) !important;
+    transform: translateY(-2px);
+}
+
+.nf-btn-landlord {
+    background: var(--nf-gold) !important;
+    color: var(--nf-navy) !important;
+    box-shadow: 0 4px 10px rgba(239, 191, 77, 0.3);
+}
+
+.nf-btn-landlord:hover {
+    background: #F0C965 !important;
+    color: var(--nf-navy) !important;
+    transform: translateY(-2px);
+}
+
+/* Notification specific styles */
+#notif-counter {
+    background-color: #e74c3c !important;
+    /* Red for alert */
+    font-size: 0.65rem;
+}
+
+.dropdown-item .text-xs {
+    font-size: 0.7rem;
+}
+
+/* Carousel/Slider Styling (Fix ugly buttons) */
+.carousel-control-prev,
+.carousel-control-next {
+    width: 50px !important;
+    height: 50px !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    backdrop-filter: blur(4px);
+    border-radius: 50% !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    opacity: 0.8 !important;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    margin: 0 20px;
+    transition: all 0.3s ease;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: var(--nf-dark-teal) !important;
+    transform: translateY(-50%) scale(1.1) !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+    filter: none !important;
+    /* Reset default white filter if needed */
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+/* Indicators (Dots) */
+.carousel-indicators {
+    bottom: 25px !important;
+    gap: 10px;
+}
+
+.carousel-indicators button {
+    width: 10px !important;
+    height: 10px !important;
+    border-radius: 50% !important;
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid transparent !important;
+    opacity: 0.7 !important;
+    transition: all 0.3s ease;
+    margin: 0 !important;
+}
+
+.carousel-indicators button.active {
+    background-color: var(--nf-gold) !important;
+    /* Use Gold or Teal? Gold stands out better on dark overlay */
+    width: 30px !important;
+    /* Elongate active dot */
+    height: 10px !important;
+    border-radius: 5px !important;
+    opacity: 1 !important;
+}
