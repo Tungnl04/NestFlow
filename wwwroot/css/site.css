@@ -16,7 +16,7 @@ body {
 /* Header */
 .nf-header {
     background: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -50,18 +50,18 @@ body {
 }
 
 .navbar-nav .nav-link {
-    color: #333;
-    font-weight: 500;
+    color: var(--nf-navy);
+    font-weight: 600;
     padding: 0.5rem 1rem;
     transition: color 0.3s;
 }
 
-    .navbar-nav .nav-link:hover {
-        color: #4FB3B3;
-    }
+.navbar-nav .nav-link:hover {
+    color: var(--nf-teal);
+}
 
 .nf-search-btn {
-    color: #333;
+    color: var(--nf-navy);
     font-size: 1.2rem;
     text-decoration: none;
     border: none;
@@ -71,48 +71,54 @@ body {
 
 .nf-btn-login,
 .nf-btn-signup {
-    border: 1px solid #ddd;
-    padding: 0.5rem 1.5rem;
-    border-radius: 20px;
-    font-weight: 500;
+    border: 1px solid transparent;
+    padding: 0.6rem 1.5rem;
+    border-radius: 30px;
+    font-weight: 600;
     transition: all 0.3s;
 }
 
 .nf-btn-login {
     background: transparent;
-    color: #333;
+    color: var(--nf-navy);
+    border-color: #ddd;
 }
 
-    .nf-btn-login:hover {
-        background: #f0f0f0;
-    }
+.nf-btn-login:hover {
+    background: var(--nf-cream);
+    border-color: var(--nf-gold);
+    color: var(--nf-navy);
+}
 
 .nf-btn-signup {
-    background: #4FB3B3;
+    background: var(--nf-teal);
     color: #fff;
-    border-color: #4FB3B3;
+    box-shadow: 0 4px 10px rgba(79, 179, 179, 0.3);
 }
 
-    .nf-btn-signup:hover {
-        background: #1D5A6E;
-        border-color: #1D5A6E;
-        color: #fff;
-    }
+.nf-btn-signup:hover {
+    background: var(--nf-dark-teal);
+    transform: translateY(-2px);
+}
 
 .nf-btn-landlord {
-    background: #EFBF4D;
-    color: #2B3448;
+    background: var(--nf-gold);
+    color: var(--nf-navy);
     border: none;
-    padding: 0.5rem 1.5rem;
-    border-radius: 20px;
-    font-weight: 500;
+    padding: 0.6rem 1.5rem;
+    border-radius: 30px;
+    font-weight: 700;
     text-decoration: none;
+    box-shadow: 0 4px 10px rgba(239, 191, 77, 0.3);
+    transition: all 0.3s;
 }
 
-    .nf-btn-landlord:hover {
-        background: #1D5A6E;
-        color: #fff;
-    }
+.nf-btn-landlord:hover {
+    background: #F0C965;
+    /* Lighter gold */
+    transform: translateY(-2px);
+    color: var(--nf-navy);
+}
 
 /* Thanh phân loại tìm kiếm */
 .nf-search-filters {
@@ -120,10 +126,10 @@ body {
     border-top: 1px solid #e9ecef;
 }
 
-    .nf-search-filters .form-select {
-        border-radius: 8px;
-        border: 1px solid #ddd;
-    }
+.nf-search-filters .form-select {
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
 
 /* Welcome Screen - Design mới */
 .nf-role-selector {
@@ -178,7 +184,7 @@ body {
     background: #fff;
     padding: 3rem;
     border-radius: 20px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
     max-width: 800px;
     margin: 0 auto;
 }
@@ -224,7 +230,7 @@ body {
 
 .nf-role-btn-new:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 .nf-role-icon-circle {
@@ -282,7 +288,7 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.5));
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.5));
 }
 
 .nf-banner-content {
@@ -299,12 +305,12 @@ body {
     font-size: 3.5rem;
     font-weight: 700;
     margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .nf-banner-subtitle {
     font-size: 1.5rem;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .carousel-control-prev,
@@ -326,11 +332,11 @@ body {
     right: 30px;
 }
 
-    .carousel-control-prev:hover,
-    .carousel-control-next:hover {
-        opacity: 1;
-        background: rgba(255, 255, 255, 1);
-    }
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 1);
+}
 
 .carousel-indicators {
     bottom: 20px;
@@ -338,32 +344,32 @@ body {
     gap: 8px;
 }
 
-    .carousel-indicators button {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.5);
-        border: none;
-        margin: 0;
-        padding: 0;
-        text-indent: 0;
-        opacity: 1;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
+.carousel-indicators button {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    margin: 0;
+    padding: 0;
+    text-indent: 0;
+    opacity: 1;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
 
-        .carousel-indicators button.active {
-            background: #fff;
-            width: 24px;
-            height: 8px;
-            border-radius: 4px;
-        }
+.carousel-indicators button.active {
+    background: #fff;
+    width: 24px;
+    height: 8px;
+    border-radius: 4px;
+}
 
 /* Search Bar Section */
 .nf-search-bar-section {
     background: #fff;
     padding: 2rem 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     margin-bottom: 3rem;
 }
 
@@ -379,19 +385,19 @@ body {
     flex: 1;
 }
 
-    .nf-search-filter label {
-        display: block;
-        font-weight: 500;
-        margin-bottom: 0.5rem;
-        color: #333;
-        font-size: 0.9rem;
-    }
+.nf-search-filter label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #333;
+    font-size: 0.9rem;
+}
 
-    .nf-search-filter .form-select {
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        padding: 0.75rem;
-    }
+.nf-search-filter .form-select {
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    padding: 0.75rem;
+}
 
 .nf-search-btn-main {
     background: #4FB3B3;
@@ -408,9 +414,9 @@ body {
     height: fit-content;
 }
 
-    .nf-search-btn-main:hover {
-        background: #1D5A6E;
-    }
+.nf-search-btn-main:hover {
+    background: #1D5A6E;
+}
 
 /* Room cards */
 .nf-section-title {
@@ -424,7 +430,7 @@ body {
     background: #fff;
     border-radius: 15px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s, box-shadow 0.3s;
     cursor: pointer;
     height: 100%;
@@ -432,10 +438,10 @@ body {
     flex-direction: column;
 }
 
-    .nf-room-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 20px rgba(0,0,0,0.15);
-    }
+.nf-room-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+}
 
 .nf-room-image {
     position: relative;
@@ -444,12 +450,12 @@ body {
     overflow: hidden;
 }
 
-    .nf-room-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s;
-    }
+.nf-room-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
 
 .nf-room-card:hover .nf-room-image img {
     transform: scale(1.05);
@@ -485,20 +491,20 @@ body {
     z-index: 10;
 }
 
-    .nf-save-btn:hover {
-        background: #fff;
-        transform: scale(1.1);
-    }
+.nf-save-btn:hover {
+    background: #fff;
+    transform: scale(1.1);
+}
 
-    .nf-save-btn i {
-        color: #666;
-        font-size: 1.2rem;
-    }
+.nf-save-btn i {
+    color: #666;
+    font-size: 1.2rem;
+}
 
-    .nf-save-btn.saved i,
-    .nf-save-btn:hover i {
-        color: #e74c3c;
-    }
+.nf-save-btn.saved i,
+.nf-save-btn:hover i {
+    color: #e74c3c;
+}
 
 .nf-saved-count {
     background: #4FB3B3;
@@ -556,9 +562,9 @@ body {
     gap: 0.3rem;
 }
 
-    .nf-rating i {
-        color: #FFD700;
-    }
+.nf-rating i {
+    color: #FFD700;
+}
 
 .nf-review-count {
     color: #999;
@@ -577,11 +583,11 @@ body {
     padding: 3rem 0 1rem;
 }
 
-    .nf-footer h6 {
-        color: #fff;
-        margin-bottom: 1rem;
-        font-weight: 600;
-    }
+.nf-footer h6 {
+    color: #fff;
+    margin-bottom: 1rem;
+    font-weight: 600;
+}
 
 .nf-footer-link {
     color: #4FB3B3;
@@ -592,9 +598,9 @@ body {
     font-size: 0.9rem;
 }
 
-    .nf-footer-link:hover {
-        color: #EFBF4D;
-    }
+.nf-footer-link:hover {
+    color: #EFBF4D;
+}
 
 
 .nf-footer-brand {
@@ -636,11 +642,11 @@ body {
     transition: all 0.3s;
 }
 
-    .nf-social-icon:hover {
-        background: #4FB3B3;
-        color: #fff;
-        transform: translateY(-3px);
-    }
+.nf-social-icon:hover {
+    background: #4FB3B3;
+    color: #fff;
+    transform: translateY(-3px);
+}
 
 .nf-footer-copyright {
     border-top: 1px solid rgba(79, 179, 179, 0.2);
@@ -681,22 +687,22 @@ body {
     position: relative;
 }
 
-    .nf-modal-separator::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: #e9ecef;
-    }
+.nf-modal-separator::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: #e9ecef;
+}
 
-    .nf-modal-separator span {
-        background: #fff;
-        padding: 0 1rem;
-        position: relative;
-        color: #999;
-    }
+.nf-modal-separator span {
+    background: #fff;
+    padding: 0 1rem;
+    position: relative;
+    color: #999;
+}
 
 .nf-btn-social {
     border: 1px solid #ddd;
@@ -712,15 +718,15 @@ body {
     transition: all 0.3s;
 }
 
-    .nf-btn-social:hover {
-        background: #f8f9fa;
-        border-color: #4FB3B3;
-        color: #4FB3B3;
-    }
+.nf-btn-social:hover {
+    background: #f8f9fa;
+    border-color: #4FB3B3;
+    color: #4FB3B3;
+}
 
-    .nf-btn-social i {
-        font-size: 1.2rem;
-    }
+.nf-btn-social i {
+    font-size: 1.2rem;
+}
 
 .nf-btn-primary {
     background: #4FB3B3;
@@ -732,26 +738,26 @@ body {
     transition: background 0.3s;
 }
 
-    .nf-btn-primary:hover {
-        background: #1D5A6E;
-        color: #fff;
-    }
+.nf-btn-primary:hover {
+    background: #1D5A6E;
+    color: #fff;
+}
 
 .btn-outline-primary {
     border-color: #4FB3B3;
     color: #4FB3B3;
 }
 
-    .btn-outline-primary:hover {
-        background: #4FB3B3;
-        border-color: #4FB3B3;
-        color: #fff;
-    }
+.btn-outline-primary:hover {
+    background: #4FB3B3;
+    border-color: #4FB3B3;
+    color: #fff;
+}
 
 /* Landlord Layout */
 .nf-landlord-header {
     background: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -789,32 +795,32 @@ body {
     cursor: not-allowed !important;
 }
 
-    .landlord-view-mode .nf-booking-card::after,
-    .landlord-view-mode .nf-contact-btn::after,
-    .landlord-view-mode .nf-book-btn::after,
-    .landlord-view-mode .nf-call-btn::after {
-        content: 'Chỉ người thuê mới có thể đặt phòng';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(43, 52, 72, 0.95);
-        color: #fff;
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        font-size: 0.85rem;
-        white-space: nowrap;
-        z-index: 10;
-        pointer-events: none;
-    }
+.landlord-view-mode .nf-booking-card::after,
+.landlord-view-mode .nf-contact-btn::after,
+.landlord-view-mode .nf-book-btn::after,
+.landlord-view-mode .nf-call-btn::after {
+    content: 'Chỉ người thuê mới có thể đặt phòng';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(43, 52, 72, 0.95);
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    z-index: 10;
+    pointer-events: none;
+}
 
 .landlord-view-mode .nf-room-card {
     cursor: default;
 }
 
-    .landlord-view-mode .nf-room-card:hover {
-        transform: none;
-    }
+.landlord-view-mode .nf-room-card:hover {
+    transform: none;
+}
 
 /* User Role Badge */
 .nf-role-badge {
@@ -875,10 +881,10 @@ body {
     border-color: #4FB3B3;
 }
 
-    .btn-primary:hover {
-        background-color: #1D5A6E;
-        border-color: #1D5A6E;
-    }
+.btn-primary:hover {
+    background-color: #1D5A6E;
+    border-color: #1D5A6E;
+}
 
 .btn-success {
     background-color: #EFBF4D;
@@ -886,11 +892,11 @@ body {
     color: #2B3448;
 }
 
-    .btn-success:hover {
-        background-color: #1D5A6E;
-        border-color: #1D5A6E;
-        color: #fff;
-    }
+.btn-success:hover {
+    background-color: #1D5A6E;
+    border-color: #1D5A6E;
+    color: #fff;
+}
 
 .border-primary {
     border-color: #4FB3B3 !important;
@@ -910,9 +916,9 @@ body {
     background: linear-gradient(to bottom, rgba(239, 191, 77, 0.1) 0%, #fff 20%);
 }
 
-    .nf-package-vip .nf-price-main {
-        color: #EFBF4D;
-    }
+.nf-package-vip .nf-price-main {
+    color: #EFBF4D;
+}
 
 .nf-package-badge {
     background: #EFBF4D;
@@ -943,6 +949,7 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+
     .nf-banner-slider,
     .nf-banner-slide {
         height: 400px;

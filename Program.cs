@@ -2,12 +2,14 @@
 using NestFlow.Application.Services.Interfaces;
 using NestFlow.Application.Services;
 using NestFlow.Models;
+using NestFlow.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services Razor Pages &  to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
+builder.Services.AddSignalR(); // Add SignalR
 
 // Add db context service
 builder.Services.AddDbContext<NestFlowSystemContext>(options
@@ -23,6 +25,7 @@ builder.Services.AddSession(options =>
 
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // Swagger (OpenAPI)
 builder.Services.AddEndpointsApiExplorer();
@@ -36,6 +39,9 @@ builder.Services.AddCors(options =>
         policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
+        // Note: For SignalR with Credentials, AllowAnyOrigin cannot be used.
+        // If enabling credentials, you must specify origins: .WithOrigins("http://localhost:3000")
+        // For this phase with "AllowAnyOrigin", stick to standard CORS, but SignalR JS client might need specific handling if cookies are involved.
     });
 });
 
@@ -71,6 +77,7 @@ app.MapRazorPages();
 app.UseSession();
 
 app.MapControllers();
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.Use(async (context, next) =>
 {
