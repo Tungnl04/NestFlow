@@ -1,0 +1,286 @@
+﻿@page
+@model ProfileModel;
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Sidebar -->
+            <div class="card">
+                <div class="card-body">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" id="profile-tab" data-bs-toggle="pill" href="#profile">
+                                <i class="bi bi-person"></i> Thông tin cá nhân
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" id="password-tab" data-bs-toggle="pill" href="#password">
+                                <i class="bi bi-key"></i> Đổi mật khẩu
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- Profile Tab -->
+                <div class="tab-pane fade show active" id="profile">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Thông tin cá nhân</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="profileForm">
+                                <div class="text-center mb-4">
+                                    <img id="currentAvatar" src="/images/default-avatar.png" alt="Avatar" 
+                                         class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary">Đổi ảnh</button>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="fullName" class="form-label">Họ và tên</label>
+                                    <input type="text" class="form-control" id="fullName" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="phone" class="form-label">Số điện thoại</label>
+                                    <input type="tel" class="form-control" id="phone">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Loại tài khoản</label>
+                                    <input type="text" class="form-control" id="userType" readonly>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Trạng thái xác thực</label>
+                                    <div>
+                                        <span id="verifiedBadge" class="badge"></span>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-danger d-none" id="profileError"></div>
+                                <div class="alert alert-success d-none" id="profileSuccess"></div>
+
+                                <button type="submit" class="btn btn-primary">Cập nhật thông tin</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Change Password Tab -->
+                <div class="tab-pane fade" id="password">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Đổi mật khẩu</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="changePasswordForm">
+                                <div class="mb-3">
+                                    <label for="oldPassword" class="form-label">Mật khẩu cũ</label>
+                                    <input type="password" class="form-control" id="oldPassword" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="newPassword" class="form-label">Mật khẩu mới</label>
+                                    <input type="password" class="form-control" id="newPassword" required minlength="6">
+                                    <small class="text-muted">Mật khẩu phải có ít nhất 6 ký tự</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="confirmNewPassword" class="form-label">Xác nhận mật khẩu mới</label>
+                                    <input type="password" class="form-control" id="confirmNewPassword" required>
+                                </div>
+
+                                <div class="alert alert-danger d-none" id="passwordError"></div>
+                                <div class="alert alert-success d-none" id="passwordSuccess"></div>
+
+                                <button type="submit" class="btn btn-primary">Đổi mật khẩu</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load user profile on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+        await loadUserProfile();
+    });
+
+    async function loadUserProfile() {
+        try {
+            const response = await fetch('/api/auth/current-user');
+            const data = await response.json();
+
+            if (data.success && data.user) {
+                const user = data.user;
+
+                // Fill form fields
+                document.getElementById('fullName').value = user.fullName || '';
+                document.getElementById('email').value = user.email || '';
+                document.getElementById('phone').value = user.phone || '';
+                document.getElementById('userType').value = getUserTypeText(user.userType);
+
+                // Update avatar
+                if (user.avatarUrl) {
+                    document.getElementById('currentAvatar').src = user.avatarUrl;
+                }
+
+                // Update verified badge
+                const verifiedBadge = document.getElementById('verifiedBadge');
+                if (user.isVerified) {
+                    verifiedBadge.textContent = 'Đã xác thực';
+                    verifiedBadge.className = 'badge bg-success';
+                } else {
+                    verifiedBadge.textContent = 'Chưa xác thực';
+                    verifiedBadge.className = 'badge bg-warning';
+                }
+            } else {
+                window.location.href = '/';
+            }
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            alert('Không thể tải thông tin người dùng');
+        }
+    }
+
+    function getUserTypeText(userType) {
+        const types = {
+            'renter': 'Người thuê',
+            'landlord': 'Chủ trọ',
+            'admin': 'Quản trị viên'
+        };
+        return types[userType] || userType;
+    }
+
+    // Handle Profile Update
+    document.getElementById('profileForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const errorDiv = document.getElementById('profileError');
+        const successDiv = document.getElementById('profileSuccess');
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+
+        const updateData = {
+            fullName: document.getElementById('fullName').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value
+        };
+
+        try {
+            const response = await fetch('/api/auth/update-profile', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                successDiv.textContent = data.message;
+                successDiv.classList.remove('d-none');
+                
+                // Update global user state
+                await window.NestFlowAuth.initAuth();
+            } else {
+                errorDiv.textContent = data.message;
+                errorDiv.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            errorDiv.textContent = 'Đã xảy ra lỗi khi cập nhật thông tin';
+            errorDiv.classList.remove('d-none');
+        }
+    });
+
+    // Handle Change Password
+    document.getElementById('changePasswordForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const errorDiv = document.getElementById('passwordError');
+        const successDiv = document.getElementById('passwordSuccess');
+        errorDiv.classList.add('d-none');
+        successDiv.classList.add('d-none');
+
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmNewPassword').value;
+
+        if (newPassword !== confirmPassword) {
+            errorDiv.textContent = 'Mật khẩu mới không khớp';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        const changePasswordData = {
+            oldPassword: document.getElementById('oldPassword').value,
+            newPassword: newPassword,
+            confirmPassword: confirmPassword
+        };
+
+        try {
+            const response = await fetch('/api/auth/change-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(changePasswordData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                successDiv.textContent = data.message;
+                successDiv.classList.remove('d-none');
+                
+                // Reset form
+                document.getElementById('changePasswordForm').reset();
+            } else {
+                errorDiv.textContent = data.message;
+                errorDiv.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error('Error changing password:', error);
+            errorDiv.textContent = 'Đã xảy ra lỗi khi đổi mật khẩu';
+            errorDiv.classList.remove('d-none');
+        }
+    });
+</script>
+
+<style>
+    .nav-link {
+        color: #6c757d;
+        border-radius: 0.25rem;
+    }
+
+    .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .nav-link:hover {
+        background-color: #e9ecef;
+    }
+
+    .nav-link.active:hover {
+        background-color: #0b5ed7;
+    }
+</style>

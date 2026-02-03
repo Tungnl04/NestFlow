@@ -5,11 +5,62 @@ const AUTH_API = {
     REGISTER: '/api/auth/register',
     LOGOUT: '/api/auth/logout',
     CURRENT_USER: '/api/auth/current-user',
-    CHECK_SESSION: '/api/auth/check-session'
+    CHECK_SESSION: '/api/auth/check-session',
+    FORGOT_PASSWORD: '/api/auth/forgot-password',
+    RESET_PASSWORD: '/api/auth/reset-password'
 };
 
 // Global user state
 let currentUser = null;
+let forgotPasswordEmail = '';
+
+// ==================== TOAST NOTIFICATION ====================
+function showToast(message, type = 'success', title = '') {
+    const toast = document.getElementById('notificationToast');
+    const toastHeader = document.getElementById('toastHeader');
+    const toastIcon = document.getElementById('toastIcon');
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMessage = document.getElementById('toastMessage');
+
+    // Set message
+    toastMessage.textContent = message;
+
+    // Set style based on type
+    toastHeader.className = 'toast-header';
+    toastIcon.className = 'bi me-2';
+
+    switch (type) {
+        case 'success':
+            toastHeader.classList.add('bg-success', 'text-white');
+            toastIcon.classList.add('bi-check-circle-fill');
+            toastTitle.textContent = title || 'Thành công';
+            break;
+        case 'error':
+            toastHeader.classList.add('bg-danger', 'text-white');
+            toastIcon.classList.add('bi-x-circle-fill');
+            toastTitle.textContent = title || 'Lỗi';
+            break;
+        case 'warning':
+            toastHeader.classList.add('bg-warning', 'text-dark');
+            toastIcon.classList.add('bi-exclamation-triangle-fill');
+            toastTitle.textContent = title || 'Cảnh báo';
+            break;
+        case 'info':
+            toastHeader.classList.add('bg-info', 'text-white');
+            toastIcon.classList.add('bi-info-circle-fill');
+            toastTitle.textContent = title || 'Thông tin';
+            break;
+    }
+
+    // Show toast
+    const bsToast = new bootstrap.Toast(toast, {
+        autohide: true,
+        delay: 3000
+    });
+    bsToast.show();
+}
+
+// ==================== AUTHENTICATION FUNCTIONS ====================
 
 // Initialize authentication on page load
 async function initAuth() {
@@ -95,7 +146,10 @@ async function logout() {
         if (data.success) {
             currentUser = null;
             updateUIForLoggedOutUser();
-            window.location.href = '/';
+            showToast('Đăng xuất thành công', 'success');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
             return { success: true, message: data.message };
         } else {
             return { success: false, message: data.message };
@@ -105,6 +159,51 @@ async function logout() {
         return { success: false, message: 'Đã xảy ra lỗi khi đăng xuất' };
     }
 }
+
+// Forgot password - Send verification code
+async function forgotPassword(email) {
+    try {
+        const response = await fetch(AUTH_API.FORGOT_PASSWORD, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email })
+        });
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        return { success: false, message: 'Đã xảy ra lỗi khi gửi mã xác thực' };
+    }
+}
+
+// Reset password
+async function resetPassword(email, verificationCode, newPassword, confirmPassword) {
+    try {
+        const response = await fetch(AUTH_API.RESET_PASSWORD, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email,
+                verificationCode,
+                newPassword,
+                confirmPassword
+            })
+        });
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Reset password error:', error);
+        return { success: false, message: 'Đã xảy ra lỗi khi đặt lại mật khẩu' };
+    }
+}
+
+// ==================== UTILITY FUNCTIONS ====================
 
 // Check if user is logged in
 function isLoggedIn() {
@@ -121,33 +220,42 @@ function hasRole(role) {
     if (!currentUser) return false;
     if (role === 'admin') return currentUser.userType === 'admin';
     if (role === 'landlord') return ['landlord', 'admin'].includes(currentUser.userType);
-    if (role === 'tenant') return currentUser.userType === 'tenant';
+    if (role === 'renter') return currentUser.userType === 'renter';
+    if (role === 'tenant') return currentUser.userType === 'renter'; // Alias
     return false;
 }
 
 // Role access control with redirect
 function requireRole(requiredRole, redirectUrl = '/') {
     if (!isLoggedIn()) {
-        alert('Vui lòng đăng nhập để truy cập trang này.');
-        window.location.href = redirectUrl;
+        showToast('Vui lòng đăng nhập để truy cập trang này.', 'warning');
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, 1500);
         return false;
     }
 
     if (requiredRole === 'renter' && !hasRole('renter')) {
-        alert('Chỉ người thuê mới có thể truy cập trang này.');
-        window.location.href = redirectUrl;
+        showToast('Chỉ người thuê mới có thể truy cập trang này.', 'error');
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, 1500);
         return false;
     }
 
     if (requiredRole === 'landlord' && !hasRole('landlord')) {
-        alert('Chỉ chủ trọ và quản trị viên mới có thể truy cập trang này.');
-        window.location.href = redirectUrl;
+        showToast('Chỉ chủ trọ và quản trị viên mới có thể truy cập trang này.', 'error');
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, 1500);
         return false;
     }
 
     if (requiredRole === 'admin' && !hasRole('admin')) {
-        alert('Chỉ quản trị viên mới có thể truy cập trang này.');
-        window.location.href = redirectUrl;
+        showToast('Chỉ quản trị viên mới có thể truy cập trang này.', 'error');
+        setTimeout(() => {
+            window.location.href = redirectUrl;
+        }, 1500);
         return false;
     }
 
@@ -221,6 +329,225 @@ function updateUIForLoggedOutUser() {
     document.body.classList.remove('landlord-view-mode');
 }
 
+// ==================== MODAL EVENT HANDLERS ====================
+
+// Initialize modal handlers when DOM is loaded
+function initModalHandlers() {
+    // Login Form Handler
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+
+            errorDiv.classList.add('d-none');
+
+            const result = await login(email, password);
+
+            if (result.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
+                modal.hide();
+
+                // Show success toast
+                showToast('Đăng nhập thành công! Chào mừng ' + result.user.fullName, 'success');
+
+                // Reload page after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                errorDiv.textContent = result.message;
+                errorDiv.classList.remove('d-none');
+            }
+        });
+    }
+
+    // Register Form Handler
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+            const errorDiv = document.getElementById('registerError');
+
+            errorDiv.classList.add('d-none');
+
+            if (password !== confirmPassword) {
+                errorDiv.textContent = 'Mật khẩu không khớp';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            const registerData = {
+                email: document.getElementById('registerEmail').value,
+                password: password,
+                confirmPassword: confirmPassword,
+                fullName: document.getElementById('registerFullName').value,
+                phone: document.getElementById('registerPhone').value,
+                userType: document.querySelector('input[name="userType"]:checked').value
+            };
+
+            const result = await register(registerData);
+
+            if (result.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                modal.hide();
+
+                // Show success toast
+                showToast('Đăng ký thành công! Chào mừng bạn đến với NestFlow', 'success');
+
+                // Reload page after a short delay
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                errorDiv.textContent = result.message;
+                errorDiv.classList.remove('d-none');
+            }
+        });
+    }
+
+    // Forgot Password Form Handler - Step 1
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const email = document.getElementById('forgotEmail').value;
+            const errorDiv = document.getElementById('forgotPasswordError');
+
+            errorDiv.classList.add('d-none');
+
+            const data = await forgotPassword(email);
+
+            if (data.success) {
+                forgotPasswordEmail = email;
+
+                // Show step 2
+                document.getElementById('forgotPasswordStep1').classList.add('d-none');
+                document.getElementById('forgotPasswordStep2').classList.remove('d-none');
+
+                showToast('Mã xác thực đã được gửi đến email của bạn', 'success');
+            } else {
+                errorDiv.textContent = data.message;
+                errorDiv.classList.remove('d-none');
+            }
+        });
+    }
+
+    // Reset Password Form Handler - Step 2
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    if (resetPasswordForm) {
+        resetPasswordForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const verificationCode = document.getElementById('verificationCode').value;
+            const newPassword = document.getElementById('resetNewPassword').value;
+            const confirmPassword = document.getElementById('resetConfirmPassword').value;
+            const errorDiv = document.getElementById('resetPasswordError');
+
+            errorDiv.classList.add('d-none');
+
+            if (newPassword !== confirmPassword) {
+                errorDiv.textContent = 'Mật khẩu không khớp';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            const data = await resetPassword(forgotPasswordEmail, verificationCode, newPassword, confirmPassword);
+
+            if (data.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+                modal.hide();
+
+                showToast('Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại', 'success');
+
+                // Reset form
+                resetForgotPasswordModal();
+
+                // Show login modal after a short delay
+                setTimeout(() => {
+                    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                    loginModal.show();
+                }, 1500);
+            } else {
+                errorDiv.textContent = data.message;
+                errorDiv.classList.remove('d-none');
+            }
+        });
+    }
+
+    // Modal reset handlers
+    const loginModal = document.getElementById('loginModal');
+    if (loginModal) {
+        loginModal.addEventListener('hidden.bs.modal', function () {
+            const errorDiv = document.getElementById('loginError');
+            if (errorDiv) errorDiv.classList.add('d-none');
+            const form = document.getElementById('loginForm');
+            if (form) form.reset();
+        });
+    }
+
+    const registerModal = document.getElementById('registerModal');
+    if (registerModal) {
+        registerModal.addEventListener('hidden.bs.modal', function () {
+            const errorDiv = document.getElementById('registerError');
+            if (errorDiv) errorDiv.classList.add('d-none');
+            const form = document.getElementById('registerForm');
+            if (form) form.reset();
+        });
+    }
+
+    const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+    if (forgotPasswordModal) {
+        forgotPasswordModal.addEventListener('hidden.bs.modal', function () {
+            resetForgotPasswordModal();
+        });
+    }
+}
+
+// Resend verification code
+async function resendVerificationCode() {
+    const data = await forgotPassword(forgotPasswordEmail);
+
+    if (data.success) {
+        showToast('Mã xác thực mới đã được gửi', 'success');
+    } else {
+        showToast(data.message, 'error');
+    }
+}
+
+// Reset forgot password modal
+function resetForgotPasswordModal() {
+    const step1 = document.getElementById('forgotPasswordStep1');
+    const step2 = document.getElementById('forgotPasswordStep2');
+
+    if (step1) step1.classList.remove('d-none');
+    if (step2) step2.classList.add('d-none');
+
+    const forgotForm = document.getElementById('forgotPasswordForm');
+    const resetForm = document.getElementById('resetPasswordForm');
+    const forgotError = document.getElementById('forgotPasswordError');
+    const resetError = document.getElementById('resetPasswordError');
+
+    if (forgotForm) forgotForm.reset();
+    if (resetForm) resetForm.reset();
+    if (forgotError) forgotError.classList.add('d-none');
+    if (resetError) resetError.classList.add('d-none');
+
+    forgotPasswordEmail = '';
+}
+
+// ==================== PAGE PROTECTION ====================
+
 // Page protection
 function protectPage(requiredRole) {
     document.addEventListener('DOMContentLoaded', async function () {
@@ -242,10 +569,15 @@ if (window.location.pathname.includes('/Landlord/')) {
     protectPage('landlord');
 }
 
+// ==================== INITIALIZATION ====================
+
 // Initialize auth on all pages
 document.addEventListener('DOMContentLoaded', async function () {
     await initAuth();
+    initModalHandlers();
 });
+
+// ==================== EXPORT ====================
 
 // Export functions for use in other scripts
 window.NestFlowAuth = {
@@ -256,5 +588,9 @@ window.NestFlowAuth = {
     getCurrentUser,
     hasRole,
     requireRole,
-    initAuth
+    initAuth,
+    forgotPassword,
+    resetPassword,
+    showToast,
+    resendVerificationCode
 };
