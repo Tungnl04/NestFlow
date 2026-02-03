@@ -2,8 +2,7 @@
 using NestFlow.Application.DTOs;
 using NestFlow.Application.Services.Interfaces;
 using NestFlow.Models;
-using System.Security.Cryptography;
-using System.Text;
+using BCrypt.Net;
 
 namespace NestFlow.Application.Services
 {
@@ -163,21 +162,23 @@ namespace NestFlow.Application.Services
             };
         }
 
-        // Hash password sử dụng SHA256
+        // Hash password sử dụng BCrypt
         private string HashPassword(string password)
         {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
+            return BCrypt.Net.BCrypt.HashPassword(password, workFactor: 11);
         }
 
         // Verify password
         private bool VerifyPassword(string password, string hashedPassword)
         {
-            var hashOfInput = HashPassword(password);
-            return hashOfInput == hashedPassword;
+            try
+            {
+                return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
