@@ -69,7 +69,7 @@
                             <span id="userName">User</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-                            <li><a class="dropdown-item" asp-page="/Profile/Index">Tài khoản</a></li>
+                            <li><a class="dropdown-item" asp-page="/Home/Profile">Tài khoản</a></li>
                             <li><a class="dropdown-item" asp-page="/Home/Saved">Tin đã lưu</a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="#" onclick="handleLogout()">Đăng xuất</a></li>
@@ -87,7 +87,18 @@
     </div>
 
     <!-- Toast Container -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toast-container" style="z-index: 1050;"></div>
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999">
+        <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header" id="toastHeader">
+                <i class="bi me-2" id="toastIcon"></i>
+                <strong class="me-auto" id="toastTitle">Thông báo</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                Nội dung thông báo
+            </div>
+        </div>
+    </div>
 
     <footer class="nf-footer">
         <div class="container">
@@ -169,6 +180,51 @@
             } else {
                 alert(result.message);
             }
+        }
+            // Toast notification function
+        function showToast(message, type = 'success', title = '') {
+            const toast = document.getElementById('notificationToast');
+            const toastHeader = document.getElementById('toastHeader');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMessage = document.getElementById('toastMessage');
+
+            // Set message
+            toastMessage.textContent = message;
+
+            // Set style based on type
+            toastHeader.className = 'toast-header';
+            toastIcon.className = 'bi me-2';
+
+            switch(type) {
+                case 'success':
+                    toastHeader.classList.add('bg-success', 'text-white');
+                    toastIcon.classList.add('bi-check-circle-fill');
+                    toastTitle.textContent = title || 'Thành công';
+                    break;
+                case 'error':
+                    toastHeader.classList.add('bg-danger', 'text-white');
+                    toastIcon.classList.add('bi-x-circle-fill');
+                    toastTitle.textContent = title || 'Lỗi';
+                    break;
+                case 'warning':
+                    toastHeader.classList.add('bg-warning', 'text-dark');
+                    toastIcon.classList.add('bi-exclamation-triangle-fill');
+                    toastTitle.textContent = title || 'Cảnh báo';
+                    break;
+                case 'info':
+                    toastHeader.classList.add('bg-info', 'text-white');
+                    toastIcon.classList.add('bi-info-circle-fill');
+                    toastTitle.textContent = title || 'Thông tin';
+                    break;
+            }
+
+            // Show toast
+            const bsToast = new bootstrap.Toast(toast, {
+                autohide: true,
+                delay: 3000
+            });
+            bsToast.show();
         }
     </script>
 

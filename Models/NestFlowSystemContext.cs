@@ -33,6 +33,8 @@ public partial class NestFlowSystemContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+    public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
     public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<Plan> Plans { get; set; }
@@ -381,6 +383,24 @@ public partial class NestFlowSystemContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_notifications_user");
+        });
+
+        modelBuilder.Entity<PasswordResetToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Password__3214EC070066BFCA");
+
+            entity.HasIndex(e => e.ExpiresAt, "IX_PasswordResetTokens_ExpiresAt");
+
+            entity.HasIndex(e => e.Token, "IX_PasswordResetTokens_Token");
+
+            entity.HasIndex(e => e.UserId, "IX_PasswordResetTokens_UserId");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.Token).HasMaxLength(10);
+
+            entity.HasOne(d => d.User).WithMany(p => p.PasswordResetTokens)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_PasswordResetTokens_Users");
         });
 
         modelBuilder.Entity<Payment>(entity =>
