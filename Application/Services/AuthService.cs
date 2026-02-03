@@ -2,17 +2,17 @@
 using NestFlow.Application.DTOs;
 using NestFlow.Application.Services.Interfaces;
 using NestFlow.Models;
-using BCrypt.Net;
 
 namespace NestFlow.Application.Services
 {
     public class AuthService : IAuthService
     {
         private readonly NestFlowSystemContext _context;
-
-        public AuthService(NestFlowSystemContext context)
+        private readonly IEmailService _emailService;
+        public AuthService(NestFlowSystemContext context, IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
         public async Task<AuthResponseDto> LoginAsync(LoginDTO loginDTO)
@@ -115,7 +115,18 @@ namespace NestFlow.Application.Services
 
                 _context.Users.Add(newUser);
                 await _context.SaveChangesAsync();
-
+                // Gửi email chào mừng (không chặn luồng chính)
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.FullName);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error sending welcome email: {ex.Message}");
+                    }
+                });
                 return new AuthResponseDto
                 {
                     Success = true,
@@ -314,6 +325,7 @@ namespace NestFlow.Application.Services
 
                 if (user == null)
                 {
+                    // Trả về success để tránh leak thông tin user
                     return new AuthResponseDto
                     {
                         Success = true,
@@ -338,9 +350,20 @@ namespace NestFlow.Application.Services
                 _context.PasswordResetTokens.Add(resetToken);
                 await _context.SaveChangesAsync();
 
-                // TODO: Gửi email với mã xác thực
-                // Tạm thời log ra console để test
-                Console.WriteLine($"Verification code for {email}: {verificationCode}");
+                // Gửi email với mã xác thực
+                try
+                {
+                    await _emailService.SendVerificationCodeAsync(
+                        user.Email,
+                        verificationCode,
+                        user.FullName
+                    );
+                }
+                catch (Exception emailEx)
+                {
+                    Console.WriteLine($"Error sending email: {emailEx.Message}");
+                    // Vẫn trả về success nhưng log lỗi
+                }
 
                 return new AuthResponseDto
                 {
