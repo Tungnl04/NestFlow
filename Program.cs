@@ -28,6 +28,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+builder.Services.AddScoped<IUserService, UserService>();
 // Swagger (OpenAPI)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
