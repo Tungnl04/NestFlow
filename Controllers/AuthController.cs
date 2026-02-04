@@ -133,5 +133,89 @@ namespace NestFlow.Controllers
                 userType = userType
             });
         }
+        [HttpPut("update-profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto updateDto)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return Unauthorized(new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Chưa đăng nhập"
+                });
+            }
+
+            var result = await _authService.UpdateProfileAsync(userId.Value, updateDto);
+
+            if (result.Success && result.User != null)
+            {
+                // Cập nhật session nếu email thay đổi
+                if (!string.IsNullOrEmpty(updateDto.Email))
+                {
+                    HttpContext.Session.SetString("Email", result.User.Email);
+                }
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null)
+            {
+                return Unauthorized(new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Chưa đăng nhập"
+                });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Dữ liệu không hợp lệ"
+                });
+            }
+
+            var result = await _authService.ChangePasswordAsync(userId.Value, changePasswordDto);
+
+            return Ok(result);
+        }
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Dữ liệu không hợp lệ"
+                });
+            }
+
+            var result = await _authService.ForgotPasswordAsync(forgotPasswordDto.Email);
+            return Ok(result);
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Dữ liệu không hợp lệ"
+                });
+            }
+
+            var result = await _authService.ResetPasswordAsync(resetPasswordDto);
+            return Ok(result);
+        }
     }
 }
