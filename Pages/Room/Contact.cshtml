@@ -1,4 +1,4 @@
-﻿@page
+﻿@page "{id:long?}"
 @model NestFlow.Pages.Room.ContactModel
 @{
     ViewData["Title"] = "Liên hệ chủ trọ - Nestflow";
@@ -71,7 +71,7 @@
                             <i class="fas fa-paper-plane"></i>
                         </button>
                     </div>
-                    <button class="btn btn-success w-100 nf-book-btn" id="bookBtn1">
+                    <button class="btn btn-success w-100 nf-book-btn" id="bookBtn1" data-bs-toggle="modal" data-bs-target="#bookingModal">
                         <i class="fas fa-calendar-check"></i> Đặt phòng
                     </button>
                 </div>
@@ -118,31 +118,77 @@
             </div>
             <div class="modal-body">
                 <form id="bookingForm">
+                    <input type="hidden" id="propertyId" value="@Model.Property.PropertyId" />
+                    
+                    <!-- Thông tin user nếu đã login -->
+                    @if (Model.IsLoggedIn && Model.CurrentUser != null)
+                    {
+                        <div class="alert alert-success mb-3">
+                            <i class="fas fa-check-circle me-2"></i>
+                            Đặt phòng với tài khoản: <strong>@Model.CurrentUser.FullName</strong>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Form cho guest -->
+                        <div class="alert alert-info mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Vui lòng điền thông tin liên hệ
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="fullName" placeholder="Nguyễn Văn A" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="phone" placeholder="0912345678" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input type="email" class="form-control" id="email" placeholder="example@email.com" required>
+                        </div>
+                    }
+                    
                     <div class="mb-3">
-                        <label class="form-label">Họ và tên</label>
-                        <input type="text" class="form-control" required>
+                        <label class="form-label">Ngày xem phòng <span class="text-danger">*</span></label>
+                        <input type="datetime-local" 
+                               class="form-control" 
+                               id="bookingDate" 
+                               min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")"
+                               required>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Số điện thoại</label>
-                        <input type="tel" class="form-control" required>
+                        <label class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="notes" rows="2" placeholder="Ghi chú thêm..."></textarea>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Ngày bắt đầu thuê</label>
-                        <input type="date" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Thời gian thuê</label>
-                        <select class="form-select" required>
-                            <option>3 tháng</option>
-                            <option>6 tháng</option>
-                            <option>12 tháng</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn nf-btn-primary w-100">Xác nhận đặt phòng</button>
+
+                    <!-- Thông tin thanh toán -->
+                    @if (Model.Property != null && Model.Property.Deposit.HasValue)
+                    {
+                        <div class="border-top pt-3 mb-3">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Tiền đặt cọc:</span>
+                                <strong class="text-primary">@Model.Property.Deposit?.ToString("N0") VNĐ</strong>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Tiền cọc sẽ được hoàn lại nếu chủ nhà từ chối
+                            </small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Chưa có thông tin tiền đặt cọc. Vui lòng liên hệ chủ nhà.
+                        </div>
+                    }
+                    
+                    <button type="submit" class="btn nf-btn-primary w-100" id="btnBookingSubmit">
+                        <i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS
+                    </button>
                 </form>
             </div>
         </div>
@@ -210,6 +256,100 @@
 
 @section Scripts {
     <script>
+        // Xử lý booking form
+        const bookingForm = document.getElementById('bookingForm');
+        const userLoggedIn = @(Model.IsLoggedIn ? "true" : "false");
+        
+        console.log('Booking form initialized. IsLoggedIn:', userLoggedIn);
+        
+        if (bookingForm) {
+            bookingForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                console.log('Form submitted');
+                
+                const propertyId = document.getElementById('propertyId').value;
+                const bookingDate = document.getElementById('bookingDate').value;
+                const notes = document.getElementById('notes').value;
+                
+                console.log('PropertyId:', propertyId);
+                console.log('BookingDate:', bookingDate);
+                
+                if (!bookingDate) {
+                    alert('Vui lòng chọn ngày xem phòng');
+                    return;
+                }
+
+                // Prepare request data
+                const requestData = {
+                    propertyId: parseInt(propertyId),
+                    bookingDate: bookingDate,
+                    notes: notes
+                };
+
+                // Nếu chưa login, thêm thông tin liên hệ
+                if (!userLoggedIn) {
+                    const fullName = document.getElementById('fullName')?.value;
+                    const email = document.getElementById('email')?.value;
+                    const phone = document.getElementById('phone')?.value;
+
+                    console.log('Guest booking - FullName:', fullName, 'Email:', email, 'Phone:', phone);
+
+                    if (!fullName || !email || !phone) {
+                        alert('Vui lòng điền đầy đủ thông tin liên hệ');
+                        return;
+                    }
+
+                    requestData.fullName = fullName;
+                    requestData.email = email;
+                    requestData.phone = phone;
+                }
+                
+                console.log('Request data:', requestData);
+                
+                const btn = document.getElementById('btnBookingSubmit');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+                
+                console.log('Calling API...');
+                
+                // Gọi API tạo thanh toán
+                fetch('/api/Payment/create-booking-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => {
+                    console.log('API Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response data:', data);
+                    
+                    if (data.success && data.checkoutUrl) {
+                        console.log('Redirecting to:', data.checkoutUrl);
+                        // Redirect đến PayOS
+                        window.location.href = data.checkoutUrl;
+                    } else {
+                        console.error('API returned error:', data.message);
+                        alert('Có lỗi xảy ra: ' + (data.message || 'Không thể tạo link thanh toán'));
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS';
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    alert('Có lỗi xảy ra khi kết nối server: ' + error.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS';
+                });
+            });
+        } else {
+            console.error('Booking form not found!');
+        }
+
         // Xử lý gửi tin nhắn
         document.getElementById('sendBtn').addEventListener('click', function() {
             const input = document.getElementById('chatInput');
