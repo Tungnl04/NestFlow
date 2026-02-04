@@ -122,9 +122,14 @@ namespace NestFlow.Controllers
 
                 Console.WriteLine($"Deposit amount: {amount}");
 
-                // TẠM THỜI COMMENT BOOKING ĐỂ TEST PAYOS
+                // ÁP DỤNG GIẢM GIÁ 500K KHI ĐẶT QUA NỀN TẢNG
+                decimal platformDiscount = 500000;
+                amount = amount - (int)platformDiscount;
+                if (amount < 0) amount = 0;
+
+                Console.WriteLine($"Amount after discount: {amount}");
+
                 // Create booking
-                /*
                 var booking = new Booking
                 {
                     PropertyId = request.PropertyId,
@@ -155,18 +160,6 @@ namespace NestFlow.Controllers
                     }
                     throw;
                 }
-                */
-
-                // FAKE BOOKING ID ĐỂ TEST
-                long fakeBookingId = 999;
-                Console.WriteLine($"Using fake booking ID: {fakeBookingId}");
-
-                // Calculate amount (deposit)
-                // var amount = (int)(property.Deposit ?? 0);
-                // if (amount <= 0)
-                // {
-                //     return BadRequest(new { success = false, message = "Số tiền đặt cọc không hợp lệ" });
-                // }
 
                 // Create PayOS payment link
                 long orderCode = long.Parse(DateTimeOffset.Now.ToString("ffffff"));
@@ -186,8 +179,8 @@ namespace NestFlow.Controllers
                     amount,
                     "Dat coc phong tro",
                     items,
-                    $"{baseUrl}/api/Payment/payment-cancel?bookingId={fakeBookingId}",
-                    $"{baseUrl}/api/Payment/payment-success?bookingId={fakeBookingId}"
+                    $"{baseUrl}/api/Payment/payment-cancel?bookingId={booking.BookingId}",
+                    $"{baseUrl}/api/Payment/payment-success?bookingId={booking.BookingId}"
                 );
 
                 CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
@@ -231,7 +224,7 @@ namespace NestFlow.Controllers
                 {
                     success = true,
                     checkoutUrl = createPayment.checkoutUrl,
-                    bookingId = fakeBookingId,
+                    bookingId = booking.BookingId,
                     paymentId = payment.PaymentId
                 });
             }
