@@ -96,71 +96,17 @@
 <!-- Nội dung chính -->
 <div class="container-fluid px-4 py-5">
     @{
-        // Mock data từ mockData.ts
-        var newRooms = new[] {
-    new { Id = "1", Name = "Phòng trọ cao cấp gần FPT", Price = 2500000, Location = "Thạch Thất, Hòa Lạc", Rating = 4.8, ReviewCount = 24, PostedDate = new DateTime(2026, 1, 20), IsFeatured = true, Image = "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=300&h=200&fit=crop&q=80" },
-    new { Id = "2", Name = "Căn hộ mini Hòa Lạc", Price = 3500000, Location = "Thạch Hòa, Hòa Lạc", Rating = 4.6, ReviewCount = 18, PostedDate = new DateTime(2026, 1, 19), IsFeatured = true, Image = "https://images.unsplash.com/photo-1502672023488-70e25813eb80?w=300&h=200&fit=crop&q=80" },
-    new { Id = "4", Name = "Nhà nguyên căn Hòa Lạc", Price = 8000000, Location = "Thạch Hòa, Hòa Lạc", Rating = 4.9, ReviewCount = 12, PostedDate = new DateTime(2026, 1, 18), IsFeatured = true, Image = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=300&h=200&fit=crop&q=80" },
-    new { Id = "8", Name = "Homestay kiểu Nhật", Price = 4500000, Location = "Thạch Thất, Hòa Lạc", Rating = 4.9, ReviewCount = 6, PostedDate = new DateTime(2026, 1, 10), IsFeatured = true, Image = "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=300&h=200&fit=crop&q=80" }
-    };
-
-        var oneMonthRooms = new[] {
-    new { Id = "3", Name = "Phòng trọ sinh viên giá rẻ", Price = 1500000, Location = "Thạch Thất, Hòa Lạc", Rating = 4.2, ReviewCount = 31, PostedDate = new DateTime(2025, 12, 20), IsFeatured = false, Image = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=300&h=200&fit=crop&q=80" },
-    new { Id = "7", Name = "Phòng trọ nữ sinh viên", Price = 1800000, Location = "Thạch Hòa, Hòa Lạc", Rating = 4.5, ReviewCount = 22, PostedDate = new DateTime(2025, 12, 5), IsFeatured = false, Image = "https://images.unsplash.com/photo-1540518614846-7eded433c457?w=300&h=200&fit=crop&q=80" }
-    };
-
-        var threeMonthRooms = new[] {
-    new { Id = "5", Name = "Phòng trọ có gác lửng", Price = 2200000, Location = "Thạch Thất, Hòa Lạc", Rating = 4.4, ReviewCount = 15, PostedDate = new DateTime(2025, 11, 15), IsFeatured = false, Image = "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=300&h=200&fit=crop&q=80" },
-    new { Id = "6", Name = "Căn hộ dịch vụ cao cấp", Price = 5000000, Location = "Hòa Lạc, Thạch Thất", Rating = 4.7, ReviewCount = 8, PostedDate = new DateTime(2025, 10, 20), IsFeatured = false, Image = "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=300&h=200&fit=crop&q=80" }
-    };
-
-        Func<DateTime, string> GetDaysAgo = (date) =>
-        {
-            var days = (DateTime.Now - date).Days;
-            if (days == 0) return "Hôm nay";
-            if (days == 1) return "Hôm qua";
-            if (days < 7) return $"{days} ngày trước";
-            if (days < 30) return $"{days / 7} tuần trước";
-            return $"{days / 30} tháng trước";
-        };
-
-        Func<int, string> FormatPrice = (price) =>
-        {
-            return price.ToString("N0") + "đ";
-        };
+        // Helper functions moved to _RoomCard or not needed
     }
 
     <!-- Dòng 1: Tin mới nhất -->
     <section class="mb-5">
         <h3 class="nf-section-title mb-4">Tin mới nhất</h3>
         <div class="row g-4">
-            @foreach (var room in newRooms)
+            @foreach (var room in Model.NewRooms)
             {
                 <div class="col-md-3">
-                    <div class="nf-room-card" onclick="window.location.href='@Url.Page("/Room/Detail", new { id = room.Id })'">
-                        <div class="nf-room-image">
-                            @if (room.IsFeatured)
-                            {
-                                <span class="nf-featured-badge">Nổi bật</span>
-                            }
-                            <img src="@room.Image" alt="@room.Name" />
-                            <button class="nf-save-btn" data-room-id="@room.Id" onclick="event.stopPropagation();">
-                                <i class="far fa-heart"></i>
-                            </button>
-                        </div>
-                        <div class="nf-room-info">
-                            <h5 class="nf-room-name">@room.Name</h5>
-                            <p class="nf-room-location">@room.Location</p>
-                            <div class="nf-room-price">@FormatPrice(room.Price)/tháng</div>
-                            <div class="nf-room-meta">
-                                <span class="nf-rating">
-                                    <i class="fas fa-star"></i> @room.Rating
-                                    <span class="nf-review-count">(@room.ReviewCount đánh giá)</span>
-                                </span>
-                                <span class="nf-post-time">@GetDaysAgo(room.PostedDate)</span>
-                            </div>
-                        </div>
-                    </div>
+                    <partial name="_RoomCard" model="room" />
                 </div>
             }
         </div>
@@ -170,106 +116,109 @@
     <section class="mb-5">
         <h3 class="nf-section-title mb-4">Tin đăng cách 1 tháng</h3>
         <div class="row g-4">
-            @foreach (var room in oneMonthRooms)
+            @foreach (var room in Model.OneMonthRooms)
             {
                 <div class="col-md-3">
-                    <div class="nf-room-card" onclick="window.location.href='@Url.Page("/Room/Detail", new { id = room.Id })'">
-                        <div class="nf-room-image">
-                            @if (room.IsFeatured)
-                            {
-                                <span class="nf-featured-badge">Nổi bật</span>
-                            }
-                            <img src="@room.Image" alt="@room.Name" />
-                            <button class="nf-save-btn" data-room-id="@room.Id" onclick="event.stopPropagation();">
-                                <i class="far fa-heart"></i>
-                            </button>
-                        </div>
-                        <div class="nf-room-info">
-                            <h5 class="nf-room-name">@room.Name</h5>
-                            <p class="nf-room-location">@room.Location</p>
-                            <div class="nf-room-price">@FormatPrice(room.Price)/tháng</div>
-                            <div class="nf-room-meta">
-                                <span class="nf-rating">
-                                    <i class="fas fa-star"></i> @room.Rating
-                                    <span class="nf-review-count">(@room.ReviewCount đánh giá)</span>
-                                </span>
-                                <span class="nf-post-time">@GetDaysAgo(room.PostedDate)</span>
-                            </div>
-                        </div>
-                    </div>
+                    <partial name="_RoomCard" model="room" />
                 </div>
             }
         </div>
     </section>
 
     <!-- Dòng 3: Tin đăng cách 3 tháng -->
-    <section class="mb-5">
-        <h3 class="nf-section-title mb-4">Tin đăng cách 3 tháng</h3>
-        <div class="row g-4">
-            @foreach (var room in threeMonthRooms)
-            {
-                <div class="col-md-3">
-                    <div class="nf-room-card" onclick="window.location.href='@Url.Page("/Room/Detail", new { id = room.Id })'">
-                        <div class="nf-room-image">
-                            @if (room.IsFeatured)
-                            {
-                                <span class="nf-featured-badge">Nổi bật</span>
-                            }
-                            <img src="@room.Image" alt="@room.Name" />
-                            <button class="nf-save-btn" data-room-id="@room.Id" onclick="event.stopPropagation();">
-                                <i class="far fa-heart"></i>
-                            </button>
-                        </div>
-                        <div class="nf-room-info">
-                            <h5 class="nf-room-name">@room.Name</h5>
-                            <p class="nf-room-location">@room.Location</p>
-                            <div class="nf-room-price">@FormatPrice(room.Price)/tháng</div>
-                            <div class="nf-room-meta">
-                                <span class="nf-rating">
-                                    <i class="fas fa-star"></i> @room.Rating
-                                    <span class="nf-review-count">(@room.ReviewCount đánh giá)</span>
-                                </span>
-                                <span class="nf-post-time">@GetDaysAgo(room.PostedDate)</span>
-                            </div>
-                        </div>
+    @if (Model.ThreeMonthRooms.Any())
+    {
+        <section class="mb-5">
+            <h3 class="nf-section-title mb-4">Tin đăng cách 3 tháng</h3>
+            <div class="row g-4">
+                @foreach (var room in Model.ThreeMonthRooms)
+                {
+                    <div class="col-md-3">
+                        <partial name="_RoomCard" model="room" />
                     </div>
-                </div>
-            }
-        </div>
-    </section>
+                }
+            </div>
+        </section>
+    }
 </div>
 
 @section Scripts {
     <script>
-        // Xử lý lưu tin - Giờ cần login
-        document.querySelectorAll('.nf-save-btn').forEach(btn => {
-            btn.addEventListener('click', async function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-
-                // Kiểm tra đăng nhập
-                if (!window.NestFlowAuth.isLoggedIn()) {
-                    alert('Vui lòng đăng nhập để lưu tin');
-                    // Open login modal
-                    const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
-                    loginModal.show();
-                    return;
-                }
-
-                const icon = this.querySelector('i');
-                const roomId = this.dataset.roomId;
-
-                if (icon.classList.contains('far')) {
-                    // TODO: Call API to save room
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 0. Update UI helper
+            function setHeartState(btn, isFavorited) {
+                const icon = btn.querySelector('i');
+                if (isFavorited) {
                     icon.classList.remove('far');
                     icon.classList.add('fas');
-                    this.classList.add('saved');
+                    btn.classList.add('saved');
                 } else {
-                    // TODO: Call API to unsave room
                     icon.classList.remove('fas');
                     icon.classList.add('far');
-                    this.classList.remove('saved');
+                    btn.classList.remove('saved');
                 }
+            }
+
+            // 1. Initial Load: Check status of all visible rooms
+            async function checkAllFavorites() {
+                try {
+                    const res = await fetch('/api/favorites/me');
+                    if (res.ok) {
+                        const favorites = await res.json();
+                        const favoritedIds = new Set(favorites.map(f => f.propertyId.toString()));
+                        
+                        document.querySelectorAll('.nf-save-btn').forEach(btn => {
+                            const roomId = btn.dataset.roomId;
+                            if (favoritedIds.has(roomId)) {
+                                setHeartState(btn, true);
+                            }
+                        });
+                    }
+                } catch (e) { 
+                    // Silent fail if not logged in or error
+                }
+            }
+
+            // check only if might be logged in
+            checkAllFavorites();
+
+            // 2. Handle Click
+            document.querySelectorAll('.nf-save-btn').forEach(btn => {
+                btn.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Retrieve ID
+                    const roomId = this.dataset.roomId;
+
+                    try {
+                        const res = await fetch(`/api/favorites/toggle/${roomId}`, { method: 'POST' });
+                        
+                        if (res.status === 401) {
+                             // Open login modal if exists, or redirect
+                             const loginModalEl = document.getElementById('loginModal');
+                             if (loginModalEl) {
+                                const loginModal = new bootstrap.Modal(loginModalEl);
+                                loginModal.show();
+                             } else {
+                                 window.location.href = '/Auth/Login';
+                             }
+                            return;
+                        }
+
+                        if (res.ok) {
+                            const data = await res.json();
+                            setHeartState(this, data.isFavorited);
+                            
+                             // Optional: Show toast
+                            if (typeof NotificationSystem !== 'undefined' && NotificationSystem.showToast) {
+                                // NotificationSystem.showToast("Thông báo", data.message);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Error toggling favorite:", err);
+                    }
+                });
             });
         });
     </script>

@@ -1,0 +1,43 @@
+@using NestFlow.Models.ViewModels
+@model PropertyViewModel
+
+@{
+    var days = (DateTime.Now - Model.PostedDate).Days;
+    string timeAgo;
+    if (days == 0) timeAgo = "Hôm nay";
+    else if (days == 1) timeAgo = "Hôm qua";
+    else if (days < 7) timeAgo = $"{days} ngày trước";
+    else if (days < 30) timeAgo = $"{days / 7} tuần trước";
+    else timeAgo = $"{days / 30} tháng trước";
+}
+
+<div class="nf-room-card" onclick="window.location.href='@Url.Page("/Room/Detail", new { id = Model.Id })'">
+    <div class="nf-room-image">
+        @if (Model.IsFeatured)
+        {
+            <span class="nf-featured-badge">Nổi bật</span>
+        }
+        <a href="/Room/Detail?id=@Model.Id">
+            <img src="@Model.Image" alt="@Model.Name" />
+        </a>
+        <button class="nf-save-btn" data-room-id="@Model.Id" onclick="event.stopPropagation();">
+            <i class="far fa-heart"></i>
+        </button>
+    </div>
+    <div class="nf-room-info">
+        <h5 class="nf-room-name">
+            <a href="/Room/Detail?id=@Model.Id" class="text-decoration-none text-dark">
+                @Model.Name
+            </a>
+        </h5>
+        <p class="nf-room-location">@Model.Location</p>
+        <div class="nf-room-price">@Model.Price.ToString("N0")đ/tháng</div>
+        <div class="nf-room-meta">
+            <span class="nf-rating">
+                <i class="fas fa-star"></i> @(Math.Round(Model.Rating, 1))
+                <span class="nf-review-count">(@Model.ReviewCount đánh giá)</span>
+            </span>
+            <span class="nf-post-time">@timeAgo</span>
+        </div>
+    </div>
+</div>

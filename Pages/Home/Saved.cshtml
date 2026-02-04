@@ -6,51 +6,105 @@
 
 <div class="container-fluid px-4 py-5">
     <h2 class="mb-4">Tin đã lưu</h2>
-    <div class="row g-4" id="savedRooms">
-        <!-- Các phòng đã lưu sẽ được hiển thị ở đây -->
-        <div class="col-12">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> Bạn chưa lưu phòng trọ nào. Hãy lưu các phòng bạn quan tâm để xem lại sau!
+    
+    @if (!Model.IsLoggedIn)
+    {
+         <div class="row g-4">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-circle"></i> Bạn cần <a href="/Auth/Login">đăng nhập</a> để xem tin đã lưu.
+                </div>
             </div>
         </div>
-    </div>
+    }
+    else if (Model.SavedRooms == null || !Model.SavedRooms.Any())
+    {
+        <div class="row g-4" id="savedRooms">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Bạn chưa lưu phòng trọ nào. Hãy lưu các phòng bạn quan tâm để xem lại sau!
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4" id="savedRooms">
+            @foreach (var room in Model.SavedRooms)
+            {
+                <div class="col-md-3" id="room-@room.Id">
+                    <div class="nf-room-card mb-4 shadow-sm h-100">
+                        <div class="position-relative">
+                            <a href="/Room/Detail?id=@room.Id">
+                                <img src="@room.Image" class="card-img-top" alt="@room.Name" style="height: 200px; object-fit: cover;" />
+                            </a>
+                            <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
+                                    style="z-index: 10;"
+                                    onclick="removeFavorite(event, @room.Id)" title="Bỏ lưu">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title text-truncate">
+                                <a href="/Room/Detail?id=@room.Id" class="text-decoration-none text-dark">
+                                    @room.Name
+                                </a>
+                            </h5>
+                            <p class="card-text text-primary fw-bold">@room.Price.ToString("N0")đ/tháng</p>
+                            <a href="/Room/Detail?id=@room.Id" class="btn btn-outline-primary w-100">Xem chi tiết</a>
+                        </div>
+                        <div class="card-footer text-muted small">
+                            Đã lưu: @(room.CreatedAt?.ToString("dd/MM/yyyy") ?? "N/A")
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 </div>
 
 @section Scripts {
     <script>
-        // Lấy danh sách phòng đã lưu từ localStorage
-        function loadSavedRooms() {
-            const savedRooms = JSON.parse(localStorage.getItem('savedRooms') || '[]');
-            const container = document.getElementById('savedRooms');
+        async function removeFavorite(event, propertyId) {
+            event.preventDefault();
+            event.stopPropagation();
 
-            if (savedRooms.length === 0) {
-                return;
+            if(!confirm('Bạn có chắc muốn bỏ lưu tin này?')) return;
+            
+            try {
+                // Change UI immediately or show loading state on button
+                const btn = event.currentTarget;
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                btn.disabled = true;
+
+                const res = await fetch(`/api/favorites/toggle/${propertyId}`, { method: 'POST' });
+                if (res.ok) {
+                    // Remove from DOM without reloading everything
+                    const roomEl = document.getElementById(`room-${propertyId}`);
+                    if (roomEl) {
+                        roomEl.remove();
+                        
+                        // Check if empty
+                        const container = document.getElementById('savedRooms');
+                        if (!container.querySelector('.col-md-3')) {
+                             container.innerHTML = `
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i> Bạn chưa lưu phòng trọ nào.
+                                    </div>
+                                </div>`;
+                        }
+                    }
+                } else {
+                    alert('Có lỗi xảy ra, thử lại sau!');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            } catch (e) { 
+                console.error(e); 
+                alert('Lỗi kết nối!');
             }
-
-            container.innerHTML = savedRooms.map(room => `
-                <div class="col-md-3">
-                    <div class="nf-room-card">
-                        <div class="nf-room-image">
-                            <img src="${room.image}" alt="${room.name}" />
-                            <button class="nf-save-btn saved" data-room-id="${room.id}">
-                                <i class="fas fa-heart"></i>
-                            </button>
-                        </div>
-                        <div class="nf-room-info">
-                            <h5 class="nf-room-name">${room.name}</h5>
-                            <div class="nf-room-price">${room.price}</div>
-                            <div class="nf-room-meta">
-                                <span class="nf-rating">
-                                    <i class="fas fa-star"></i> ${room.rating}
-                                </span>
-                                <span class="nf-post-time">${room.postTime}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
         }
-
-        loadSavedRooms();
     </script>
 }

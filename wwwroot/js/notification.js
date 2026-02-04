@@ -1,83 +1,291 @@
 "use strict";
 
-const connection = new signalR.HubConnectionBuilder()
-    .withUrl("/notificationHub")
-    .build();
+/**
+ * NestFlow Notification System
+ * Handles SignalR connection, fetching initial notifications, and UI updates.
+ */
 
-// Start connection
-connection.start().then(function () {
-    console.log("SignalR Connected.");
-}).catch(function (err) {
-    return console.error(err.toString());
-});
+const NotificationSystem = (function () {
+    let connection = null;
+    let userId = null;
+    const MAX_NOTIFICATIONS = 10;
 
-// Receive Notification
-connection.on("ReceiveNotification", function (notification) {
-    console.log("Received notification: ", notification);
+    // DOM Elements
+    const elements = {
+        bell: document.getElementById('notificationBell'),
+        counter: document.getElementById('notif-counter'),
+        list: document.querySelector('#notificationBell .dropdown-menu'),
+        toastContainer: document.getElementById('toast-container')
+    };
 
-    // Update Counter
-    let counter = document.getElementById("notif-counter");
-    let currentCount = parseInt(counter.innerText) || 0;
-    counter.innerText = currentCount + 1;
-    counter.classList.remove("d-none");
+    /**
+     * Initialize the system
+     */
+    async function init() {
+        // 1. Check Auth & Get User ID
+        userId = await getUserId();
+        if (!userId) {
+            console.log("NotificationSystem: User not logged in.");
+            return;
+        }
 
-    // Add to list (Toast or Dropdown)
-    showToast(notification.title, notification.content);
-    addToDropdown(notification);
-});
+        // 2. Load Initial Notifications (Recent history)
+        await loadNotifications();
 
-function addToDropdown(notification) {
-    const list = document.querySelector('#notificationBell .dropdown-menu');
-    if (!list) return;
+        // 3. Start SignalR Connection
+        // 3. Start SignalR Connection
+        initSignalR();
 
-    // Remove "empty" message if it exists
-    const emptyMsg = list.querySelector('.text-muted.small.text-center');
-    if (emptyMsg) emptyMsg.remove();
-    if (list.querySelector('li.text-center.text-muted')) list.querySelector('li.text-center.text-muted').remove();
-
-    // Create new item
-    const li = document.createElement('li');
-    li.innerHTML = `
-        <a class="dropdown-item" href="${notification.linkUrl || '#'}">
-            <div class="d-flex flex-column">
-                <span class="fw-bold small">${notification.title}</span>
-                <span class="small text-muted text-truncate" style="max-width: 250px;">${notification.content}</span>
-                <span class="text-xs text-muted text-end mt-1" style="font-size: 0.7rem;">Vừa xong</span>
-            </div>
-        </a>
-    `;
-
-    // Insert after the divider (assuming index 2: header, divider, ...)
-    // Or just append to list if we strictly control structure. 
-    // Let's look for the divider.
-    const divider = list.querySelector('hr.dropdown-divider');
-    if (divider && divider.parentElement) {
-        divider.parentElement.after(li);
-    } else {
-        list.appendChild(li);
+        // 4. Setup UI Interaction
+        setupEventListeners();
     }
-}
 
-function showToast(title, message) {
-    // Simple toast implementation (requires Bootstrap Toast container in Layout)
-    const toastHtml = `
-        <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-          <div class="toast-header bg-success text-white">
-            <strong class="me-auto"><i class="fas fa-bell me-2"></i>${title}</strong>
-            <small class="text-white">Vừa xong</small>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-          </div>
-          <div class="toast-body">
-            ${message}
-          </div>
-        </div>
-    `;
+    /**
+     * Get current user ID from Session/API
+     */
+    async function getUserId() {
+        try {
+            // Priority 1: Check if Auth global object has it (if available)
+            // Priority 2: Call API
+            const response = await fetch('/api/auth/check-session');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.isLoggedIn && data.userId) return data.userId;
+            }
+        } catch (e) { console.error("Error checking session:", e); }
+        return null;
+    }
 
-    const container = document.getElementById("toast-container");
-    if (container) {
-        container.insertAdjacentHTML('beforeend', toastHtml);
-        const newToast = container.lastElementChild;
-        const toast = new bootstrap.Toast(newToast);
+    /**
+     * Fetch existing notifications from API
+     */
+    async function loadNotifications() {
+        try {
+            // Need to pass userId if not in cookies/claims yet (dev mode fallback)
+            const url = `/api/Notifications?userId=${userId}`;
+            const response = await fetch(url);
+            if (response.ok) {
+                const notifications = await response.json();
+                renderNotificationList(notifications);
+                updateCounter(notifications.filter(n => !n.isRead).length);
+            }
+        } catch (e) { console.error("Error loading notifications:", e); }
+    }
+
+    /**
+     * Initialize SignalR
+     */
+    function initSignalR() {
+        const hubUrl = `/notificationHub?userId=${userId}`;
+
+        connection = new signalR.HubConnectionBuilder()
+            .withUrl(hubUrl)
+            .withAutomaticReconnect()
+            .build();
+
+        connection.start()
+            .then(() => console.log("SignalR Connected for User:", userId))
+            .catch(err => console.error("SignalR Connection Error:", err));
+
+        // Event Handler
+        connection.on("ReceiveNotification", onReceiveNotification);
+    }
+
+    /**
+     * Handle incoming notification from SignalR
+     */
+    function onReceiveNotification(notification) {
+        console.log("Received:", notification);
+
+        // 1. Show Toast
+        showToast(notification.title, notification.content);
+
+        // 2. Update Counter
+        incrementCounter();
+
+        // 3. Add to Dropdown (Prepend to top)
+        addNotificationItem(notification, true);
+    }
+
+    // --- UI Renderers ---
+
+    function renderNotificationList(notifications) {
+        if (!elements.list) return;
+
+        // Clear "Empty" message if we have data
+        if (notifications.length > 0) {
+            const emptyMsg = elements.list.querySelector('.text-muted.small.text-center');
+            if (emptyMsg) emptyMsg.remove();
+
+            // Should also remove "empty" li if generated by simple logic before
+            const emptyLi = elements.list.querySelector('li.text-center');
+            if (emptyLi) emptyLi.remove();
+        }
+
+        // Render last N items
+        notifications.slice(0, MAX_NOTIFICATIONS).forEach(n => {
+            addNotificationItem(n, false); // Append
+        });
+    }
+
+    function addNotificationItem(notification, isNew = true) {
+        if (!elements.list) return;
+
+        // Check for divider
+        const divider = elements.list.querySelector('hr.dropdown-divider');
+
+        // Remove empty placeholder again just in case
+        const emptyMsg = elements.list.querySelector('li.text-center.text-muted');
+        if (emptyMsg) emptyMsg.remove();
+
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.className = 'dropdown-item';
+        a.href = notification.linkUrl || '#';
+
+        // Use textContent for safety against XSS
+        const div = document.createElement('div');
+        div.className = 'd-flex flex-column';
+
+        const spanTitle = document.createElement('span');
+        spanTitle.className = 'fw-bold small';
+        spanTitle.textContent = notification.title;
+
+        const spanContent = document.createElement('span');
+        spanContent.className = 'small text-muted text-truncate';
+        spanContent.style.maxWidth = '250px';
+        spanContent.textContent = notification.content;
+
+        const spanTime = document.createElement('span');
+        spanTime.className = 'text-xs text-muted text-end mt-1';
+        spanTime.style.fontSize = '0.7rem';
+        spanTime.textContent = isNew ? 'Vừa xong' : new Date(notification.createdAt).toLocaleDateString('vi-VN');
+
+        div.appendChild(spanTitle);
+        div.appendChild(spanContent);
+        div.appendChild(spanTime);
+        a.appendChild(div);
+        li.appendChild(a);
+
+        // logic to insert: If isNew, insert after header/divider. If not, append.
+        if (isNew && divider && divider.parentElement) {
+            divider.parentElement.after(li);
+        } else {
+            // Append to end of list
+            elements.list.appendChild(li);
+        }
+    }
+
+    function updateCounter(count) {
+        if (!elements.counter) return;
+        elements.counter.innerText = count;
+        if (count > 0) {
+            elements.counter.classList.remove('d-none');
+        } else {
+            elements.counter.classList.add('d-none');
+        }
+    }
+
+    function incrementCounter() {
+        if (!elements.counter) return;
+        let current = parseInt(elements.counter.innerText) || 0;
+        updateCounter(current + 1);
+    }
+
+    function showToast(title, message) {
+        if (!elements.toastContainer) return;
+
+        const toastEl = document.createElement('div');
+        toastEl.className = 'toast';
+        toastEl.setAttribute('role', 'alert');
+        toastEl.setAttribute('aria-live', 'assertive');
+        toastEl.setAttribute('aria-atomic', 'true');
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'toast-header bg-success text-white';
+
+        const strong = document.createElement('strong');
+        strong.className = 'me-auto';
+        strong.innerHTML = `<i class="fas fa-bell me-2"></i> ${escapeHtml(title)}`; // InnerHTML ok for icon, but title escaped
+
+        const small = document.createElement('small');
+        small.className = 'text-white';
+        small.textContent = 'Vừa xong';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-close btn-close-white';
+        btn.setAttribute('data-bs-dismiss', 'toast');
+        btn.setAttribute('aria-label', 'Close');
+
+        header.append(strong, small, btn);
+
+        // Body
+        const body = document.createElement('div');
+        body.className = 'toast-body';
+        body.textContent = message; // Safe
+
+        toastEl.append(header, body);
+        elements.toastContainer.append(toastEl);
+
+        const toast = new bootstrap.Toast(toastEl);
         toast.show();
     }
-}
+
+    // Helper to escape HTML if needed
+    function escapeHtml(text) {
+        if (!text) return text;
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    /**
+     * Mark all as read
+     */
+    async function markAllAsRead() {
+        if (!userId) return;
+
+        // Optimistic UI update
+        updateCounter(0);
+
+        try {
+            await fetch(`/api/Notifications/read-all?userId=${userId}`, { method: 'PUT' });
+        } catch (e) { console.error("Error marking all as read:", e); }
+    }
+
+    /**
+     * Setup UI Event Listeners
+     */
+    function setupEventListeners() {
+        // Listen for Bootstrap Dropdown show event
+        const dropdownParent = elements.bell?.closest('.dropdown');
+        if (dropdownParent) {
+            dropdownParent.addEventListener('show.bs.dropdown', function () {
+                // When dropdown opens, mark all as read
+                if (elements.counter && !elements.counter.classList.contains('d-none')) {
+                    markAllAsRead();
+                }
+            });
+        } else if (elements.bell) {
+            // Fallback if structure is different
+            elements.bell.addEventListener('click', function () {
+                if (elements.counter && !elements.counter.classList.contains('d-none')) {
+                    markAllAsRead();
+                }
+            });
+        }
+    }
+
+    return {
+        init: init
+    };
+
+})();
+
+// Auto-start on load
+document.addEventListener('DOMContentLoaded', NotificationSystem.init);

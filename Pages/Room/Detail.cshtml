@@ -1,52 +1,34 @@
 ﻿@page
 @model NestFlow.Pages.Room.DetailModel
 @{
-    ViewData["Title"] = "Chi tiết phòng trọ - Nestflow";
-    // Mock data - trong thực tế sẽ lấy từ database
-    var room = new
-    {
-        Id = ViewBag.RoomId ?? "1",
-        Name = "Nhà nguyên căn Hòa Lạc",
-        Price = 8000000,
-        PriceRange = new { Min = 7000000, Max = 9000000 },
-        Images = new[] {
-            "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&h=500&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1558036117-15d82a90b9b1?w=400&h=240&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=400&h=240&fit=crop&q=80"
-        },
-        Rating = 4.9,
-        ReviewCount = 12,
-        Location = "Thạch Hòa, Hòa Lạc",
-        Area = 80,
-        RoomType = "Nhà nguyên căn",
-        AvailableRoomTypes = new[] {
-            new { Type = "2 phòng ngủ", Price = 8000000 },
-            new { Type = "3 phòng ngủ", Price = 9000000 }
-        },
-        Description = "Nhà nguyên căn mới xây, đầy đủ nội thất. Phù hợp gia đình hoặc nhóm bạn.",
-        Amenities = new[] { "WiFi miễn phí", "Điều hòa", "Tủ lạnh", "Máy giặt", "Bếp riêng", "Sân phơi", "Gara ô tô" },
-        Landlord = new { Name = "Anh Minh", Rating = 5.0, ResponseRate = 98, Avatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200" },
-        Rules = new[] { "Giữ vệ sinh chung", "Không gây ồn", "Trả tiền đầu tháng" },
-        SafetyFeatures = new[] { "Camera xung quanh", "Hàng rào bảo vệ", "Cổng tự động" },
-        Reviews = new[] {
-            new { User = "Nguyễn Văn A", Rating = 5, Comment = "Phòng rất sạch sẽ, chủ trọ nhiệt tình. Rất hài lòng!", Date = "2 tháng trước", Avatar = "https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=200" }
-        }
-    };
+    ViewData["Title"] = $"{Model.Property.Title} - Nestflow";
 
-    Func<int, string> FormatPrice = (price) => price.ToString("N0") + "đ";
+    // Helper functions
+    Func<decimal?, string> FormatPrice = (price) => (price ?? 0).ToString("N0") + "đ";
+    
+    // Process Images
+    var images = Model.Property.PropertyImages.Select(i => i.ImageUrl).ToList();
+    // Fallback if no images
+    if (!images.Any())
+    {
+        images.Add("https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&fit=crop&q=80");
+        images.Add("https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&fit=crop&q=80");
+    }
+
+    var mainImage = images.First();
 }
 
 <div class="container py-4">
     <!-- Header với tên trọ -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="nf-room-detail-title mb-2">@room.Name</h1>
+            <h1 class="nf-room-detail-title mb-2">@Model.Property.Title</h1>
             <div class="d-flex align-items-center gap-3">
                 <div class="nf-rating">
-                    <i class="fas fa-star"></i> @room.Rating
-                    <span class="text-muted">(@room.ReviewCount đánh giá)</span>
+                    <i class="fas fa-star"></i> @(Model.Property.Reviews.Any() ? Math.Round(Model.Property.Reviews.Average(r => r.Rating ?? 0), 1) : 0)
+                    <span class="text-muted">(@Model.Property.Reviews.Count đánh giá)</span>
                 </div>
-                <span class="text-muted">@room.Location</span>
+                <span class="text-muted">@Model.Property.Address, @Model.Property.Ward, @Model.Property.City</span>
             </div>
         </div>
         <button class="btn btn-link p-0" onclick="window.history.back()">
@@ -58,14 +40,24 @@
     <div class="nf-room-gallery mb-4">
         <div class="row g-2">
             <div class="col-md-8">
-                <img src="@room.Images[0]" class="img-fluid rounded" alt="@room.Name" id="mainImage" />
+                <img src="@mainImage" class="img-fluid rounded w-100" alt="@Model.Property.Title" id="mainImage" style="height: 500px; object-fit: cover;" />
             </div>
             <div class="col-md-4">
                 <div class="row g-2">
-                    @for (int i = 1; i < room.Images.Length && i < 3; i++)
+                    @for (int i = 1; i < images.Count && i < 3; i++)
                     {
                         <div class="col-12">
-                            <img src="@room.Images[i]" class="img-fluid rounded" alt="Ảnh @(i+1)" onclick="document.getElementById('mainImage').src = this.src" style="cursor: pointer;" />
+                            <img src="@images[i]" class="img-fluid rounded w-100" alt="Ảnh @(i+1)" onclick="document.getElementById('mainImage').src = this.src" style="cursor: pointer; height: 245px; object-fit: cover;" />
+                        </div>
+                    }
+                    @if (images.Count <= 1)
+                    {
+                         // Show placeholders if not enough images
+                        <div class="col-12">
+                            <img src="https://via.placeholder.com/400x240?text=No+Image" class="img-fluid rounded w-100" style="height: 245px; object-fit: cover;" />
+                        </div>
+                        <div class="col-12">
+                            <img src="https://via.placeholder.com/400x240?text=NestFlow" class="img-fluid rounded w-100" style="height: 245px; object-fit: cover;" />
                         </div>
                     }
                 </div>
@@ -76,7 +68,7 @@
                 <i class="fas fa-share"></i> Chia sẻ
             </button>
             <button class="btn btn-outline-danger nf-save-btn-detail">
-                <i class="far fa-heart"></i> Lưu
+                <i class="far fa-heart"></i> Lưu tin
             </button>
         </div>
     </div>
@@ -85,47 +77,43 @@
         <div class="col-lg-8">
             <!-- Giá tiền và loại phòng -->
             <div class="nf-room-pricing mb-4">
-                <h3 class="mb-3">Giá và loại phòng</h3>
-                <p class="text-muted mb-3">
-                    Giá từ @FormatPrice(room.PriceRange.Min) - @FormatPrice(room.PriceRange.Max)
-                </p>
-                <div class="mb-3">
-                    <label class="form-label fw-bold">Chọn loại phòng:</label>
-                    <select class="form-select" id="roomTypeSelect">
-                        @foreach (var rt in room.AvailableRoomTypes)
-                        {
-                            <option value="@rt.Type" data-price="@rt.Price">@rt.Type - @FormatPrice(rt.Price)/tháng</option>
-                        }
-                    </select>
-                </div>
+                <h3 class="mb-3">Giá và thông tin chính</h3>
                 <div class="bg-blue-50 p-4 rounded-lg">
-                    <p class="text-sm text-muted mb-1">Giá đã chọn</p>
-                    <p class="text-2xl font-bold text-primary mb-0" id="selectedPrice">@FormatPrice(room.AvailableRoomTypes[0].Price)/tháng</p>
+                    <p class="text-sm text-muted mb-1">Mức giá</p>
+                    <p class="text-2xl font-bold text-primary mb-0" id="selectedPrice">@FormatPrice(Model.Property.Price)/tháng</p>
                 </div>
             </div>
 
             <!-- Mô tả -->
             <div class="mb-4">
                 <h3 class="mb-3">Mô tả</h3>
-                <p class="text-muted">@room.Description</p>
+                <p class="text-muted" style="white-space: pre-line;">@Model.Property.Description</p>
                 <div class="mt-3 text-sm text-muted">
-                    <p>Diện tích: @room.Area m²</p>
-                    <p>Loại phòng: @room.RoomType</p>
+                    <p>Diện tích: @(Model.Property.Area ?? 0) m²</p>
+                    <p>Loại phòng: @Model.Property.PropertyType</p>
+                    <p>Ngày đăng: @Model.Property.CreatedAt?.ToString("dd/MM/yyyy")</p>
                 </div>
             </div>
 
-            <!-- Nơi này sẽ cho bạn những gì -->
+            <!-- Tiện nghi -->
             <div class="nf-room-features mb-4">
-                <h3 class="mb-3">Nơi này sẽ cho bạn những gì</h3>
+                <h3 class="mb-3">Tiện nghi</h3>
                 <div class="row g-3">
-                    @foreach (var amenity in room.Amenities)
+                    @if (Model.Property.Amenities.Any())
                     {
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center gap-2">
-                                <div class="nf-amenity-dot"></div>
-                                <span>@amenity</span>
+                        foreach (var amenity in Model.Property.Amenities)
+                        {
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="nf-amenity-dot"></div>
+                                    <span>@amenity.Name</span>
+                                </div>
                             </div>
-                        </div>
+                        }
+                    } 
+                    else 
+                    {
+                        <p class="text-muted">Chưa cập nhật tiện nghi.</p>
                     }
                 </div>
             </div>
@@ -134,22 +122,26 @@
             <div class="nf-room-reviews mb-4">
                 <div class="d-flex align-items-center gap-3 mb-3">
                     <i class="fas fa-star text-warning fa-lg"></i>
-                    <h3 class="mb-0">@room.Rating · @room.ReviewCount đánh giá</h3>
+                    <h3 class="mb-0">
+                         @(Model.Property.Reviews.Any() ? Math.Round(Model.Property.Reviews.Average(r => r.Rating ?? 0), 1) : 0) · @Model.Property.Reviews.Count đánh giá
+                    </h3>
                 </div>
-                @if (room.Reviews.Length > 0)
+                @if (Model.Property.Reviews.Any())
                 {
-                    @foreach (var review in room.Reviews)
+                    @foreach (var review in Model.Property.Reviews)
                     {
+                         var userAvatar = review.User?.AvatarUrl ?? "/images/default-avatar.png";
+                         var userName = review.User?.FullName ?? "Người dùng";
                         <div class="nf-review-item mb-3 pb-3 border-bottom">
                             <div class="d-flex align-items-center gap-3 mb-2">
-                                <img src="@review.Avatar" alt="@review.User" class="nf-review-avatar" />
+                                <img src="@userAvatar" alt="@userName" class="nf-review-avatar" />
                                 <div>
-                                    <p class="fw-bold mb-0">@review.User</p>
-                                    <p class="text-muted small mb-0">@review.Date</p>
+                                    <p class="fw-bold mb-0">@userName</p>
+                                    <p class="text-muted small mb-0">@review.CreatedAt?.ToString("dd/MM/yyyy")</p>
                                 </div>
                             </div>
                             <div class="mb-2">
-                                @for (int i = 0; i < review.Rating; i++)
+                                @for (int i = 0; i < (review.Rating ?? 5); i++)
                                 {
                                     <i class="fas fa-star text-warning"></i>
                                 }
@@ -160,81 +152,30 @@
                 }
                 else
                 {
-                    <p class="text-muted">Chưa có đánh giá</p>
+                    <p class="text-muted">Chưa có đánh giá nào.</p>
                 }
-                <div class="alert alert-warning mt-3">
-                    <i class="fas fa-info-circle"></i> <strong>Lưu ý:</strong> Chỉ khi bạn đặt phòng thì mới được góp ý
-                </div>
             </div>
 
-            <!-- Chủ trọ của bạn -->
+            <!-- Chủ trọ -->
             <div class="nf-landlord-info mb-4">
-                <h3 class="mb-3">Chủ trọ của bạn</h3>
+                <h3 class="mb-3">Liên hệ chủ trọ</h3>
                 <div class="card">
                     <div class="card-body">
                         <div class="d-flex align-items-start gap-4">
-                            <img src="@room.Landlord.Avatar" alt="@room.Landlord.Name" class="nf-avatar-lg" />
+                            <img src="@(Model.Property.Landlord?.AvatarUrl ?? "https://ui-avatars.com/api/?name=Landlord")" alt="Landlord" class="nf-avatar-lg" />
                             <div class="flex-grow-1">
-                                <h5 class="mb-1">@room.Landlord.Name</h5>
+                                <h5 class="mb-1">@(Model.Property.Landlord?.FullName ?? "Chủ nhà")</h5>
                                 <div class="d-flex align-items-center gap-3 mt-2">
-                                    <div class="d-flex align-items-center gap-1">
-                                        <i class="fas fa-star text-warning"></i>
-                                        <span>@room.Landlord.Rating rating</span>
-                                    </div>
-                                    <div class="d-flex align-items-center gap-1">
-                                        <i class="fas fa-comment"></i>
-                                        <span>@room.Landlord.ResponseRate% tỷ lệ phản hồi</span>
+                                    <div class="text-muted small">
+                                        SDT: @(Model.Property.Landlord?.Phone ?? "Liên hệ check")
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="alert alert-warning mt-3 mb-0">
-                            <i class="fas fa-exclamation-triangle"></i> <strong>Lưu ý:</strong> Để tránh bị lừa đảo, hãy luôn sử dụng chuyển tiền cọc và liên hệ qua website
-                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Những điều bạn cần biết -->
-            <div class="nf-room-rules mb-4">
-                <h3 class="mb-3">Những điều bạn cần biết</h3>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-home text-primary"></i> Nội quy nhà
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <ul class="list-unstyled mb-0">
-                                    @foreach (var rule in room.Rules)
-                                    {
-                                        <li class="mb-2">• @rule</li>
-                                    }
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="mb-0">
-                                    <i class="fas fa-shield-alt text-primary"></i> An toàn và chỗ ở
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <ul class="list-unstyled mb-0">
-                                    @foreach (var feature in room.SafetyFeatures)
-                                    {
-                                        <li class="mb-2">• @feature</li>
-                                    }
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- Sidebar bên phải -->
@@ -243,38 +184,21 @@
                 <div class="card-body">
                     <div class="mb-3">
                         <div class="d-flex align-items-baseline gap-2">
-                            <span class="nf-room-price-large" id="sidebarPrice">@FormatPrice(room.AvailableRoomTypes[0].Price)</span>
+                            <span class="nf-room-price-large">@FormatPrice(Model.Property.Price)</span>
                             <span class="text-muted">/tháng</span>
                         </div>
-                        <div class="d-flex align-items-center gap-2 mt-2">
-                            <i class="fas fa-star text-warning"></i>
-                            <span class="fw-bold">@room.Rating</span>
-                            <span class="text-muted small">(@room.ReviewCount đánh giá)</span>
-                        </div>
                     </div>
+                    
                     <div class="mb-3">
-                        <label class="form-label">Loại phòng:</label>
-                        <select class="form-select" id="sidebarRoomType">
-                            @foreach (var rt in room.AvailableRoomTypes)
-                            {
-                                <option value="@rt.Type" data-price="@rt.Price">@rt.Type</option>
-                            }
-                        </select>
+                         <i class="fas fa-bolt text-warning"></i> Trạng thái: <strong>@Model.Property.Status</strong>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Thời gian thuê:</label>
-                        <select class="form-select">
-                            <option>3 tháng</option>
-                            <option>6 tháng</option>
-                            <option>12 tháng</option>
-                        </select>
-                    </div>
-                    <a asp-page="/Room/Contact" asp-route-id="@room.Id"
-                       class="btn nf-btn-primary w-100 nf-contact-btn" id="contactBtn">
-                        Liên hệ chủ trọ
-                    </a>
 
-                    <p class="text-center text-muted small mt-2 mb-0">Bạn vẫn chưa bị trừ tiền</p>
+                    <a asp-page="/Room/Contact" asp-route-id="@Model.Property.PropertyId"
+                       class="btn nf-btn-primary w-100 nf-contact-btn" id="contactBtn">
+                        Liên hệ / Đặt phòng
+                    </a>
+                    
+                    <p class="text-center text-muted small mt-2 mb-0">Không thanh toán ngay</p>
                 </div>
             </div>
         </div>
@@ -283,153 +207,70 @@
 
 @section Scripts {
     <script>
-        // Cập nhật giá khi chọn loại phòng
-        function updatePrice() {
-            const select = document.getElementById('roomTypeSelect');
-            const sidebarSelect = document.getElementById('sidebarRoomType');
-            const selectedOption = select.options[select.selectedIndex];
-            const price = selectedOption.dataset.price;
+        // Global config
+        const roomId = "@Model.Property.PropertyId";
+        const btnSave = document.querySelector('.nf-save-btn-detail');
 
-            document.getElementById('selectedPrice').textContent = parseInt(price).toLocaleString('vi-VN') + 'đ/tháng';
-            if (document.getElementById('sidebarPrice')) {
-                document.getElementById('sidebarPrice').textContent = parseInt(price).toLocaleString('vi-VN') + 'đ';
-            }
-
-            if (sidebarSelect) {
-                sidebarSelect.value = selectedOption.value;
-            }
+        // 1. Check current status
+        async function checkFavoriteStatus() {
+            if (!roomId || !btnSave) return;
+            try {
+                const res = await fetch(`/api/favorites/check/${roomId}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    updateFavoriteButton(data.isFavorited);
+                }
+            } catch (e) { console.error("Error checking favorite:", e); }
         }
 
-        document.getElementById('roomTypeSelect').addEventListener('change', updatePrice);
-        if (document.getElementById('sidebarRoomType')) {
-            document.getElementById('sidebarRoomType').addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const price = selectedOption.dataset.price;
-                document.getElementById('roomTypeSelect').value = this.value;
-                document.getElementById('selectedPrice').textContent = parseInt(price).toLocaleString('vi-VN') + 'đ/tháng';
-                document.getElementById('sidebarPrice').textContent = parseInt(price).toLocaleString('vi-VN') + 'đ';
-            });
-        }
-
-        // Xử lý lưu tin
-        document.querySelector('.nf-save-btn-detail')?.addEventListener('click', function() {
-            const icon = this.querySelector('i');
-            if (icon.classList.contains('far')) {
+        // 2. Update UI helper
+        function updateFavoriteButton(isFavorited) {
+            const icon = btnSave.querySelector('i');
+            if (isFavorited) {
                 icon.classList.remove('far');
                 icon.classList.add('fas');
-                this.classList.add('btn-danger');
-                this.classList.remove('btn-outline-danger');
+                btnSave.classList.add('btn-danger');
+                btnSave.classList.remove('btn-outline-danger');
+                btnSave.innerHTML = '<i class="fas fa-heart"></i> Đã lưu';
             } else {
                 icon.classList.remove('fas');
                 icon.classList.add('far');
-                this.classList.remove('btn-danger');
-                this.classList.add('btn-outline-danger');
+                btnSave.classList.remove('btn-danger');
+                btnSave.classList.add('btn-outline-danger');
+                btnSave.innerHTML = '<i class="far fa-heart"></i> Lưu tin';
             }
+        }
+
+        // 3. Handle Click
+        btnSave?.addEventListener('click', async function() {
+            try {
+                const res = await fetch(`/api/favorites/toggle/${roomId}`, { method: 'POST' });
+                
+                if (res.status === 401) {
+                    // Show Login Modal directly
+                    const loginModalEl = document.getElementById('loginModal');
+                    if (loginModalEl) {
+                        const modal = new bootstrap.Modal(loginModalEl);
+                        modal.show();
+                    } else {
+                        window.location.href = '/Auth/Login';
+                    }
+                    return;
+                }
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    updateFavoriteButton(data.isFavorited);
+                    
+                    // Optional: Show toast if available
+                    if (typeof showToast !== 'undefined') {
+                        showToast(data.message, 'success');
+                    }
+                }
+            } catch (e) { console.error("Error toggling favorite:", e); }
         });
 
-        // Kiểm tra role và disable booking nếu không phải tenant
-        const userRole = localStorage.getItem('userRole');
-        const landlordViewMode = localStorage.getItem('landlordViewMode');
-        const contactBtn = document.getElementById('contactBtn');
-        const bookingCard = document.querySelector('.nf-booking-card');
-
-        // Chỉ disable booking nếu là admin, landlord hoặc đang ở landlord view mode
-        // Tenant có thể đặt phòng bình thường
-        if (userRole && (userRole === 'admin' || userRole === 'landlord' || landlordViewMode === 'true')) {
-            document.body.classList.add('landlord-view-mode');
-            if (contactBtn) {
-                contactBtn.style.pointerEvents = 'none';
-                contactBtn.style.opacity = '0.6';
-                contactBtn.style.cursor = 'not-allowed';
-                contactBtn.title = 'Chỉ người thuê mới có thể đặt phòng';
-                contactBtn.onclick = function(e) {
-                    e.preventDefault();
-                    alert('Chỉ người thuê mới có thể đặt phòng. Vui lòng đăng nhập với tài khoản người thuê.');
-                    return false;
-                };
-            }
-            if (bookingCard) {
-                bookingCard.style.opacity = '0.6';
-            }
-        } else {
-            // Đảm bảo tenant có thể đặt phòng - remove any disabled state
-            if (contactBtn) {
-                contactBtn.style.pointerEvents = 'auto';
-                contactBtn.style.opacity = '1';
-                contactBtn.style.cursor = 'pointer';
-                contactBtn.title = '';
-                contactBtn.onclick = null;
-            }
-            if (bookingCard) {
-                bookingCard.style.opacity = '1';
-            }
-            document.body.classList.remove('landlord-view-mode');
-        }
+        // Initialize
+        checkFavoriteStatus();
     </script>
 }
-
-<style>
-    .nf-room-detail-title {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #333;
-    }
-
-    .nf-room-gallery img {
-        cursor: pointer;
-        transition: transform 0.3s;
-    }
-
-        .nf-room-gallery img:hover {
-            transform: scale(1.02);
-        }
-
-    .nf-rating-large {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #FFD700;
-    }
-
-    .nf-room-price-large {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #4A90E2;
-    }
-
-    .nf-avatar-lg {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-
-    .nf-booking-card {
-        border: 1px solid #ddd;
-        border-radius: 15px;
-    }
-
-    .nf-amenity-dot {
-        width: 24px;
-        height: 24px;
-        background: #E3F2FD;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-        .nf-amenity-dot::after {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background: #4A90E2;
-            border-radius: 50%;
-        }
-
-    .nf-review-avatar {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-</style>
