@@ -10,6 +10,7 @@ public interface INotificationService
     Task CreateAndSendNotificationAsync(long userId, string title, string content, string type, string linkUrl = "");
     Task<List<Notification>> GetUserNotificationsAsync(long userId);
     Task MarkAsReadAsync(long notificationId);
+    Task MarkAllAsReadAsync(long userId);
 }
 
 public class NotificationService : INotificationService
@@ -68,6 +69,22 @@ public class NotificationService : INotificationService
         if (notif != null)
         {
             notif.IsRead = true;
+            await _context.SaveChangesAsync();
+        }
+    }
+
+    public async Task MarkAllAsReadAsync(long userId)
+    {
+        var unreadNotifs = await _context.Notifications
+            .Where(n => n.UserId == userId && n.IsRead != true)
+            .ToListAsync();
+
+        if (unreadNotifs.Any())
+        {
+            foreach (var notif in unreadNotifs)
+            {
+                notif.IsRead = true;
+            }
             await _context.SaveChangesAsync();
         }
     }
