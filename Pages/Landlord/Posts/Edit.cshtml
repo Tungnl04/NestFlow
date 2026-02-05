@@ -1,0 +1,78 @@
+@page "{id:long}"
+@model NestFlow.Pages.Landlord.Posts.EditModel
+@{
+    ViewData["Title"] = "Chỉnh sửa tin đăng";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="./Index">Quản lý bài đăng</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Cập nhật bài đăng</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                        <input type="hidden" asp-for="EditingListing.ListingId" />
+                        <input type="hidden" asp-for="EditingListing.CreatedAt" />
+                        <input type="hidden" asp-for="EditingListing.ViewCount" />
+                        <input type="hidden" asp-for="EditingListing.LikeCount" />
+
+                        <div class="mb-3">
+                            <label asp-for="EditingListing.Title" class="form-label">Tiêu đề tin <span class="text-danger">*</span></label>
+                            <input asp-for="EditingListing.Title" class="form-control" required />
+                            <span asp-validation-for="EditingListing.Title" class="text-danger"></span>
+                        </div>
+
+                         <div class="mb-3">
+                            <label asp-for="EditingListing.PropertyId" class="form-label">Phòng trọ</label>
+                            <select asp-for="EditingListing.PropertyId" class="form-select" asp-items="Model.PropertyOptions" required>
+                                <option value="">-- Chọn phòng --</option>
+                            </select>
+                            <span asp-validation-for="EditingListing.PropertyId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="EditingListing.Content" class="form-label">Nội dung chi tiết</label>
+                            <textarea asp-for="EditingListing.Content" class="form-control" rows="8"></textarea>
+                        </div>
+
+                        <div class="row">
+                             <div class="col-md-6 mb-3">
+                                <label asp-for="EditingListing.Status" class="form-label">Trạng thái</label>
+                                <select asp-for="EditingListing.Status" class="form-select">
+                                    <option value="draft">Bản nháp</option>
+                                    <option value="active">Hoạt động</option>
+                                    <option value="inactive">Ẩn</option>
+                                    <option value="expired">Hết hạn</option>
+                                </select>
+                             </div>
+                             <div class="col-md-6 mb-3">
+                                 <label asp-for="EditingListing.ExpiresAt" class="form-label">Ngày hết hạn</label>
+                                 <input asp-for="EditingListing.ExpiresAt" class="form-control" type="datetime-local" />
+                             </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-page="./Index" class="btn btn-secondary">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-primary">Cập nhật tin</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

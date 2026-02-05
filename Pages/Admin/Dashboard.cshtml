@@ -1,8 +1,7 @@
 ﻿@page
 @model NestFlow.Pages.Landlord.DashboardModel
 @{
-    ViewData["Title"] = "Quản lý trọ của bạn - Nestflow";
-    Layout = "~/Pages/Shared/_LandlordLayout.cshtml";
+    ViewData["Title"] = "Admin Site - Nestflow";
 }
 
 <div class="container-fluid px-4 py-4">
@@ -13,44 +12,26 @@
                 <h4 class="mb-4">Menu quản lý</h4>
                 <ul class="nf-sidebar-menu">
                     <li class="active">
-                        <a asp-page="/Landlord/Dashboard">
+                        <a asp-page="/Admin/Dashboard">
                             <i class="fas fa-home"></i> Trang tổng quan
                         </a>
                     </li>
 
                     <li>
-                        <a asp-page="/Landlord/Properties/Index">
-                            <i class="fas fa-door-open"></i> Quản lý phòng trọ
+                        <a asp-page="/Admin/Users">
+                            <i class="fas fa-door-open"></i> Quản lý người dùng
                         </a>
                     </li>
 
                     <li>
-                        <a asp-page="/Landlord/Posts/Index">
+                        <a asp-page="/Admin/Posts">
                             <i class="fas fa-newspaper"></i> Quản lý tin đăng
                         </a>
                     </li>
 
                     <li>
-                        <a asp-page="/Landlord/Renters">
-                            <i class="fas fa-users"></i> Người thuê
-                        </a>
-                    </li>
-
-                    <li>
-                        <a asp-page="/Landlord/Contracts">
-                            <i class="fas fa-file-contract"></i> Hợp đồng & thanh toán
-                        </a>
-                    </li>
-
-                    <li>
-                        <a asp-page="/Landlord/Packages">
-                            <i class="fas fa-box"></i> Gói đăng tin
-                        </a>
-                    </li>
-
-                    <li>
-                        <a asp-page="/Landlord/Notifications">
-                            <i class="fas fa-bell"></i> Thông báo
+                        <a asp-page="/Admin/Requests">
+                            <i class="fas fa-bell"></i> Quản lý yêu cầu
                         </a>
                     </li>
                 </ul>
