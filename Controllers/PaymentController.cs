@@ -17,12 +17,14 @@ namespace NestFlow.Controllers
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IEmailService _emailService;
         private readonly INotificationService? _notificationService;
+        private readonly IWalletService _walletService;
 
         public PaymentController(
             NestFlowSystemContext context,
             PayOS payOS,
             IHttpContextAccessor httpContextAccessor,
             IEmailService emailService,
+            IWalletService walletService,
             INotificationService? notificationService = null)
         {
             _context = context;
@@ -30,6 +32,7 @@ namespace NestFlow.Controllers
             _httpContextAccessor = httpContextAccessor;
             _emailService = emailService;
             _notificationService = notificationService;
+            _walletService = walletService;
         }
 
         /// <summary>
@@ -112,7 +115,7 @@ namespace NestFlow.Controllers
 
                 Console.WriteLine($"User found: {user.FullName}, UserId={userId}");
 
-                // Calculate amount (deposit) - TEST TRƯỚC
+                // Calculate amount (deposit) - ÁP DỤNG GIẢM GIÁ 500K
                 var amount = (int)(property.Deposit ?? 0);
                 if (amount <= 0)
                 {
@@ -122,16 +125,50 @@ namespace NestFlow.Controllers
 
                 Console.WriteLine($"Deposit amount: {amount}");
 
-                // TẠM THỜI COMMENT BOOKING ĐỂ TEST PAYOS
+                decimal platformDiscount = 500000;
+                amount = amount - (int)platformDiscount;
+                if (amount < 0) amount = 0;
+
+                Console.WriteLine($"Amount after discount: {amount}");
+
+                // KIỂM TRA VÍ USER - Nếu có số dư, cho phép dùng ví
+                var userWallet = await _context.Wallets
+                    .FirstOrDefaultAsync(w => w.LandlordId == userId);
+
+                bool useWallet = request.UseWallet && userWallet != null && userWallet.AvailableBalance >= amount;
+
+                if (useWallet)
+                {
+                    // Dùng ví - không cần PayOS
+                    Console.WriteLine($"Using wallet balance: {userWallet!.AvailableBalance}");
+
+                    // Trừ tiền từ ví user
+                    userWallet.AvailableBalance -= amount;
+                    userWallet.UpdatedAt = DateTime.Now;
+
+                    // Tạo transaction log cho user
+                    var userTxn = new WalletTransaction
+                    {
+                        WalletId = userWallet.WalletId,
+                        Direction = "out",
+                        Amount = amount,
+                        RelatedType = "booking_payment",
+                        RelatedId = 0, // Sẽ update sau khi có bookingId
+                        Status = "completed",
+                        Note = $"Thanh toán booking - {property.Title}",
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.WalletTransactions.Add(userTxn);
+                }
+
                 // Create booking
-                /*
                 var booking = new Booking
                 {
                     PropertyId = request.PropertyId,
                     RenterId = userId,
                     BookingDate = DateOnly.FromDateTime(request.BookingDate),
                     BookingTime = TimeOnly.FromDateTime(request.BookingDate),
-                    Status = "Pending",
+                    Status = useWallet ? "Confirmed" : "Pending", // Nếu dùng ví thì confirmed luôn
                     Notes = request.Notes,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
@@ -155,20 +192,50 @@ namespace NestFlow.Controllers
                     }
                     throw;
                 }
-                */
 
-                // FAKE BOOKING ID ĐỂ TEST
-                long fakeBookingId = 999;
-                Console.WriteLine($"Using fake booking ID: {fakeBookingId}");
+                if (useWallet)
+                {
+                    // Thanh toán bằng ví - Không cần PayOS
+                    // Khóa tiền vào ví landlord ngay
+                    var landlordWallet = await _walletService.GetOrCreateWalletAsync(property.LandlordId);
+                    await _walletService.LockBalanceAsync(
+                        landlordWallet.WalletId,
+                        amount,
+                        "booking",
+                        booking.BookingId,
+                        $"Đặt cọc booking #{booking.BookingId} - {property.Title}"
+                    );
 
-                // Calculate amount (deposit)
-                // var amount = (int)(property.Deposit ?? 0);
-                // if (amount <= 0)
-                // {
-                //     return BadRequest(new { success = false, message = "Số tiền đặt cọc không hợp lệ" });
-                // }
+                    // Tạo payment record
+                    var payment = new Models.Payment
+                    {
+                        PayerUserId = userId,
+                        LandlordId = property.LandlordId,
+                        PaymentType = "Deposit",
+                        Amount = amount,
+                        Provider = "Wallet",
+                        ProviderOrderCode = $"WALLET_{booking.BookingId}",
+                        Status = "Completed",
+                        CreatedAt = DateTime.Now,
+                        PaidAt = DateTime.Now
+                    };
+                    _context.Payments.Add(payment);
+                    await _context.SaveChangesAsync();
 
-                // Create PayOS payment link
+                    // Gửi notification
+                    await SendBookingNotifications(booking, property, user);
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Đặt phòng thành công bằng ví",
+                        bookingId = booking.BookingId,
+                        paymentMethod = "wallet",
+                        redirectUrl = $"/Room/Detail?id={property.PropertyId}&bookingSuccess=true"
+                    });
+                }
+
+                // Thanh toán bằng PayOS
                 long orderCode = long.Parse(DateTimeOffset.Now.ToString("ffffff"));
 
                 ItemData item = new ItemData(
@@ -186,8 +253,8 @@ namespace NestFlow.Controllers
                     amount,
                     "Dat coc phong tro",
                     items,
-                    $"{baseUrl}/api/Payment/payment-cancel?bookingId={fakeBookingId}",
-                    $"{baseUrl}/api/Payment/payment-success?bookingId={fakeBookingId}"
+                    $"{baseUrl}/api/Payment/payment-cancel?bookingId={booking.BookingId}",
+                    $"{baseUrl}/api/Payment/payment-success?bookingId={booking.BookingId}"
                 );
 
                 CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
@@ -195,7 +262,7 @@ namespace NestFlow.Controllers
                 Console.WriteLine($"PayOS payment link created: {createPayment.checkoutUrl}");
 
                 // Save payment record
-                var payment = new Models.Payment
+                var payosPayment = new Models.Payment
                 {
                     PayerUserId = userId,
                     LandlordId = property.LandlordId,
@@ -208,14 +275,14 @@ namespace NestFlow.Controllers
                     CreatedAt = DateTime.Now
                 };
 
-                Console.WriteLine($"Creating payment record: PayerUserId={payment.PayerUserId}, LandlordId={payment.LandlordId}, Amount={payment.Amount}");
+                Console.WriteLine($"Creating payment record: PayerUserId={payosPayment.PayerUserId}, LandlordId={payosPayment.LandlordId}, Amount={payosPayment.Amount}");
 
-                _context.Payments.Add(payment);
+                _context.Payments.Add(payosPayment);
                 
                 try
                 {
                     await _context.SaveChangesAsync();
-                    Console.WriteLine($"Payment saved successfully: PaymentId={payment.PaymentId}");
+                    Console.WriteLine($"Payment saved successfully: PaymentId={payosPayment.PaymentId}");
                 }
                 catch (Exception paymentEx)
                 {
@@ -231,8 +298,8 @@ namespace NestFlow.Controllers
                 {
                     success = true,
                     checkoutUrl = createPayment.checkoutUrl,
-                    bookingId = fakeBookingId,
-                    paymentId = payment.PaymentId
+                    bookingId = booking.BookingId,
+                    paymentId = payosPayment.PaymentId
                 });
             }
             catch (Exception ex)
@@ -245,6 +312,77 @@ namespace NestFlow.Controllers
                     Console.WriteLine($"Inner stack trace: {ex.InnerException.StackTrace}");
                 }
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
+            }
+        }
+
+        private async Task SendBookingNotifications(Booking booking, Property property, User user)
+        {
+            // Send notification to RENTER
+            if (!string.IsNullOrEmpty(user.Email))
+            {
+                try
+                {
+                    await _emailService.SendEmailAsync(
+                        user.Email,
+                        "Xác nhận đặt phòng thành công",
+                        $"Chào {user.FullName},<br><br>" +
+                        $"Bạn đã đặt cọc thành công cho phòng: {property.Title}<br>" +
+                        $"Số tiền: {property.Deposit:N0} VNĐ<br>" +
+                        $"Chủ nhà sẽ xem xét và phản hồi sớm nhất.<br><br>" +
+                        $"Trân trọng,<br>NestFlow Team"
+                    );
+
+                    if (_notificationService != null)
+                    {
+                        await _notificationService.CreateAndSendNotificationAsync(
+                            booking.RenterId,
+                            "Đặt phòng thành công",
+                            $"Bạn đã đặt cọc thành công cho phòng: {property.Title}. Chờ chủ nhà xác nhận.",
+                            "success",
+                            $"/Room/Detail?id={booking.PropertyId}"
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sending email to renter: {ex.Message}");
+                }
+            }
+
+            // Send notification to LANDLORD
+            var landlord = await _context.Users.FindAsync(property.LandlordId);
+            if (landlord != null && !string.IsNullOrEmpty(landlord.Email))
+            {
+                try
+                {
+                    await _emailService.SendEmailAsync(
+                        landlord.Email,
+                        "Có đơn đặt cọc mới",
+                        $"Chào {landlord.FullName},<br><br>" +
+                        $"Bạn có đơn đặt cọc mới cho phòng: {property.Title}<br>" +
+                        $"Người đặt: {user.FullName}<br>" +
+                        $"Số điện thoại: {user.Phone}<br>" +
+                        $"Ngày xem phòng: {booking.BookingDate:dd/MM/yyyy} lúc {booking.BookingTime}<br>" +
+                        $"Số tiền cọc: {property.Deposit:N0} VNĐ<br><br>" +
+                        $"Vui lòng vào trang quản lý để chấp nhận hoặc từ chối.<br><br>" +
+                        $"Trân trọng,<br>NestFlow Team"
+                    );
+
+                    if (_notificationService != null)
+                    {
+                        await _notificationService.CreateAndSendNotificationAsync(
+                            property.LandlordId,
+                            "Có đơn đặt cọc mới",
+                            $"Bạn có đơn đặt cọc mới cho phòng: {property.Title}. Số tiền: {property.Deposit:N0} VNĐ",
+                            "info",
+                            $"/Landlord/Bookings"
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sending email to landlord: {ex.Message}");
+                }
             }
         }
 
@@ -284,7 +422,24 @@ namespace NestFlow.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // Send notification
+                // KHÓA TIỀN VÀO VÍ LANDLORD (chờ approve)
+                try
+                {
+                    var wallet = await _walletService.GetOrCreateWalletAsync(booking.Property.LandlordId);
+                    await _walletService.LockBalanceAsync(
+                        wallet.WalletId,
+                        booking.Property.Deposit ?? 0,
+                        "booking",
+                        booking.BookingId,
+                        $"Đặt cọc booking #{booking.BookingId} - {booking.Property.Title}"
+                    );
+                }
+                catch (Exception walletEx)
+                {
+                    Console.WriteLine($"Error locking balance: {walletEx.Message}");
+                }
+
+                // Send notification to RENTER
                 if (booking.Renter != null && !string.IsNullOrEmpty(booking.Renter.Email))
                 {
                     try
@@ -295,17 +450,16 @@ namespace NestFlow.Controllers
                             $"Chào {booking.Renter.FullName},<br><br>" +
                             $"Bạn đã đặt cọc thành công cho phòng: {booking.Property.Title}<br>" +
                             $"Số tiền: {booking.Property.Deposit:N0} VNĐ<br>" +
-                            $"Chủ nhà sẽ liên hệ với bạn sớm nhất.<br><br>" +
+                            $"Chủ nhà sẽ xem xét và phản hồi sớm nhất.<br><br>" +
                             $"Trân trọng,<br>NestFlow Team"
                         );
 
-                        // Send in-app notification if service is available
                         if (_notificationService != null)
                         {
                             await _notificationService.CreateAndSendNotificationAsync(
                                 booking.RenterId,
                                 "Đặt phòng thành công",
-                                $"Bạn đã đặt cọc thành công cho phòng: {booking.Property.Title}",
+                                $"Bạn đã đặt cọc thành công cho phòng: {booking.Property.Title}. Chờ chủ nhà xác nhận.",
                                 "success",
                                 $"/Room/Detail?id={booking.PropertyId}"
                             );
@@ -313,7 +467,43 @@ namespace NestFlow.Controllers
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error sending email: {ex.Message}");
+                        Console.WriteLine($"Error sending email to renter: {ex.Message}");
+                    }
+                }
+
+                // Send notification to LANDLORD
+                var landlord = await _context.Users.FindAsync(booking.Property.LandlordId);
+                if (landlord != null && !string.IsNullOrEmpty(landlord.Email))
+                {
+                    try
+                    {
+                        await _emailService.SendEmailAsync(
+                            landlord.Email,
+                            "Có đơn đặt cọc mới",
+                            $"Chào {landlord.FullName},<br><br>" +
+                            $"Bạn có đơn đặt cọc mới cho phòng: {booking.Property.Title}<br>" +
+                            $"Người đặt: {booking.Renter.FullName}<br>" +
+                            $"Số điện thoại: {booking.Renter.Phone}<br>" +
+                            $"Ngày xem phòng: {booking.BookingDate:dd/MM/yyyy} lúc {booking.BookingTime}<br>" +
+                            $"Số tiền cọc: {booking.Property.Deposit:N0} VNĐ<br><br>" +
+                            $"Vui lòng vào trang quản lý để chấp nhận hoặc từ chối.<br><br>" +
+                            $"Trân trọng,<br>NestFlow Team"
+                        );
+
+                        if (_notificationService != null)
+                        {
+                            await _notificationService.CreateAndSendNotificationAsync(
+                                booking.Property.LandlordId,
+                                "Có đơn đặt cọc mới",
+                                $"Bạn có đơn đặt cọc mới cho phòng: {booking.Property.Title}. Số tiền: {booking.Property.Deposit:N0} VNĐ",
+                                "info",
+                                $"/Landlord/Dashboard"
+                            );
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error sending email to landlord: {ex.Message}");
                     }
                 }
 
@@ -443,5 +633,8 @@ namespace NestFlow.Controllers
         public string? FullName { get; set; }
         public string? Email { get; set; }
         public string? Phone { get; set; }
+        
+        // Sử dụng ví
+        public bool UseWallet { get; set; }
     }
 }

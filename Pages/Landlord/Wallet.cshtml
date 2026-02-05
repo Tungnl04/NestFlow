@@ -1,0 +1,377 @@
+@page
+@model NestFlow.Pages.Landlord.WalletModel
+@{
+    ViewData["Title"] = "Quản lý Ví - NestFlow";
+    Layout = "~/Pages/Shared/_LandlordLayout.cshtml";
+}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0">
+                <i class="fas fa-wallet me-2"></i>
+                Quản lý Ví
+            </h2>
+            <p class="text-muted">Theo dõi số dư và lịch sử giao dịch</p>
+        </div>
+    </div>
+
+    <!-- Wallet Balance Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 opacity-75">
+                        <i class="fas fa-coins me-2"></i>Tổng số dư
+                    </h6>
+                    <h3 class="card-title mb-0">@Model.WalletInfo.TotalBalance.ToString("N0") VNĐ</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 opacity-75">
+                        <i class="fas fa-check-circle me-2"></i>Khả dụng
+                    </h6>
+                    <h3 class="card-title mb-0">@Model.WalletInfo.AvailableBalance.ToString("N0") VNĐ</h3>
+                    <small class="opacity-75">Có thể rút</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-warning text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 opacity-75">
+                        <i class="fas fa-lock me-2"></i>Bị khóa
+                    </h6>
+                    <h3 class="card-title mb-0">@Model.WalletInfo.LockedBalance.ToString("N0") VNĐ</h3>
+                    <small class="opacity-75">Chờ xử lý booking</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 opacity-75">
+                        <i class="fas fa-hourglass-half me-2"></i>Đang rút
+                    </h6>
+                    <h3 class="card-title mb-0">@Model.WalletInfo.PendingWithdrawals.ToString("N0") VNĐ</h3>
+                    <small class="opacity-75">Chờ admin xử lý</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdraw Button -->
+    @if (Model.WalletInfo.AvailableBalance > 0)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#withdrawModal">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    Tạo yêu cầu rút tiền
+                </button>
+            </div>
+        </div>
+    }
+
+    <!-- Tabs -->
+    <ul class="nav nav-tabs mb-4" id="walletTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="withdraws-tab" data-bs-toggle="tab" data-bs-target="#withdraws" type="button">
+                <i class="fas fa-list me-2"></i>Lịch sử rút tiền
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button">
+                <i class="fas fa-exchange-alt me-2"></i>Giao dịch
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="walletTabsContent">
+        <!-- Withdraw Requests -->
+        <div class="tab-pane fade show active" id="withdraws" role="tabpanel">
+            @if (!Model.WithdrawRequests.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Chưa có yêu cầu rút tiền nào
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ngày yêu cầu</th>
+                                <th>Số tiền</th>
+                                <th>Ngân hàng</th>
+                                <th>Số TK</th>
+                                <th>Trạng thái</th>
+                                <th>Ngày xử lý</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var withdraw in Model.WithdrawRequests)
+                            {
+                                <tr>
+                                    <td>@withdraw.RequestedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td><strong class="text-primary">@withdraw.Amount.ToString("N0") VNĐ</strong></td>
+                                    <td>@withdraw.BankName</td>
+                                    <td>@withdraw.BankAccount</td>
+                                    <td>
+                                        @if (withdraw.Status == "Pending")
+                                        {
+                                            <span class="badge bg-warning">Chờ xử lý</span>
+                                        }
+                                        else if (withdraw.Status == "Approved")
+                                        {
+                                            <span class="badge bg-success">Đã chuyển</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Từ chối</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (withdraw.ProcessedAt.HasValue)
+                                        {
+                                            @withdraw.ProcessedAt.Value.ToString("dd/MM/yyyy HH:mm")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">-</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <!-- Transactions -->
+        <div class="tab-pane fade" id="transactions" role="tabpanel">
+            @if (!Model.Transactions.Any())
+            {
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Chưa có giao dịch nào
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Loại</th>
+                                <th>Số tiền</th>
+                                <th>Trạng thái</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var txn in Model.Transactions)
+                            {
+                                <tr>
+                                    <td>@txn.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>
+                                        @if (txn.Direction == "in")
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-arrow-down me-1"></i>Nhận
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-arrow-up me-1"></i>Rút
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <strong class="@(txn.Direction == "in" ? "text-success" : "text-danger")">
+                                            @(txn.Direction == "in" ? "+" : "-")@txn.Amount.ToString("N0") VNĐ
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        @if (txn.Status == "completed")
+                                        {
+                                            <span class="badge bg-success">Hoàn tất</span>
+                                        }
+                                        else if (txn.Status == "locked")
+                                        {
+                                            <span class="badge bg-warning">Khóa</span>
+                                        }
+                                        else if (txn.Status == "pending")
+                                        {
+                                            <span class="badge bg-info">Chờ</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">@txn.Status</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">@txn.Note</small>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Withdraw Modal -->
+<div class="modal fade" id="withdrawModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    Tạo yêu cầu rút tiền
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="withdrawForm">
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Số dư khả dụng: <strong>@Model.WalletInfo.AvailableBalance.ToString("N0") VNĐ</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Số tiền rút <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="amount" min="10000" max="@Model.WalletInfo.AvailableBalance" step="1000" required>
+                        <small class="text-muted">Tối thiểu 10,000 VNĐ</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ngân hàng <span class="text-danger">*</span></label>
+                        <select class="form-select" id="bankName" required>
+                            <option value="">Chọn ngân hàng</option>
+                            <option value="Vietcombank">Vietcombank</option>
+                            <option value="VietinBank">VietinBank</option>
+                            <option value="BIDV">BIDV</option>
+                            <option value="Agribank">Agribank</option>
+                            <option value="Techcombank">Techcombank</option>
+                            <option value="MB Bank">MB Bank</option>
+                            <option value="ACB">ACB</option>
+                            <option value="VPBank">VPBank</option>
+                            <option value="TPBank">TPBank</option>
+                            <option value="Sacombank">Sacombank</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Số tài khoản <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="bankAccount" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Chủ tài khoản <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="accountHolder" required>
+                        <small class="text-muted">Viết HOA KHÔNG DẤU</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú</label>
+                        <textarea class="form-control" id="note" rows="2"></textarea>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <small>
+                            Admin sẽ xử lý và chuyển tiền trong vòng 1-3 ngày làm việc.
+                            Vui lòng kiểm tra kỹ thông tin trước khi gửi.
+                        </small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="btnSubmitWithdraw">
+                    <i class="fas fa-paper-plane me-2"></i>Gửi yêu cầu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnSubmitWithdraw').addEventListener('click', async function() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            const bankName = document.getElementById('bankName').value;
+            const bankAccount = document.getElementById('bankAccount').value.trim();
+            const accountHolder = document.getElementById('accountHolder').value.trim();
+            const note = document.getElementById('note').value.trim();
+
+            if (!amount || amount < 10000) {
+                alert('Vui lòng nhập số tiền hợp lệ (tối thiểu 10,000 VNĐ)');
+                return;
+            }
+
+            if (!bankName || !bankAccount || !accountHolder) {
+                alert('Vui lòng điền đầy đủ thông tin ngân hàng');
+                return;
+            }
+
+            const btn = this;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+
+            try {
+                const response = await fetch('/api/Withdraw/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        amount: amount,
+                        bankName: bankName,
+                        bankAccount: bankAccount,
+                        accountHolder: accountHolder,
+                        note: note
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (response.ok && data.success) {
+                    alert('Yêu cầu rút tiền đã được gửi thành công!');
+                    // Đóng modal trước khi reload
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('withdrawModal'));
+                    if (modal) modal.hide();
+                    // Reload sau 500ms
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    const errorMsg = data.message || data.error || 'Có lỗi xảy ra';
+                    alert('Lỗi: ' + errorMsg);
+                    if (data.details) {
+                        console.error('Error details:', data.details);
+                    }
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Gửi yêu cầu';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Có lỗi xảy ra: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Gửi yêu cầu';
+            }
+        });
+    </script>
+}
