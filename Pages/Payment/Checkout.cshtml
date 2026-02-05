@@ -1,0 +1,243 @@
+@page
+@model NestFlow.Pages.Payment.CheckoutModel
+@{
+    ViewData["Title"] = "Thanh toán đặt cọc";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-credit-card me-2"></i>Thanh toán đặt cọc</h3>
+                </div>
+                <div class="card-body p-4">
+                    @if (Model.Property != null)
+                    {
+                        <!-- Thông tin bất động sản -->
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <h5 class="mb-3">Thông tin bất động sản</h5>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    @if (Model.Property.PropertyImages != null && Model.Property.PropertyImages.Any())
+                                    {
+                                        <img src="@Model.Property.PropertyImages.First().ImageUrl" 
+                                             class="img-fluid rounded" 
+                                             alt="@Model.Property.Title">
+                                    }
+                                    else
+                                    {
+                                        <img src="/images/placeholder.jpg" 
+                                             class="img-fluid rounded" 
+                                             alt="Property">
+                                    }
+                                </div>
+                                <div class="col-md-8">
+                                    <h5>@Model.Property.Title</h5>
+                                    <p class="text-muted mb-2">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        @Model.Property.Address, @Model.Property.District, @Model.Property.City
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Giá thuê:</strong> 
+                                        <span class="text-danger">@Model.Property.Price?.ToString("N0") VNĐ/tháng</span>
+                                    </p>
+                                    <p class="mb-0">
+                                        <strong>Tiền đặt cọc:</strong> 
+                                        <span class="text-primary fs-4">@Model.Property.Deposit?.ToString("N0") VNĐ</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form đặt lịch -->
+                        <form id="bookingForm">
+                            <input type="hidden" id="propertyId" value="@Model.Property.PropertyId" />
+                            
+                            @if (!Model.IsLoggedIn)
+                            {
+                                <!-- Form thông tin liên hệ cho guest -->
+                                <div class="alert alert-info mb-4">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Vui lòng điền thông tin liên hệ để chúng tôi có thể xác nhận đặt phòng
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="fullName" class="form-label">
+                                            <i class="fas fa-user me-1"></i>Họ và tên <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="fullName" 
+                                               placeholder="Nguyễn Văn A"
+                                               required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="phone" class="form-label">
+                                            <i class="fas fa-phone me-1"></i>Số điện thoại <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="tel" 
+                                               class="form-control" 
+                                               id="phone" 
+                                               placeholder="0912345678"
+                                               required>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">
+                                        <i class="fas fa-envelope me-1"></i>Email <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="email" 
+                                           placeholder="example@email.com"
+                                           required>
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- Hiển thị thông tin user đã login -->
+                                <div class="alert alert-success mb-4">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    Đặt phòng với tài khoản: <strong>@Model.CurrentUser?.FullName</strong>
+                                </div>
+                            }
+                            
+                            <div class="mb-3">
+                                <label for="bookingDate" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Ngày xem phòng <span class="text-danger">*</span>
+                                </label>
+                                <input type="datetime-local" 
+                                       class="form-control" 
+                                       id="bookingDate" 
+                                       required
+                                       min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="notes" class="form-label">
+                                    <i class="fas fa-sticky-note me-1"></i>Ghi chú (tùy chọn)
+                                </label>
+                                <textarea class="form-control" 
+                                          id="notes" 
+                                          rows="3" 
+                                          placeholder="Nhập ghi chú của bạn..."></textarea>
+                            </div>
+
+                            <!-- Tóm tắt thanh toán -->
+                            <div class="border-top pt-3 mb-4">
+                                <h5 class="mb-3">Tóm tắt thanh toán</h5>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Tiền đặt cọc:</span>
+                                    <strong>@Model.Property.Deposit?.ToString("N0") VNĐ</strong>
+                                </div>
+                                <div class="d-flex justify-content-between border-top pt-2">
+                                    <span class="fs-5"><strong>Tổng cộng:</strong></span>
+                                    <span class="fs-4 text-primary"><strong>@Model.Property.Deposit?.ToString("N0") VNĐ</strong></span>
+                                </div>
+                            </div>
+
+                            <!-- Nút thanh toán -->
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg" id="btnPayment">
+                                    <i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS
+                                </button>
+                                <a href="/Room/Detail?id=@Model.Property.PropertyId" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Quay lại
+                                </a>
+                            </div>
+
+                            <!-- Thông báo bảo mật -->
+                            <div class="alert alert-info mt-3 mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                <small>
+                                    Giao dịch của bạn được bảo mật bởi PayOS. 
+                                    Tiền đặt cọc sẽ được hoàn lại nếu chủ nhà từ chối.
+                                </small>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Không tìm thấy thông tin bất động sản.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            var isLoggedIn = @(Model.IsLoggedIn ? "true" : "false");
+
+            $('#bookingForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                const propertyId = $('#propertyId').val();
+                const bookingDate = $('#bookingDate').val();
+                const notes = $('#notes').val();
+                
+                if (!bookingDate) {
+                    alert('Vui lòng chọn ngày xem phòng');
+                    return;
+                }
+
+                // Prepare request data
+                var requestData = {
+                    propertyId: parseInt(propertyId),
+                    bookingDate: bookingDate,
+                    notes: notes
+                };
+
+                // Nếu chưa login, thêm thông tin liên hệ
+                if (!isLoggedIn) {
+                    const fullName = $('#fullName').val();
+                    const email = $('#email').val();
+                    const phone = $('#phone').val();
+
+                    if (!fullName || !email || !phone) {
+                        alert('Vui lòng điền đầy đủ thông tin liên hệ');
+                        return;
+                    }
+
+                    requestData.fullName = fullName;
+                    requestData.email = email;
+                    requestData.phone = phone;
+                }
+                
+                const btn = $('#btnPayment');
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...');
+                
+                $.ajax({
+                    url: '/api/Payment/create-booking-payment',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(requestData),
+                    success: function(response) {
+                        if (response.success && response.checkoutUrl) {
+                            window.location.href = response.checkoutUrl;
+                        } else {
+                            alert('Có lỗi xảy ra: ' + (response.message || 'Không thể tạo link thanh toán'));
+                            btn.prop('disabled', false).html('<i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS');
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMsg = 'Có lỗi xảy ra khi kết nối server';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+                        alert(errorMsg);
+                        btn.prop('disabled', false).html('<i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS');
+                    }
+                });
+            });
+        });
+    </script>
+}

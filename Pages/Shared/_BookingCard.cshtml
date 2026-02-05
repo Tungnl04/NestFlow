@@ -1,0 +1,76 @@
+@model NestFlow.Pages.Landlord.BookingViewModel
+
+<div class="card h-100 shadow-sm">
+    <img src="@Model.PropertyImage" class="card-img-top" alt="@Model.PropertyTitle" style="height: 200px; object-fit: cover;">
+    <div class="card-body">
+        <h5 class="card-title">@Model.PropertyTitle</h5>
+        
+        <div class="mb-3">
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Tiền cọc:</span>
+                <strong class="text-primary">@Model.DepositAmount.ToString("N0") VNĐ</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+                <span class="text-muted">Ngày xem:</span>
+                <strong>@Model.BookingDate.ToString("dd/MM/yyyy") @Model.BookingTime.ToString("HH:mm")</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span class="text-muted">Ngày đặt:</span>
+                <span>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+        </div>
+
+        <hr>
+
+        <h6 class="mb-2">
+            <i class="fas fa-user me-2"></i>Thông tin khách hàng
+        </h6>
+        <div class="mb-2">
+            <strong>@Model.RenterName</strong>
+        </div>
+        <div class="mb-2">
+            <i class="fas fa-phone me-2 text-muted"></i>
+            <a href="tel:@Model.RenterPhone">@Model.RenterPhone</a>
+        </div>
+        <div class="mb-3">
+            <i class="fas fa-envelope me-2 text-muted"></i>
+            <a href="mailto:@Model.RenterEmail">@Model.RenterEmail</a>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Notes))
+        {
+            <div class="alert alert-light mb-3">
+                <small>
+                    <i class="fas fa-sticky-note me-2"></i>
+                    <strong>Ghi chú:</strong> @Model.Notes
+                </small>
+            </div>
+        }
+
+        @if (Model.Status == "Pending")
+        {
+            <div class="d-grid gap-2">
+                <button class="btn btn-success" onclick="approveBooking(@Model.BookingId)">
+                    <i class="fas fa-check me-2"></i>Chấp nhận
+                </button>
+                <button class="btn btn-outline-danger" onclick="rejectBooking(@Model.BookingId)">
+                    <i class="fas fa-times me-2"></i>Từ chối
+                </button>
+            </div>
+        }
+        else if (Model.Status == "Confirmed")
+        {
+            <div class="alert alert-success mb-0">
+                <i class="fas fa-check-circle me-2"></i>
+                Đã chấp nhận
+            </div>
+        }
+        else if (Model.Status == "Rejected")
+        {
+            <div class="alert alert-danger mb-0">
+                <i class="fas fa-times-circle me-2"></i>
+                Đã từ chối
+            </div>
+        }
+    </div>
+</div>

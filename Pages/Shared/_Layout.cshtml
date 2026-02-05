@@ -69,10 +69,25 @@
                             <span id="userName">User</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-                            <li><a class="dropdown-item" asp-page="/Home/Profile">Tài khoản</a></li>
-                            <li><a class="dropdown-item" asp-page="/Home/Saved">Tin đã lưu</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="goToDashboard(); return false;">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                            </a></li>
+                            <li><a class="dropdown-item" asp-page="/Home/Profile">
+                                <i class="fas fa-user me-2"></i>Tài khoản
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="goToBookings(); return false;">
+                                <i class="fas fa-history me-2"></i>Lịch sử đặt phòng
+                            </a></li>
+                            <li><a class="dropdown-item" href="#" onclick="goToWallet(); return false;">
+                                <i class="fas fa-wallet me-2"></i>Ví của tôi
+                            </a></li>
+                            <li><a class="dropdown-item" asp-page="/Home/Saved">
+                                <i class="fas fa-heart me-2"></i>Tin đã lưu
+                            </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="handleLogout()">Đăng xuất</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="handleLogout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                            </a></li>
                         </ul>
                     </div>
                 </div>
@@ -181,7 +196,71 @@
                 alert(result.message);
             }
         }
-            // Toast notification function
+
+        // Navigate to wallet based on user role
+        async function goToWallet() {
+            try {
+                const response = await fetch('/api/auth/current-user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    if (data.user.userType && data.user.userType.toLowerCase() === 'landlord') {
+                        window.location.href = '/Landlord/Wallet';
+                    } else {
+                        window.location.href = '/Home/MyWallet';
+                    }
+                } else {
+                    window.location.href = '/Home/MyWallet';
+                }
+            } catch (error) {
+                console.error('Error checking user role:', error);
+                window.location.href = '/Home/MyWallet';
+            }
+        }
+
+        // Navigate to bookings based on user role
+        async function goToBookings() {
+            try {
+                const response = await fetch('/api/auth/current-user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    if (data.user.userType && data.user.userType.toLowerCase() === 'landlord') {
+                        window.location.href = '/Landlord/Bookings';
+                    } else {
+                        window.location.href = '/Home/MyBookings';
+                    }
+                } else {
+                    window.location.href = '/Home/MyBookings';
+                }
+            } catch (error) {
+                console.error('Error checking user role:', error);
+                window.location.href = '/Home/MyBookings';
+            }
+        }
+
+        // Navigate to dashboard based on user role
+        async function goToDashboard() {
+            try {
+                const response = await fetch('/api/auth/current-user');
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    if (data.user.userType && data.user.userType.toLowerCase() === 'landlord') {
+                        window.location.href = '/Landlord/Dashboard';
+                    } else {
+                        window.location.href = '/Home/Dashboard';
+                    }
+                } else {
+                    window.location.href = '/Home/Dashboard';
+                }
+            } catch (error) {
+                console.error('Error checking user role:', error);
+                window.location.href = '/Home/Dashboard';
+            }
+        }
+
+        // Toast notification function
         function showToast(message, type = 'success', title = '') {
             const toast = document.getElementById('notificationToast');
             const toastHeader = document.getElementById('toastHeader');

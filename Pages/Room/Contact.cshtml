@@ -1,153 +1,265 @@
-﻿@page
+﻿@page "{id:long?}"
 @model NestFlow.Pages.Room.ContactModel
 @{
     ViewData["Title"] = "Liên hệ chủ trọ - Nestflow";
-    // Mock data
-    var landlord = new { Name = "Anh Minh", Avatar = "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200", Phone = "0359940918" };
-    var room = new { Name = "Nhà nguyên căn Hòa Lạc", RoomType = "2 phòng ngủ", Price = 8000000, Image = "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=250&fit=crop&q=80" };
-
-    Func<int, string> FormatPrice = (price) => price.ToString("N0") + "đ";
+    var landlord = Model.Property?.Landlord;
+    var property = Model.Property;
+    
+    // GIẢM GIÁ 500K KHI ĐẶT QUA NỀN TẢNG
+    decimal platformDiscount = 500000;
+    decimal originalDeposit = property?.Deposit ?? 0;
+    decimal discountedDeposit = originalDeposit - platformDiscount;
+    if (discountedDeposit < 0) discountedDeposit = 0;
 }
 
-<div class="container py-4">
-    <div class="row">
+<div class="container py-5">
+    <div class="row justify-content-center">
         <div class="col-lg-8">
-            <!-- Chat Modal Style -->
-            <div class="card">
-                <div class="card-header border-bottom d-flex align-items-center justify-content-between">
-                    <div class="d-flex align-items-center gap-3">
-                        <img src="@landlord.Avatar" alt="@landlord.Name" class="nf-chat-avatar-img" />
-                        <div>
-                            <h5 class="mb-0 fw-bold">@landlord.Name</h5>
-                            <p class="text-muted small mb-0">Thường trả lời trong vài phút</p>
-                        </div>
-                    </div>
-                    <button class="btn btn-link p-0" onclick="window.history.back()">
-                        <i class="fas fa-times fa-lg"></i>
-                    </button>
-                </div>
-
-                <!-- Room Info -->
-                <div class="bg-blue-50 p-4 border-bottom">
-                    <div class="d-flex gap-3">
-                        <img src="@room.Image" alt="@room.Name" class="nf-room-thumb" />
-                        <div class="flex-grow-1">
-                            <h6 class="fw-bold mb-1">@room.Name</h6>
-                            <p class="text-muted small mb-1">Loại: @room.RoomType</p>
-                            <p class="fw-bold text-primary mb-0">@FormatPrice(room.Price)/tháng</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Contact Info -->
-                <div class="bg-green-50 p-4 border-bottom">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <p class="text-muted small mb-1">Số điện thoại chủ trọ:</p>
-                            <p class="fw-bold fs-5 mb-0">@landlord.Phone</p>
-                        </div>
-                        <a href="tel:@landlord.Phone" class="btn btn-success nf-call-btn" id="callBtn">
-                            <i class="fas fa-phone"></i> Gọi ngay
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Messages -->
-                <div class="nf-chat-messages-container" id="chatMessages">
-                    <div class="nf-chat-message">
-                        <div class="nf-chat-avatar"></div>
-                        <div class="nf-chat-bubble">
-                            <p class="mb-0">Xin chào! Tôi có thể giúp gì cho bạn?</p>
-                            <small class="text-muted">17:15</small>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Input -->
-                <div class="border-top p-4">
-                    <div class="input-group mb-3">
-                        <input type="text" class="form-control" placeholder="Nhập tin nhắn..." id="chatInput">
-                        <button class="btn nf-btn-primary" type="button" id="sendBtn">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                    <button class="btn btn-success w-100 nf-book-btn" id="bookBtn1">
-                        <i class="fas fa-calendar-check"></i> Đặt phòng
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card sticky-top" style="top: 100px;">
+            <!-- Thông tin chủ trọ -->
+            <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <div class="mb-3">
-                        <img src="@room.Image" class="img-fluid rounded mb-3" alt="Phòng trọ" />
+                    <div class="d-flex align-items-center mb-4">
+                        @if (!string.IsNullOrEmpty(landlord?.AvatarUrl))
+                        {
+                            <img src="@landlord.AvatarUrl" alt="@landlord.FullName" 
+                                 class="rounded-circle me-3" 
+                                 style="width: 80px; height: 80px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 80px; height: 80px; font-size: 32px;">
+                                @(landlord?.FullName?.Substring(0, 1).ToUpper() ?? "?")
+                            </div>
+                        }
+                        <div>
+                            <h4 class="mb-1">@landlord?.FullName</h4>
+                            <p class="text-muted mb-0">Chủ nhà</p>
+                        </div>
                     </div>
-                    <h5 class="card-title mb-3">@room.Name</h5>
-                    <div class="mb-3">
-                        <small class="text-muted">Loại: @room.RoomType</small>
+
+                    <!-- Thông tin phòng -->
+                    <div class="border-top pt-3 mb-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                @if (property?.PropertyImages != null && property.PropertyImages.Any())
+                                {
+                                    <img src="@property.PropertyImages.First().ImageUrl" 
+                                         class="img-fluid rounded" 
+                                         alt="@property.Title">
+                                }
+                            </div>
+                            <div class="col-md-8">
+                                <h5 class="mb-2">@property?.Title</h5>
+                                <p class="text-muted mb-2">@property?.PropertyType</p>
+                                <h4 class="text-primary mb-0">@property?.Price?.ToString("N0") VNĐ/tháng</h4>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <div class="nf-room-price-large">@FormatPrice(room.Price)/tháng</div>
+
+                    <!-- Số điện thoại liên hệ -->
+                    <div class="border-top pt-3">
+                        <h5 class="mb-3">
+                            <i class="fas fa-phone-alt me-2 text-primary"></i>
+                            Liên hệ trực tiếp
+                        </h5>
+                        <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded">
+                            <div>
+                                <p class="mb-1 text-muted small">Số điện thoại chủ nhà:</p>
+                                <h4 class="mb-0 text-primary">@landlord?.Phone</h4>
+                            </div>
+                            <a href="tel:@landlord?.Phone" class="btn btn-success btn-lg">
+                                <i class="fas fa-phone me-2"></i>Gọi ngay
+                            </a>
+                        </div>
+                        <p class="text-muted small mt-2 mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Liên hệ với chủ nhà để xem phòng và thỏa thuận. Nếu đồng ý, hãy đặt cọc qua nền tảng để được giảm giá!
+                        </p>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Loại phòng:</label>
-                        <select class="form-select" id="roomTypeSelect">
-                            <option>2 phòng ngủ - @FormatPrice(8000000)/tháng</option>
-                            <option>3 phòng ngủ - @FormatPrice(9000000)/tháng</option>
-                        </select>
-                    </div>
-                    <button class="btn nf-btn-primary w-100 nf-book-btn" id="bookBtn2" data-bs-toggle="modal" data-bs-target="#bookingModal">
-                        <i class="fas fa-calendar-check"></i> Đặt phòng
-                    </button>
-                    <p class="text-muted small mt-2 mb-0">Bạn vẫn chưa bị trừ tiền</p>
                 </div>
             </div>
+
+            <!-- Ưu đãi đặt qua nền tảng -->
+            @if (Model.IsLoggedIn)
+            {
+                <div class="card shadow-sm border-primary mb-4">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                 style="width: 50px; height: 50px;">
+                                <i class="fas fa-gift fa-lg"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0 text-primary">Ưu đãi đặt qua NestFlow</h5>
+                                <p class="mb-0 text-muted small">Giảm ngay 500,000 VNĐ tiền đặt cọc</p>
+                            </div>
+                        </div>
+
+                        <div class="border-top pt-3">
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <span class="text-muted">Tiền cọc gốc:</span>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span class="text-decoration-line-through">@originalDeposit.ToString("N0") VNĐ</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-6">
+                                    <span class="text-success fw-bold">Giảm giá:</span>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <span class="text-success fw-bold">-@platformDiscount.ToString("N0") VNĐ</span>
+                                </div>
+                            </div>
+                            <div class="row border-top pt-2">
+                                <div class="col-6">
+                                    <span class="fw-bold">Chỉ còn:</span>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <h4 class="text-primary mb-0">@discountedDeposit.ToString("N0") VNĐ</h4>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-lg w-100 mt-3" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#bookingModal">
+                            <i class="fas fa-calendar-check me-2"></i>
+                            Đặt cọc ngay - Tiết kiệm 500K
+                        </button>
+                        <p class="text-muted small text-center mt-2 mb-0">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            Thanh toán an toàn qua PayOS
+                        </p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card shadow-sm border-warning mb-4">
+                    <div class="card-body text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-lock fa-3x text-warning"></i>
+                        </div>
+                        <h5 class="mb-3">Đăng nhập để đặt phòng</h5>
+                        <p class="text-muted mb-3">
+                            Đăng nhập ngay để được giảm <strong class="text-success">500,000 VNĐ</strong> tiền đặt cọc!
+                        </p>
+                        <button class="btn btn-primary btn-lg w-100" onclick="showLoginModal()">
+                            <i class="fas fa-sign-in-alt me-2"></i>
+                            Đăng nhập ngay
+                        </button>
+                        <p class="text-muted small mt-2 mb-0">
+                            Chưa có tài khoản? <a href="#" onclick="showRegisterModal(); return false;">Đăng ký ngay</a>
+                        </p>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </div>
 
-<!-- Modal Đặt phòng -->
-<div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="bookingModalLabel">Đặt phòng</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="bookingForm">
-                    <div class="mb-3">
-                        <label class="form-label">Họ và tên</label>
-                        <input type="text" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Số điện thoại</label>
-                        <input type="tel" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Ngày bắt đầu thuê</label>
-                        <input type="date" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Thời gian thuê</label>
-                        <select class="form-select" required>
-                            <option>3 tháng</option>
-                            <option>6 tháng</option>
-                            <option>12 tháng</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn nf-btn-primary w-100">Xác nhận đặt phòng</button>
-                </form>
+<!-- Modal Đặt phòng - CHỈ HIỂN THỊ KHI ĐÃ LOGIN -->
+@if (Model.IsLoggedIn)
+{
+    <div class="modal fade" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bookingModalLabel">
+                        <i class="fas fa-calendar-check me-2"></i>Đặt cọc phòng
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="bookingForm">
+                        <input type="hidden" id="propertyId" value="@Model.Property.PropertyId" />
+                        
+                        <!-- Thông tin user đã login -->
+                        <div class="alert alert-success mb-3">
+                            <i class="fas fa-user-check me-2"></i>
+                            Đặt phòng với tài khoản: <strong>@Model.CurrentUser?.FullName</strong>
+                        </div>
+
+                        <!-- Ưu đãi -->
+                        <div class="alert alert-primary mb-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-gift fa-2x me-3"></i>
+                                <div>
+                                    <strong>Ưu đãi đặc biệt!</strong>
+                                    <p class="mb-0 small">Giảm ngay 500,000 VNĐ khi đặt cọc qua NestFlow</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Ngày xem phòng <span class="text-danger">*</span></label>
+                            <input type="datetime-local" 
+                                   class="form-control" 
+                                   id="bookingDate" 
+                                   min="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")"
+                                   required>
+                            <small class="text-muted">Chọn thời gian bạn muốn đến xem phòng</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Ghi chú</label>
+                            <textarea class="form-control" id="notes" rows="2" placeholder="Ghi chú thêm..."></textarea>
+                        </div>
+
+                        <!-- Thông tin thanh toán -->
+                        <div class="border-top pt-3 mb-3">
+                            <h6 class="mb-3">Chi tiết thanh toán</h6>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Tiền cọc gốc:</span>
+                                <span class="text-decoration-line-through">@originalDeposit.ToString("N0") VNĐ</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 text-success">
+                                <span><strong>Giảm giá nền tảng:</strong></span>
+                                <strong>-@platformDiscount.ToString("N0") VNĐ</strong>
+                            </div>
+                            <div class="d-flex justify-content-between border-top pt-2">
+                                <span class="fw-bold">Tổng thanh toán:</span>
+                                <h5 class="text-primary mb-0">@discountedDeposit.ToString("N0") VNĐ</h5>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Tiền cọc sẽ được hoàn lại nếu chủ nhà từ chối
+                            </small>
+                        </div>
+                        
+                        <!-- Wallet Payment Option -->
+                        <div id="walletPaymentOption" class="d-none mb-3">
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <i class="fas fa-wallet me-2"></i>
+                                        <strong>Số dư ví:</strong> <span id="walletBalance">0</span> VNĐ
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="useWalletCheckbox">
+                                        <label class="form-check-label" for="useWalletCheckbox">
+                                            Dùng ví
+                                        </label>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    Thanh toán nhanh chóng với số dư trong ví của bạn
+                                </small>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg w-100" id="btnBookingSubmit">
+                            <i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
+}
 
 <style>
     .nf-chat-avatar-img {
@@ -210,116 +322,152 @@
 
 @section Scripts {
     <script>
-        // Xử lý gửi tin nhắn
-        document.getElementById('sendBtn').addEventListener('click', function() {
-            const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            if (message) {
-                const messagesContainer = document.getElementById('chatMessages');
-                const messageDiv = document.createElement('div');
-                messageDiv.className = 'nf-chat-message user';
-                const now = new Date();
-                const time = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                messageDiv.innerHTML = `
-                    <div class="nf-chat-avatar"></div>
-                    <div class="nf-chat-bubble">
-                        <p class="mb-0">${message}</p>
-                        <small style="color: rgba(255,255,255,0.8);">${time}</small>
-                    </div>
-                `;
-                messagesContainer.appendChild(messageDiv);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                input.value = '';
+        // Hàm mở modal đăng nhập
+        function showLoginModal() {
+            // Giả sử bạn có modal đăng nhập trong _AuthModals.cshtml
+            const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            loginModal.show();
+        }
 
-                // Simulate response
-                setTimeout(() => {
-                    const responseDiv = document.createElement('div');
-                    responseDiv.className = 'nf-chat-message';
-                    const responseTime = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                    responseDiv.innerHTML = `
-                        <div class="nf-chat-avatar"></div>
-                        <div class="nf-chat-bubble">
-                            <p class="mb-0">Cảm ơn bạn đã quan tâm! Tôi sẽ trả lời bạn sớm nhất có thể.</p>
-                            <small class="text-muted">${responseTime}</small>
-                        </div>
-                    `;
-                    messagesContainer.appendChild(responseDiv);
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                }, 1000);
-            }
-        });
+        // Hàm mở modal đăng ký
+        function showRegisterModal() {
+            const registerModal = new bootstrap.Modal(document.getElementById('registerModal'));
+            registerModal.show();
+        }
 
-        document.getElementById('chatInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('sendBtn').click();
-            }
-        });
+        // Load wallet balance when modal opens
+        const bookingModal = document.getElementById('bookingModal');
+        if (bookingModal) {
+            bookingModal.addEventListener('show.bs.modal', async function() {
+                await loadWalletBalance();
+            });
+        }
 
-        // Kiểm tra role và disable booking nếu không phải tenant
-        const userRole = localStorage.getItem('userRole');
-        const landlordViewMode = localStorage.getItem('landlordViewMode');
-
-        // Chỉ disable booking nếu là admin, landlord hoặc đang ở landlord view mode
-        // Tenant có thể đặt phòng bình thường
-        if (userRole && (userRole === 'admin' || userRole === 'landlord' || landlordViewMode === 'true')) {
-            const callBtn = document.getElementById('callBtn');
-            const bookBtn1 = document.getElementById('bookBtn1');
-            const bookBtn2 = document.getElementById('bookBtn2');
-            const bookingModal = document.getElementById('bookingModal');
-
-            function disableBooking(element, message) {
-                if (element) {
-                    element.style.pointerEvents = 'none';
-                    element.style.opacity = '0.6';
-                    element.style.cursor = 'not-allowed';
-                    element.title = message;
-                    element.onclick = function(e) {
-                        e.preventDefault();
-                        alert('Chỉ người thuê mới có thể đặt phòng. Vui lòng đăng nhập với tài khoản người thuê.');
-                        return false;
-                    };
-                }
-            }
-
-            disableBooking(callBtn, 'Chỉ người thuê mới có thể gọi điện');
-            disableBooking(bookBtn1, 'Chỉ người thuê mới có thể đặt phòng');
-            disableBooking(bookBtn2, 'Chỉ người thuê mới có thể đặt phòng');
-
-            // Disable modal booking
-            if (bookingModal) {
-                bookingModal.addEventListener('show.bs.modal', function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    alert('Chỉ người thuê mới có thể đặt phòng. Vui lòng đăng nhập với tài khoản người thuê.');
-                    const modal = bootstrap.Modal.getInstance(bookingModal);
-                    if (modal) {
-                        modal.hide();
+        // Load wallet balance
+        async function loadWalletBalance() {
+            try {
+                const response = await fetch('/api/Withdraw/wallet-info');
+                const data = await response.json();
+                
+                if (data.success && data.wallet && data.wallet.availableBalance > 0) {
+                    const walletOption = document.getElementById('walletPaymentOption');
+                    const walletBalanceSpan = document.getElementById('walletBalance');
+                    const depositAmount = @discountedDeposit;
+                    
+                    walletBalanceSpan.textContent = data.wallet.availableBalance.toLocaleString('vi-VN');
+                    walletOption.classList.remove('d-none');
+                    
+                    // Auto check if balance is enough
+                    if (data.wallet.availableBalance >= depositAmount) {
+                        document.getElementById('useWalletCheckbox').checked = true;
+                        updatePaymentButton(true);
                     }
-                    return false;
-                }, { once: false });
-            }
-        } else {
-            // Đảm bảo tenant có thể đặt phòng - remove any disabled state
-            const callBtn = document.getElementById('callBtn');
-            const bookBtn1 = document.getElementById('bookBtn1');
-            const bookBtn2 = document.getElementById('bookBtn2');
-
-            function enableBooking(element) {
-                if (element) {
-                    element.style.pointerEvents = 'auto';
-                    element.style.opacity = '1';
-                    element.style.cursor = 'pointer';
-                    element.title = '';
-                    element.onclick = null;
                 }
+            } catch (error) {
+                console.error('Error loading wallet:', error);
             }
+        }
 
-            enableBooking(callBtn);
-            enableBooking(bookBtn1);
-            enableBooking(bookBtn2);
+        // Update payment button text
+        function updatePaymentButton(useWallet) {
+            const btn = document.getElementById('btnBookingSubmit');
+            if (useWallet) {
+                btn.innerHTML = '<i class="fas fa-wallet me-2"></i>Thanh toán bằng ví';
+                btn.className = 'btn btn-success btn-lg w-100';
+            } else {
+                btn.innerHTML = '<i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS';
+                btn.className = 'btn btn-primary btn-lg w-100';
+            }
+        }
 
-            // Remove landlord-view-mode class
-            document.body.classList.remove('landlord-view-mode');
+        // Listen to wallet checkbox change
+        const useWalletCheckbox = document.getElementById('useWalletCheckbox');
+        if (useWalletCheckbox) {
+            useWalletCheckbox.addEventListener('change', function() {
+                updatePaymentButton(this.checked);
+            });
+        }
+
+        // Xử lý booking form - CHỈ CHO USER ĐÃ LOGIN
+        const bookingForm = document.getElementById('bookingForm');
+        
+        if (bookingForm) {
+            console.log('Booking form initialized for logged-in user');
+            
+            bookingForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                console.log('Form submitted');
+                
+                const propertyId = document.getElementById('propertyId').value;
+                const bookingDate = document.getElementById('bookingDate').value;
+                const notes = document.getElementById('notes').value;
+                const useWallet = document.getElementById('useWalletCheckbox')?.checked || false;
+                
+                console.log('PropertyId:', propertyId);
+                console.log('BookingDate:', bookingDate);
+                console.log('UseWallet:', useWallet);
+                
+                if (!bookingDate) {
+                    alert('Vui lòng chọn ngày xem phòng');
+                    return;
+                }
+
+                // Request data
+                const requestData = {
+                    propertyId: parseInt(propertyId),
+                    bookingDate: bookingDate,
+                    notes: notes,
+                    useWallet: useWallet
+                };
+                
+                console.log('Request data:', requestData);
+                
+                const btn = document.getElementById('btnBookingSubmit');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+                
+                console.log('Calling API...');
+                
+                // Gọi API tạo thanh toán
+                fetch('/api/Payment/create-booking-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                })
+                .then(response => {
+                    console.log('API Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response data:', data);
+                    
+                    if (data.success) {
+                        if (data.paymentMethod === 'wallet') {
+                            // Thanh toán bằng ví thành công
+                            alert('Đặt phòng thành công! Chủ nhà sẽ liên hệ với bạn sớm.');
+                            window.location.href = data.redirectUrl || '/Home/MyBookings';
+                        } else if (data.checkoutUrl) {
+                            // Redirect đến PayOS
+                            console.log('Redirecting to:', data.checkoutUrl);
+                            window.location.href = data.checkoutUrl;
+                        }
+                    } else {
+                        console.error('API returned error:', data.message);
+                        alert('Có lỗi xảy ra: ' + (data.message || 'Không thể tạo link thanh toán'));
+                        btn.disabled = false;
+                        updatePaymentButton(useWallet);
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                    alert('Có lỗi xảy ra khi kết nối server: ' + error.message);
+                    btn.disabled = false;
+                    updatePaymentButton(useWallet);
+                });
+            });
         }
     </script>
 }

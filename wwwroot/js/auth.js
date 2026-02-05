@@ -632,10 +632,11 @@ if (window.location.pathname.includes('/Home/Saved')) {
     protectPage('renter');
 }
 
-// Example: Protect Landlord pages
-if (window.location.pathname.includes('/Landlord/')) {
-    protectPage('landlord');
-}
+// NOTE: Landlord pages are protected by _LandlordLayout.cshtml
+// No need to protect here to avoid double-checking
+// if (window.location.pathname.includes('/Landlord/')) {
+//     protectPage('landlord');
+// }
 
 // ==================== INITIALIZATION ====================
 
