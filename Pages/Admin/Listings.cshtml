@@ -1,0 +1,143 @@
+﻿@page
+@model NestFlow.Pages.Landlord.PostsModel
+@{
+    ViewData["Title"] = "Admin Site - Nestflow";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="nf-sidebar">
+                <h4 class="mb-4">Menu quản lý</h4>
+                <ul class="nf-sidebar-menu">
+                    <li class="active">
+                        <a asp-page="/Admin/Dashboard">
+                            <i class="fas fa-home"></i> Trang tổng quan
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Admin/Users">
+                            <i class="fas fa-user"></i> Quản lý người dùng
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Admin/Listings">
+                            <i class="fas fa-newspaper"></i> Quản lý tin đăng
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Admin/Requests">
+                            <i class="fas fa-bell"></i> Quản lý yêu cầu
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>Quản lý tin đăng</h2>
+                <button class="btn nf-btn-primary">
+                    <i class="fas fa-plus"></i> Đăng tin mới
+                </button>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Tiêu đề</th>
+                                    <th>Ngày đăng</th>
+                                    <th>Ngày hết hạn</th>
+                                    <th>Trạng thái</th>
+                                    <th>Lượt xem</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Phòng trọ sinh viên tại Hòa Lạc</td>
+                                    <td>01/01/2026</td>
+                                    <td>01/02/2026</td>
+                                    <td><span class="badge bg-success">Đang hiển thị</span></td>
+                                    <td>245</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Sửa</button>
+                                        <button class="btn btn-sm btn-warning">Gia hạn</button>
+                                        <button class="btn btn-sm btn-danger">Xóa</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Căn hộ mini giá rẻ</td>
+                                    <td>15/12/2025</td>
+                                    <td>15/01/2026</td>
+                                    <td><span class="badge bg-warning">Sắp hết hạn</span></td>
+                                    <td>189</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Sửa</button>
+                                        <button class="btn btn-sm btn-warning">Gia hạn</button>
+                                        <button class="btn btn-sm btn-danger">Xóa</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Nhà nguyên căn cho thuê</td>
+                                    <td>01/11/2025</td>
+                                    <td>01/12/2025</td>
+                                    <td><span class="badge bg-danger">Đã hết hạn</span></td>
+                                    <td>156</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary">Sửa</button>
+                                        <button class="btn btn-sm btn-warning">Gia hạn</button>
+                                        <button class="btn btn-sm btn-danger">Xóa</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nf-sidebar {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+    }
+
+    .nf-sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+        .nf-sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+            .nf-sidebar-menu li a {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                padding: 0.75rem 1rem;
+                color: #333;
+                text-decoration: none;
+                border-radius: 8px;
+                transition: all 0.3s;
+            }
+
+                .nf-sidebar-menu li a:hover,
+                .nf-sidebar-menu li.active a {
+                    background: #4A90E2;
+                    color: #fff;
+                }
+</style>
