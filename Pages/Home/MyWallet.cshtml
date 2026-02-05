@@ -1,0 +1,196 @@
+@page
+@model NestFlow.Pages.Home.MyWalletModel
+@{
+    ViewData["Title"] = "Ví của tôi - NestFlow";
+}
+
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="mb-0">
+                <i class="fas fa-wallet me-2"></i>
+                Ví của tôi
+            </h2>
+            <p class="text-muted">Quản lý số dư và giao dịch</p>
+        </div>
+    </div>
+
+    @if (Model.WalletInfo.WalletId == 0)
+    {
+        <!-- Ví mới tạo - chưa có giao dịch -->
+        <div class="row mb-4">
+            <div class="col-md-6 mx-auto">
+                <div class="card bg-gradient-primary text-white shadow-lg">
+                    <div class="card-body p-4">
+                        <h6 class="card-subtitle mb-3 opacity-75">
+                            <i class="fas fa-coins me-2"></i>Số dư khả dụng
+                        </h6>
+                        <h2 class="card-title mb-3">0 VNĐ</h2>
+                        <p class="mb-0 opacity-75">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Ví của bạn đã sẵn sàng để sử dụng
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Cách tích lũy số dư trong ví
+                    </h6>
+                    <ul class="mb-0">
+                        <li>Khi chủ nhà từ chối booking, tiền cọc sẽ được hoàn lại vào ví của bạn</li>
+                        <li>Bạn có thể sử dụng số dư trong ví để đặt phòng khác mà không cần thanh toán lại</li>
+                        <li>Đặt phòng ngay để trải nghiệm hệ thống!</li>
+                    </ul>
+                    <a href="/Home/Index" class="btn btn-primary mt-3">
+                        <i class="fas fa-search me-2"></i>Tìm phòng trọ ngay
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Có ví -->
+        <div class="row mb-4">
+            <div class="col-md-6 mx-auto">
+                <div class="card bg-gradient-primary text-white shadow-lg">
+                    <div class="card-body p-4">
+                        <h6 class="card-subtitle mb-3 opacity-75">
+                            <i class="fas fa-coins me-2"></i>Số dư khả dụng
+                        </h6>
+                        <h2 class="card-title mb-3">@Model.WalletInfo.AvailableBalance.ToString("N0") VNĐ</h2>
+                        <p class="mb-0 opacity-75">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Bạn có thể sử dụng số dư này để đặt phòng
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.WalletInfo.AvailableBalance > 0)
+        {
+            <div class="row mb-4">
+                <div class="col-12 text-center">
+                    <a href="/Home/Index" class="btn btn-success btn-lg">
+                        <i class="fas fa-home me-2"></i>
+                        Đặt phòng với số dư ví
+                    </a>
+                </div>
+            </div>
+        }
+
+        <!-- Lịch sử giao dịch -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>
+                            Lịch sử giao dịch
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (!Model.Transactions.Any())
+                        {
+                            <div class="alert alert-info mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Chưa có giao dịch nào
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Ngày</th>
+                                            <th>Loại</th>
+                                            <th>Số tiền</th>
+                                            <th>Trạng thái</th>
+                                            <th>Ghi chú</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var txn in Model.Transactions)
+                                        {
+                                            <tr>
+                                                <td>@txn.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td>
+                                                    @if (txn.Direction == "in")
+                                                    {
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-arrow-down me-1"></i>Nhận
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger">
+                                                            <i class="fas fa-arrow-up me-1"></i>Chi
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <strong class="@(txn.Direction == "in" ? "text-success" : "text-danger")">
+                                                        @(txn.Direction == "in" ? "+" : "-")@txn.Amount.ToString("N0") VNĐ
+                                                    </strong>
+                                                </td>
+                                                <td>
+                                                    @if (txn.Status == "completed" || txn.Status == "refunded")
+                                                    {
+                                                        <span class="badge bg-success">Hoàn tất</span>
+                                                    }
+                                                    else if (txn.Status == "pending")
+                                                    {
+                                                        <span class="badge bg-warning">Chờ</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary">@txn.Status</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">@txn.Note</small>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin hữu ích -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-light">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Cách hoạt động của ví (Dành cho người thuê)
+                    </h6>
+                    <ul class="mb-0">
+                        <li><strong>Nhận hoàn tiền:</strong> Khi chủ nhà từ chối booking, tiền cọc sẽ được hoàn lại vào ví của bạn</li>
+                        <li><strong>Thanh toán nhanh:</strong> Bạn có thể sử dụng số dư trong ví để đặt phòng khác mà không cần thanh toán qua PayOS</li>
+                        <li><strong>Không thể rút tiền:</strong> Số dư trong ví chỉ dùng để đặt phòng trên NestFlow, không thể rút về tài khoản ngân hàng</li>
+                        <li><strong>Liên hệ admin:</strong> Nếu muốn hoàn tiền về tài khoản ngân hàng, vui lòng liên hệ admin qua email hoặc hotline</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+</style>

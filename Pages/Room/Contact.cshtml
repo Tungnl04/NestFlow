@@ -230,6 +230,27 @@
                             </small>
                         </div>
                         
+                        <!-- Wallet Payment Option -->
+                        <div id="walletPaymentOption" class="d-none mb-3">
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <i class="fas fa-wallet me-2"></i>
+                                        <strong>Số dư ví:</strong> <span id="walletBalance">0</span> VNĐ
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="useWalletCheckbox">
+                                        <label class="form-check-label" for="useWalletCheckbox">
+                                            Dùng ví
+                                        </label>
+                                    </div>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    Thanh toán nhanh chóng với số dư trong ví của bạn
+                                </small>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-primary btn-lg w-100" id="btnBookingSubmit">
                             <i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS
                         </button>
@@ -314,6 +335,59 @@
             registerModal.show();
         }
 
+        // Load wallet balance when modal opens
+        const bookingModal = document.getElementById('bookingModal');
+        if (bookingModal) {
+            bookingModal.addEventListener('show.bs.modal', async function() {
+                await loadWalletBalance();
+            });
+        }
+
+        // Load wallet balance
+        async function loadWalletBalance() {
+            try {
+                const response = await fetch('/api/Withdraw/wallet-info');
+                const data = await response.json();
+                
+                if (data.success && data.wallet && data.wallet.availableBalance > 0) {
+                    const walletOption = document.getElementById('walletPaymentOption');
+                    const walletBalanceSpan = document.getElementById('walletBalance');
+                    const depositAmount = @discountedDeposit;
+                    
+                    walletBalanceSpan.textContent = data.wallet.availableBalance.toLocaleString('vi-VN');
+                    walletOption.classList.remove('d-none');
+                    
+                    // Auto check if balance is enough
+                    if (data.wallet.availableBalance >= depositAmount) {
+                        document.getElementById('useWalletCheckbox').checked = true;
+                        updatePaymentButton(true);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading wallet:', error);
+            }
+        }
+
+        // Update payment button text
+        function updatePaymentButton(useWallet) {
+            const btn = document.getElementById('btnBookingSubmit');
+            if (useWallet) {
+                btn.innerHTML = '<i class="fas fa-wallet me-2"></i>Thanh toán bằng ví';
+                btn.className = 'btn btn-success btn-lg w-100';
+            } else {
+                btn.innerHTML = '<i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS';
+                btn.className = 'btn btn-primary btn-lg w-100';
+            }
+        }
+
+        // Listen to wallet checkbox change
+        const useWalletCheckbox = document.getElementById('useWalletCheckbox');
+        if (useWalletCheckbox) {
+            useWalletCheckbox.addEventListener('change', function() {
+                updatePaymentButton(this.checked);
+            });
+        }
+
         // Xử lý booking form - CHỈ CHO USER ĐÃ LOGIN
         const bookingForm = document.getElementById('bookingForm');
         
@@ -328,20 +402,23 @@
                 const propertyId = document.getElementById('propertyId').value;
                 const bookingDate = document.getElementById('bookingDate').value;
                 const notes = document.getElementById('notes').value;
+                const useWallet = document.getElementById('useWalletCheckbox')?.checked || false;
                 
                 console.log('PropertyId:', propertyId);
                 console.log('BookingDate:', bookingDate);
+                console.log('UseWallet:', useWallet);
                 
                 if (!bookingDate) {
                     alert('Vui lòng chọn ngày xem phòng');
                     return;
                 }
 
-                // Request data - CHỈ CẦN THÔNG TIN CƠ BẢN
+                // Request data
                 const requestData = {
                     propertyId: parseInt(propertyId),
                     bookingDate: bookingDate,
-                    notes: notes
+                    notes: notes,
+                    useWallet: useWallet
                 };
                 
                 console.log('Request data:', requestData);
@@ -367,22 +444,28 @@
                 .then(data => {
                     console.log('API Response data:', data);
                     
-                    if (data.success && data.checkoutUrl) {
-                        console.log('Redirecting to:', data.checkoutUrl);
-                        // Redirect đến PayOS
-                        window.location.href = data.checkoutUrl;
+                    if (data.success) {
+                        if (data.paymentMethod === 'wallet') {
+                            // Thanh toán bằng ví thành công
+                            alert('Đặt phòng thành công! Chủ nhà sẽ liên hệ với bạn sớm.');
+                            window.location.href = data.redirectUrl || '/Home/MyBookings';
+                        } else if (data.checkoutUrl) {
+                            // Redirect đến PayOS
+                            console.log('Redirecting to:', data.checkoutUrl);
+                            window.location.href = data.checkoutUrl;
+                        }
                     } else {
                         console.error('API returned error:', data.message);
                         alert('Có lỗi xảy ra: ' + (data.message || 'Không thể tạo link thanh toán'));
                         btn.disabled = false;
-                        btn.innerHTML = '<i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS';
+                        updatePaymentButton(useWallet);
                     }
                 })
                 .catch(error => {
                     console.error('Fetch error:', error);
                     alert('Có lỗi xảy ra khi kết nối server: ' + error.message);
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-lock me-2"></i>Thanh toán an toàn với PayOS';
+                    updatePaymentButton(useWallet);
                 });
             });
         }

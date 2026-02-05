@@ -115,6 +115,20 @@ namespace NestFlow.Application.Services
 
                 _context.Users.Add(newUser);
                 await _context.SaveChangesAsync();
+
+                // TẠO VÍ TỰ ĐỘNG CHO USER MỚI
+                var newWallet = new Wallet
+                {
+                    LandlordId = newUser.UserId,
+                    AvailableBalance = 0,
+                    LockedBalance = 0,
+                    Currency = "VND",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.Wallets.Add(newWallet);
+                await _context.SaveChangesAsync();
+
                 // Gửi email chào mừng (không chặn luồng chính)
                 _ = Task.Run(async () =>
                 {
