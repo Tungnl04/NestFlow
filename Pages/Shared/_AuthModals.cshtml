@@ -17,7 +17,7 @@
                         <input type="password" class="form-control" id="loginPassword" required>
                     </div>
                     <div class="mb-3 text-end">
-                        <a href="#" class="text-decoration-none small" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-bs-dismiss="modal">
+                        <a href="#" class="text-decoration-none small switch-to-forgot-password">
                             Quên mật khẩu?
                         </a>
                     </div>
@@ -25,7 +25,7 @@
                     <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
                 </form>
                 <div class="text-center mt-3">
-                    <p class="mb-0">Chưa có tài khoản? <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal">Đăng ký ngay</a></p>
+                    <p class="mb-0">Chưa có tài khoản? <a href="#" class="switch-to-register">Đăng ký ngay</a></p>
                 </div>
             </div>
         </div>
@@ -84,7 +84,7 @@
                     <button type="submit" class="btn btn-primary w-100">Đăng ký</button>
                 </form>
                 <div class="text-center mt-3">
-                    <p class="mb-0">Đã có tài khoản? <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Đăng nhập</a></p>
+                    <p class="mb-0">Đã có tài khoản? <a href="#" class="switch-to-login">Đăng nhập</a></p>
                 </div>
             </div>
         </div>
@@ -139,7 +139,7 @@
                 </div>
 
                 <div class="text-center mt-3">
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">
+                    <a href="#" class="switch-to-login-from-forgot">
                         Quay lại đăng nhập
                     </a>
                 </div>
@@ -147,3 +147,48 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Handle modal switching when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Switch from Login to Register
+        document.querySelectorAll('.switch-to-register').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (window.NestFlowAuth && window.NestFlowAuth.switchModal) {
+                    window.NestFlowAuth.switchModal('loginModal', 'registerModal');
+                }
+            });
+        });
+
+        // Switch from Register to Login
+        document.querySelectorAll('.switch-to-login').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (window.NestFlowAuth && window.NestFlowAuth.switchModal) {
+                    window.NestFlowAuth.switchModal('registerModal', 'loginModal');
+                }
+            });
+        });
+
+        // Switch from Login to Forgot Password
+        document.querySelectorAll('.switch-to-forgot-password').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (window.NestFlowAuth && window.NestFlowAuth.switchModal) {
+                    window.NestFlowAuth.switchModal('loginModal', 'forgotPasswordModal');
+                }
+            });
+        });
+
+        // Switch from Forgot Password to Login
+        document.querySelectorAll('.switch-to-login-from-forgot').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                if (window.NestFlowAuth && window.NestFlowAuth.switchModal) {
+                    window.NestFlowAuth.switchModal('forgotPasswordModal', 'loginModal');
+                }
+            });
+        });
+    });
+</script>

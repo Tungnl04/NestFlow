@@ -1,0 +1,164 @@
+@page
+@model NestFlow.Pages.Landlord.CommissionReportModel
+@{
+    ViewData["Title"] = "Báo cáo hoa hồng - Nestflow";
+    Layout = "~/Pages/Shared/_LandlordLayout.cshtml";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Báo cáo hoa hồng</h2>
+            <p class="text-muted">Thống kê commission và doanh thu</p>
+        </div>
+        <div>
+            <select class="form-select" id="monthFilter" onchange="filterByMonth()">
+                <option value="">Tất cả</option>
+                <option value="2026-02">Tháng 2/2026</option>
+                <option value="2026-01">Tháng 1/2026</option>
+                <option value="2025-12">Tháng 12/2025</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Tổng Bookings</h6>
+                    <h3 class="card-title mb-0" id="totalBookings">0</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Bạn nhận</h6>
+                    <h3 class="card-title mb-0" id="totalLandlordReceived">0 VNĐ</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Commission</h6>
+                    <h3 class="card-title mb-0" id="totalCommission">0 VNĐ</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2">Discount cho khách</h6>
+                    <h3 class="card-title mb-0" id="totalDiscount">0 VNĐ</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Chi tiết thanh toán</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Ngày</th>
+                            <th>Property</th>
+                            <th>Khách trả</th>
+                            <th>Commission</th>
+                            <th>Discount</th>
+                            <th>Bạn nhận</th>
+                            <th>Platform giữ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paymentsTable">
+                        <tr>
+                            <td colspan="7" class="text-center">
+                                <div class="spinner-border" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Biểu đồ doanh thu</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="revenueChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let currentFilter = '';
+        let allPayments = [];
+
+        async function loadReport() {
+            try {
+                const url = currentFilter 
+                    ? `/api/commission/report?year=${currentFilter.split('-')[0]}&month=${currentFilter.split('-')[1]}`
+                    : '/api/commission/report';
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                if (result.success) {
+                    updateSummary(result.data);
+                    await loadPayments();
+                }
+            } catch (error) {
+                console.error('Error loading report:', error);
+            }
+        }
+
+        function updateSummary(data) {
+            document.getElementById('totalBookings').textContent = data.totalBookings;
+            document.getElementById('totalLandlordReceived').textContent = formatMoney(data.totalLandlordReceived);
+            document.getElementById('totalCommission').textContent = formatMoney(data.totalCommission);
+            document.getElementById('totalDiscount').textContent = formatMoney(data.totalDiscount);
+        }
+
+        async function loadPayments() {
+            try {
+                // TODO: Create API endpoint to get detailed payments
+                // For now, show placeholder
+                const tbody = document.getElementById('paymentsTable');
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Chưa có dữ liệu chi tiết</td></tr>';
+            } catch (error) {
+                console.error('Error loading payments:', error);
+            }
+        }
+
+        function filterByMonth() {
+            currentFilter = document.getElementById('monthFilter').value;
+            loadReport();
+        }
+
+        function formatMoney(amount) {
+            return new Intl.NumberFormat('vi-VN').format(amount) + ' VNĐ';
+        }
+
+        // Load on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadReport();
+        });
+    </script>
+}

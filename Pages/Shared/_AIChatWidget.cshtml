@@ -1,0 +1,176 @@
+@* AI Chat Floating Widget *@
+<div id="aiChatContainer">
+    <!-- Floating Button -->
+    <button id="aiChatButton" class="nf-chat-float-btn" title="Chat với AI">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <!-- Chat Window -->
+    <div id="aiChatWidget" class="nf-chat-window d-none">
+        <div class="nf-chat-header">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fas fa-robot text-white"></i>
+                <span class="fw-bold text-white">Trợ lý NestFlow</span>
+            </div>
+            <button id="closeChatBtn" class="btn-close btn-close-white"></button>
+        </div>
+        
+        <div class="nf-chat-body" id="chatMessages">
+            <div class="nf-chat-message ai">
+                <div class="message-content">
+                    Xin chào! Tôi có thể giúp gì cho bạn hôm nay?
+                </div>
+            </div>
+        </div>
+        
+        <div class="nf-chat-footer">
+            <div class="input-group">
+                <input type="text" id="chatInput" class="form-control border-0" placeholder="Nhập câu hỏi..." aria-label="Message">
+                <button class="btn btn-primary" id="sendMessageBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Chat Widget Styles - Isolated */
+    .nf-chat-float-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #4FB3B3 0%, #1D5A6E 100%);
+        border-radius: 50%;
+        border: none;
+        box-shadow: 0 4px 15px rgba(29, 90, 110, 0.4);
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 9999;
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .nf-chat-float-btn:hover {
+        transform: scale(1.1);
+    }
+
+    .nf-chat-window {
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
+        width: 450px;
+        height: 600px;
+        background: #fff;
+        border-radius: 15px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.2);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: opacity 0.3s, transform 0.3s;
+    }
+
+    .nf-chat-window.active {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .nf-chat-header {
+        background: linear-gradient(to right, #4FB3B3, #2B3448);
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .nf-chat-body {
+        flex: 1;
+        background: #f8f9fa;
+        padding: 15px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .nf-chat-footer {
+        padding: 10px;
+        background: #fff;
+        border-top: 1px solid #eee;
+    }
+
+    .nf-chat-message {
+        display: flex;
+        flex-direction: column;
+        max-width: 80%;
+    }
+
+    .nf-chat-message.ai {
+        align-self: flex-start;
+    }
+
+    .nf-chat-message.user {
+        align-self: flex-end;
+    }
+
+    .nf-chat-message .message-content {
+        padding: 10px 15px;
+        border-radius: 12px;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .nf-chat-message.ai .message-content {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-bottom-left-radius: 2px;
+        color: #333;
+    }
+
+    .nf-chat-message.user .message-content {
+        background: #4FB3B3;
+        color: white;
+        border-bottom-right-radius: 2px;
+    }
+
+    /* Content styling */
+    .nf-chat-message .message-content b {
+        font-weight: 700;
+        color: #2B3448;
+    }
+
+    .nf-chat-message .message-content li {
+        margin-left: 15px;
+        margin-bottom: 4px;
+        list-style-type: disc;
+    }
+
+    .nf-chat-message.ai .message-content li {
+        color: #555;
+    }
+
+    /* Typing Dots */
+    .typing-indicator .dot {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: #aaa;
+        margin-right: 3px;
+        animation: typing 1s infinite;
+    }
+
+    .typing-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+
+    @@keyframes typing {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+        100% { transform: translateY(0); }
+    }
+</style>
