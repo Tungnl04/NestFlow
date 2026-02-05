@@ -1,0 +1,123 @@
+@page
+@model NestFlow.Pages.Landlord.Properties.IndexModel
+@{
+    ViewData["Title"] = "Quản lý phòng trọ";
+    Layout = "_Layout";
+}
+
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <h2 class="text-primary fw-bold">Quản lý phòng trọ</h2>
+        <p class="text-muted">Danh sách tất cả các phòng trọ của bạn</p>
+    </div>
+    <div class="col-auto">
+        <a asp-page="/Landlord/Properties/Create" class="btn btn-primary">
+            <i class="fa-solid fa-plus me-2"></i> Thêm phòng mới
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        @if (Model.Properties.Count == 0)
+        {
+            <div class="text-center py-5">
+                <img src="~/images/empty_state.svg" alt="No data" class="mb-3" style="width: 150px; opacity: 0.5;" onerror="this.style.display='none'">
+                <p class="text-muted">Bạn chưa có phòng trọ nào.</p>
+                <a asp-page="/Landlord/Properties/Create" class="btn btn-outline-primary btn-sm">Tạo phòng ngay</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th scope="col">Tên phòng/Dự án</th>
+                            <th scope="col">Loại</th>
+                            <th scope="col">Giá thuê</th>
+                            <th scope="col">Khu vực</th>
+                            <th scope="col">Trạng thái</th>
+                            <th scope="col" class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Properties)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">@item.Title</div>
+                                    <small class="text-muted">ID: @item.PropertyId</small>
+                                </td>
+                                <td>
+                                    @if(item.PropertyType == "phong_tro") { <span>Phòng trọ</span> }
+                                    else if(item.PropertyType == "chung_cu") { <span>Chung cư mini</span> }
+                                    else { <span>@item.PropertyType</span> }
+                                </td>
+                                <td class="text-success fw-bold">@item.Price?.ToString("N0") đ</td>
+                                <td>@item.District, @item.City</td>
+                                <td>
+                                    @if(item.Status == "available")
+                                    {
+                                        <span class="badge bg-success">Còn trống</span>
+                                    }
+                                    else if(item.Status == "rented")
+                                    {
+                                        <span class="badge bg-danger">Đang thuê</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Ngừng hoạt động</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <a asp-page="./Edit" asp-route-id="@item.PropertyId" class="btn btn-sm btn-outline-secondary me-1" title="Sửa">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger" title="Xóa" onclick="confirmDelete(@item.PropertyId, '@item.Title')">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa phòng <strong id="delete-name"></strong> không?
+                <br />
+                <span class="text-danger small">Lưu ý: Không thể xóa nếu đã có booking hoặc lịch sử thuê.</span>
+            </div>
+            <div class="modal-footer">
+                <form method="post" asp-page-handler="Delete">
+                    <input type="hidden" name="id" id="delete-id" />
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger">Xóa bỏ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id, name) {
+            document.getElementById('delete-id').value = id;
+            document.getElementById('delete-name').innerText = name;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+    </script>
+}

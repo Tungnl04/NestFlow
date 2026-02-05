@@ -5,6 +5,8 @@ using NestFlow.Models;
 using NestFlow.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
+var currentConn = builder.Configuration.GetConnectionString("Default");
+Console.WriteLine($"DEBUG: Chuỗi kết nối thực tế đang chạy là: {currentConn}");
 
 // Add services Razor Pages &  to the container.
 builder.Services.AddRazorPages();
@@ -26,6 +28,8 @@ builder.Services.AddSession(options =>
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IPropertyService, PropertyService>();
+builder.Services.AddScoped<IListingService, ListingService>();
 
 // Swagger (OpenAPI)
 builder.Services.AddEndpointsApiExplorer();
@@ -72,9 +76,9 @@ app.UseRouting();
 
 app.UseAuthorization();
 
-app.MapRazorPages();
-
 app.UseSession();
+
+app.MapRazorPages();
 
 app.MapControllers();
 app.MapHub<NotificationHub>("/notificationHub");
