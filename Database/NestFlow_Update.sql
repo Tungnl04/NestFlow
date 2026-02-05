@@ -185,6 +185,17 @@ BEGIN
         CONSTRAINT fk_wallets_landlord FOREIGN KEY (landlord_id)
             REFERENCES dbo.Users(user_id)
     );
+
+	CREATE TABLE [dbo].[Wallets](
+        [wallet_id] [bigint] IDENTITY(1,1) NOT NULL,
+        [landlord_id] [bigint] NOT NULL,
+        [locked_balance] [decimal](14, 2) NOT NULL DEFAULT 0,
+        [available_balance] [decimal](14, 2) NOT NULL DEFAULT 0,
+        [currency] [nvarchar](10) NOT NULL DEFAULT 'VND',
+        [created_at] [datetime] NOT NULL DEFAULT (getdate()),
+        [updated_at] [datetime] NOT NULL DEFAULT (getdate()),
+        CONSTRAINT [PK__Wallets__3214EC07] PRIMARY KEY CLUSTERED ([wallet_id] ASC)
+    )
 END
 GO
 
