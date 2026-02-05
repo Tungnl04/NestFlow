@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace NestFlow.Pages.Landlord
+namespace NestFlow.Pages.Admin
 {
-    public class PostsModel : PageModel
+    public class DashboardModel : PageModel
     {
         public void OnGet()
         {

@@ -1,0 +1,117 @@
+@page "{id:long}"
+@model NestFlow.Pages.Landlord.Properties.EditModel
+@{
+    ViewData["Title"] = "Chỉnh sửa phòng trọ";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="./Index">Quản lý trọ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Cập nhật thông tin</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <input type="hidden" asp-for="EditingProperty.PropertyId" />
+                        <input type="hidden" asp-for="EditingProperty.LandlordId" />
+                        <input type="hidden" asp-for="EditingProperty.CreatedAt" />
+                        <input type="hidden" asp-for="EditingProperty.ViewCount" />
+
+                        <div class="mb-3">
+                            <label asp-for="EditingProperty.Title" class="form-label">Tên phòng / Tiêu đề <span class="text-danger">*</span></label>
+                            <input asp-for="EditingProperty.Title" class="form-control" required />
+                            <span asp-validation-for="EditingProperty.Title" class="text-danger"></span>
+                        </div>
+
+                         <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="EditingProperty.Status" class="form-label">Trạng thái</label>
+                                <select asp-for="EditingProperty.Status" class="form-select" required>
+                                    <option value="available">Còn trống</option>
+                                    <option value="rented">Đang thuê</option>
+                                    <option value="unavailable">Tạm ngưng</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="EditingProperty.PropertyType" class="form-label">Loại hình</label>
+                                <select asp-for="EditingProperty.PropertyType" class="form-select" required>
+                                    <option value="phong_tro">Phòng trọ</option>
+                                    <option value="chung_cu">Chung cư mini</option>
+                                    <option value="nha_nguyen_can">Nhà nguyên căn</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="EditingProperty.Price" class="form-label">Giá thuê (VND) <span class="text-danger">*</span></label>
+                                <input asp-for="EditingProperty.Price" class="form-control" type="number" required min="0" />
+                            </div>
+                             <div class="col-md-6 mb-3">
+                                <label asp-for="EditingProperty.Deposit" class="form-label">Tiền cọc (VND)</label>
+                                <input asp-for="EditingProperty.Deposit" class="form-control" type="number" min="0" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="EditingProperty.Area" class="form-label">Diện tích (m2)</label>
+                                <input asp-for="EditingProperty.Area" class="form-control" type="number" min="0" step="0.1" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="EditingProperty.MaxOccupants" class="form-label">Số người tối đa</label>
+                                <input asp-for="EditingProperty.MaxOccupants" class="form-control" type="number" min="1" />
+                            </div>
+                        </div>
+                        
+                         <div class="mb-3">
+                            <label class="form-label">Địa chỉ</label>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <input asp-for="EditingProperty.City" class="form-control" placeholder="Thành phố" />
+                                </div>
+                                <div class="col-md-4">
+                                    <input asp-for="EditingProperty.District" class="form-control" placeholder="Quận/Huyện" />
+                                </div>
+                                <div class="col-md-4">
+                                    <input asp-for="EditingProperty.Ward" class="form-control" placeholder="Phường/Xã" />
+                                </div>
+                                <div class="col-12 mt-2">
+                                     <input asp-for="EditingProperty.Address" class="form-control" placeholder="Số nhà, tên đường..." required />
+                                </div>
+                            </div>
+                        </div>
+
+                         <div class="mb-3">
+                            <label asp-for="EditingProperty.AvailableFrom" class="form-label">Trống từ ngày</label>
+                            <input asp-for="EditingProperty.AvailableFrom" class="form-control" type="date" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="EditingProperty.Description" class="form-label">Mô tả chi tiết</label>
+                            <textarea asp-for="EditingProperty.Description" class="form-control" rows="5"></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-page="./Index" class="btn btn-secondary">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-primary">Cập nhật</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

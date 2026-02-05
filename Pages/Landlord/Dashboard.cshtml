@@ -2,6 +2,7 @@
 @model NestFlow.Pages.Landlord.DashboardModel
 @{
     ViewData["Title"] = "Quản lý trọ của bạn - Nestflow";
+    Layout = "~/Pages/Shared/_LandlordLayout.cshtml";
 }
 
 <div class="container-fluid px-4 py-4">
@@ -18,13 +19,13 @@
                     </li>
 
                     <li>
-                        <a asp-page="/Landlord/Rooms">
+                        <a asp-page="/Landlord/Properties/Index">
                             <i class="fas fa-door-open"></i> Quản lý phòng trọ
                         </a>
                     </li>
 
                     <li>
-                        <a asp-page="/Landlord/Posts">
+                        <a asp-page="/Landlord/Posts/Index">
                             <i class="fas fa-newspaper"></i> Quản lý tin đăng
                         </a>
                     </li>

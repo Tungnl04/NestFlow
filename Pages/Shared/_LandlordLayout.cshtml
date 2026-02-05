@@ -16,7 +16,7 @@
             <div class="container-fluid px-4">
 
                 <!-- Logo -->
-                <a class="navbar-brand" href="/landlord/dashboard">
+                <a class="navbar-brand" href="/Landlord/Dashboard">
                     <div class="nf-logo">
                         <span class="nf-logo-icon">N</span>
                         <span class="nf-logo-text">Nestflow</span>
@@ -41,8 +41,32 @@
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link" href="/landlord/dashboard">
+                            <a class="nav-link" href="/Landlord/Dashboard">
                                 <i class="fas fa-home"></i> Trang quản lý
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Landlord/Bookings">
+                                <i class="fas fa-calendar-check"></i> Quản lý Booking
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Landlord/Wallet">
+                                <i class="fas fa-wallet"></i> Ví của tôi
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Landlord/CommissionSettings">
+                                <i class="fas fa-percent"></i> Hoa hồng
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Landlord/CommissionReport">
+                                <i class="fas fa-chart-line"></i> Báo cáo
                             </a>
                         </li>
 
@@ -143,13 +167,14 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-
-            const userRole = localStorage.getItem('userRole');
-            const userName = localStorage.getItem('userName');
-
+        document.addEventListener('DOMContentLoaded', async function () {
+            // Wait for auth to initialize
+            await window.NestFlowAuth.initAuth();
+            
+            const currentUser = window.NestFlowAuth.getCurrentUser();
+            
             // Guard landlord/admin
-            if (userRole !== 'landlord' && userRole !== 'admin') {
+            if (!currentUser || (!window.NestFlowAuth.hasRole('landlord') && !window.NestFlowAuth.hasRole('admin'))) {
                 window.location.href = '/';
                 return;
             }
@@ -158,12 +183,12 @@
             const landlordUserName = document.getElementById('landlordUserName');
             const landlordRoleDisplay = document.getElementById('landlordRoleDisplay');
 
-            if (landlordUserName && userName) {
-                landlordUserName.textContent = userName;
+            if (landlordUserName && currentUser) {
+                landlordUserName.textContent = currentUser.fullName || currentUser.email;
             }
 
-            if (landlordRoleDisplay) {
-                if (userRole === 'admin') {
+            if (landlordRoleDisplay && currentUser) {
+                if (currentUser.userType === 'admin') {
                     landlordRoleDisplay.textContent = 'Quản trị viên';
                     landlordRoleDisplay.className = 'nf-role-badge nf-role-admin-badge';
                 } else {
@@ -171,19 +196,10 @@
                     landlordRoleDisplay.className = 'nf-role-badge nf-role-landlord-badge';
                 }
             }
-
-            // landlord view flag
-            const viewPostsLink = document.getElementById('viewPostsLink');
-            if (viewPostsLink) {
-                viewPostsLink.addEventListener('click', function () {
-                    localStorage.setItem('landlordViewMode', 'true');
-                });
-            }
         });
 
         function logout() {
-            localStorage.clear();
-            window.location.href = '/';
+            window.NestFlowAuth.logout();
         }
     </script>
 
