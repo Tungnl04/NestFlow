@@ -123,7 +123,66 @@ namespace NestFlow.Application.Services
             await SendEmailAsync(toEmail, subject, htmlBody);
         }
 
-        private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+        public async Task SendPaymentSuccessEmailAsync(string toEmail, string customerName, string propertyTitle, decimal amount, string orderCode)
+        {
+            var subject = "Xác nhận thanh toán thành công - NestFlow";
+
+            var htmlBody = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .info-box {{ background: white; padding: 20px; margin: 20px 0; border-left: 4px solid #667eea; border-radius: 5px; }}
+        .amount {{ color: #667eea; font-size: 28px; font-weight: bold; }}
+        .success-icon {{ color: #28a745; font-size: 48px; text-align: center; margin: 20px 0; }}
+        .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 14px; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>🏠 NestFlow</h1>
+            <p>Thanh toán thành công</p>
+        </div>
+        <div class='content'>
+            <div class='success-icon'>✓</div>
+            <p>Xin chào <strong>{customerName}</strong>,</p>
+            <p>Cảm ơn bạn đã sử dụng dịch vụ của NestFlow. Giao dịch thanh toán của bạn đã được xử lý thành công.</p>
+            
+            <div class='info-box'>
+                <h3 style='color: #667eea; margin-top: 0;'>Thông tin giao dịch</h3>
+                <p><strong>Mã giao dịch:</strong> {orderCode}</p>
+                <p><strong>Bất động sản:</strong> {propertyTitle}</p>
+                <p><strong>Số tiền đặt cọc:</strong> <span class='amount'>{amount:N0} VNĐ</span></p>
+                <p><strong>Thời gian:</strong> {DateTime.Now:dd/MM/yyyy HH:mm:ss}</p>
+            </div>
+
+            <p>Chủ nhà sẽ liên hệ với bạn trong thời gian sớm nhất để xác nhận lịch xem phòng.</p>
+            
+            <p>Nếu bạn có bất kỳ thắc mắc nào, vui lòng liên hệ:</p>
+            <ul>
+                <li>Hotline: 1900-xxxx</li>
+                <li>Email: support@nestflow.com</li>
+            </ul>
+
+            <p>Trân trọng,<br>Đội ngũ NestFlow</p>
+        </div>
+        <div class='footer'>
+            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+            <p>&copy; 2024 NestFlow. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>";
+
+            await SendEmailAsync(toEmail, subject, htmlBody);
+        }
+
+        public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
         {
             try
             {
