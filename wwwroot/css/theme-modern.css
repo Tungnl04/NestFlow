@@ -155,3 +155,71 @@ body {
     border-radius: 5px !important;
     opacity: 1 !important;
 }
+
+/* Room Detail Page Styles */
+.nf-room-detail-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--nf-navy);
+}
+
+.nf-room-gallery img {
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.nf-room-gallery img:hover {
+    transform: scale(1.02);
+}
+
+.nf-rating-large {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--nf-gold);
+}
+
+.nf-room-price-large {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--nf-teal);
+}
+
+.nf-avatar-lg {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.nf-booking-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+    background: #fff;
+}
+
+.nf-amenity-dot {
+    width: 24px;
+    height: 24px;
+    background: #E3F2FD;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nf-amenity-dot::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--nf-teal);
+    border-radius: 50%;
+}
+
+.nf-review-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}

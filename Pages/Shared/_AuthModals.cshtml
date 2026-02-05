@@ -16,6 +16,11 @@
                         <label for="loginPassword" class="form-label">Mật khẩu</label>
                         <input type="password" class="form-control" id="loginPassword" required>
                     </div>
+                    <div class="mb-3 text-end">
+                        <a href="#" class="text-decoration-none small" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-bs-dismiss="modal">
+                            Quên mật khẩu?
+                        </a>
+                    </div>
                     <div class="alert alert-danger d-none" id="loginError"></div>
                     <button type="submit" class="btn btn-primary w-100">Đăng nhập</button>
                 </form>
@@ -86,83 +91,59 @@
     </div>
 </div>
 
-<script>
-    // Handle Login Form
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        const errorDiv = document.getElementById('loginError');
-        
-        const result = await window.NestFlowAuth.login(email, password);
-        
-        if (result.success) {
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('loginModal'));
-            modal.hide();
-            
-            // Show success message
-            alert(result.message);
-            
-            // Reload page to update UI
-            window.location.reload();
-        } else {
-            errorDiv.textContent = result.message;
-            errorDiv.classList.remove('d-none');
-        }
-    });
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="forgotPasswordModalLabel">Quên mật khẩu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Step 1: Enter Email -->
+                <div id="forgotPasswordStep1">
+                    <p class="text-muted">Nhập email của bạn để nhận mã xác thực</p>
+                    <form id="forgotPasswordForm">
+                        <div class="mb-3">
+                            <label for="forgotEmail" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="forgotEmail" required>
+                        </div>
+                        <div class="alert alert-danger d-none" id="forgotPasswordError"></div>
+                        <button type="submit" class="btn btn-primary w-100">Gửi mã xác thực</button>
+                    </form>
+                </div>
 
-    // Handle Register Form
-    document.getElementById('registerForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const password = document.getElementById('registerPassword').value;
-        const confirmPassword = document.getElementById('registerConfirmPassword').value;
-        const errorDiv = document.getElementById('registerError');
-        
-        // Validate password match
-        if (password !== confirmPassword) {
-            errorDiv.textContent = 'Mật khẩu không khớp';
-            errorDiv.classList.remove('d-none');
-            return;
-        }
-        
-        const registerData = {
-            email: document.getElementById('registerEmail').value,
-            password: password,
-            confirmPassword: confirmPassword,
-            fullName: document.getElementById('registerFullName').value,
-            phone: document.getElementById('registerPhone').value,
-            userType: document.querySelector('input[name="userType"]:checked').value
-        };
-        
-        const result = await window.NestFlowAuth.register(registerData);
-        
-        if (result.success) {
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-            modal.hide();
-            
-            // Show success message
-            alert(result.message);
-            
-            // Reload page to update UI
-            window.location.reload();
-        } else {
-            errorDiv.textContent = result.message;
-            errorDiv.classList.remove('d-none');
-        }
-    });
+                <!-- Step 2: Verify Code and Reset Password -->
+                <div id="forgotPasswordStep2" class="d-none">
+                    <p class="text-muted">Nhập mã xác thực đã được gửi đến email của bạn</p>
+                    <form id="resetPasswordForm">
+                        <div class="mb-3">
+                            <label for="verificationCode" class="form-label">Mã xác thực</label>
+                            <input type="text" class="form-control" id="verificationCode" required maxlength="6">
+                            <small class="text-muted">Mã có hiệu lực trong 15 phút</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="resetNewPassword" class="form-label">Mật khẩu mới</label>
+                            <input type="password" class="form-control" id="resetNewPassword" required minlength="6">
+                        </div>
+                        <div class="mb-3">
+                            <label for="resetConfirmPassword" class="form-label">Xác nhận mật khẩu mới</label>
+                            <input type="password" class="form-control" id="resetConfirmPassword" required>
+                        </div>
+                        <div class="alert alert-danger d-none" id="resetPasswordError"></div>
+                        <button type="submit" class="btn btn-primary w-100">Đặt lại mật khẩu</button>
+                        <button type="button" class="btn btn-link w-100" onclick="window.NestFlowAuth.resendVerificationCode()">
+                            Gửi lại mã
+                        </button>
+                    </form>
+                </div>
 
-    // Clear error messages when modal is closed
-    document.getElementById('loginModal').addEventListener('hidden.bs.modal', function() {
-        document.getElementById('loginError').classList.add('d-none');
-        document.getElementById('loginForm').reset();
-    });
-
-    document.getElementById('registerModal').addEventListener('hidden.bs.modal', function() {
-        document.getElementById('registerError').classList.add('d-none');
-        document.getElementById('registerForm').reset();
-    });
-</script>
+                <div class="text-center mt-3">
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">
+                        Quay lại đăng nhập
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

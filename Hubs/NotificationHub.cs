@@ -11,47 +11,43 @@ public class NotificationHub : Hub
     
     public override async Task OnConnectedAsync()
     {
-        // 1. Try get from Claims (if Cookie Auth was used)
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        string? userId = null;
 
-        // 2. Fallback: Try get from Session (if HttpContext available)
-        if (string.IsNullOrEmpty(userId))
-        {
-            var httpContext = Context.GetHttpContext();
-            if (httpContext?.Session != null)
-            {
-                // Note: Session might be null if not configured for SignalR path
-                try
-                {
-                   var sessionUserId = httpContext.Session.GetInt32("UserId");
-                   if (sessionUserId.HasValue)
-                   {
-                       userId = sessionUserId.Value.ToString();
-                   }
-                }
-                catch { /* Ignore session error */ }
-            }
-        }
+        // 1. Try get from Claims (Best practice)
+        userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        // 3. Fallback: Try get from Query String (Common for SignalR clients)
+        // 2. Fallback: Try get from Session or Query String (Dev/Test convenience)
         if (string.IsNullOrEmpty(userId))
         {
             var httpContext = Context.GetHttpContext();
             if (httpContext != null)
             {
-                 userId = httpContext.Request.Query["userId"];
+                // Try Session
+                if (httpContext.Session != null)
+                {
+                    try 
+                    {
+                        var sessionUserId = httpContext.Session.GetInt32("UserId");
+                        if (sessionUserId.HasValue) userId = sessionUserId.ToString();
+                    }
+                    catch { /* Ignore session errors */ }
+                }
+
+                // Try Query String
+                if (string.IsNullOrEmpty(userId))
+                {
+                    userId = httpContext.Request.Query["userId"];
+                }
             }
         }
 
         if (!string.IsNullOrEmpty(userId))
         {
-             // Add user to a group named by their UserID for easy targeting
+            // Store in Context.Items for retrieval in OnDisconnected
+            Context.Items["UserId"] = userId;
+
             await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
-            Console.WriteLine($"SignalR Connected: User {userId} - ID {Context.ConnectionId}");
-        }
-        else
-        {
-            Console.WriteLine($"SignalR Connected: Anonymous - ID {Context.ConnectionId}");
+            Console.WriteLine($"SignalR Connected: User {userId}");
         }
 
         await base.OnConnectedAsync();
@@ -59,34 +55,11 @@ public class NotificationHub : Hub
 
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        // We need to retrieve userId again to remove from group.
-        // Context.User might work if it was set, but for QueryString/Session we might need to store it in Context.Items during OnConnected
-        // For simple Group management, SignalR auto cleans up connectionId from groups on disconnect, 
-        // effectively we don't strictly need to manually RemoveFromGroupAsync unless we are tracking presence.
-        // But let's try to be clean.
-        
-        var userId = Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userId))
-        {
-             var httpContext = Context.GetHttpContext();
-             if (httpContext != null)
-             {
-                 if (httpContext.Session != null)
-                 {
-                     var sId = httpContext.Session.GetInt32("UserId");
-                     if(sId.HasValue) userId = sId.Value.ToString();
-                 }
-                 if(string.IsNullOrEmpty(userId))
-                 {
-                     userId = httpContext.Request.Query["userId"];
-                 }
-             }
-        }
-
-        if (!string.IsNullOrEmpty(userId))
+        if (Context.Items.TryGetValue("UserId", out var userIdObj) && userIdObj is string userId)
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user_{userId}");
         }
+        
         await base.OnDisconnectedAsync(exception);
     }
 }

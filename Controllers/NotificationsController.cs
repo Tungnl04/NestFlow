@@ -46,6 +46,28 @@ public class NotificationsController : ControllerBase
         await _notificationService.MarkAsReadAsync(id);
         return Ok();
     }
+
+    // PUT: api/Notifications/read-all
+    [HttpPut("read-all")]
+    public async Task<IActionResult> MarkAllAsRead([FromQuery] long userId)
+    {
+        // If userId is not provided in query, try to get from Claims
+        if (userId <= 0)
+        {
+             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+             if (!string.IsNullOrEmpty(userIdStr) && long.TryParse(userIdStr, out long parsedId))
+             {
+                 userId = parsedId;
+             }
+        }
+
+        if (userId <= 0) {
+            return BadRequest("User ID required");
+        }
+
+        await _notificationService.MarkAllAsReadAsync(userId);
+        return Ok();
+    }
     
     // POST: api/Notifications/test (For Dev Testing Only)
     [HttpPost("test")]

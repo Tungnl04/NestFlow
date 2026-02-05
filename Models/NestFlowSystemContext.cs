@@ -33,6 +33,8 @@ public partial class NestFlowSystemContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+    public virtual DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+
     public virtual DbSet<Payment> Payments { get; set; }
 
     public virtual DbSet<Plan> Plans { get; set; }
@@ -58,17 +60,6 @@ public partial class NestFlowSystemContext : DbContext
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
     public virtual DbSet<WithdrawRequest> WithdrawRequests { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        var builder = new ConfigurationBuilder();
-        builder.SetBasePath(Directory.GetCurrentDirectory());
-        builder.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-        var configuration = builder.Build();
-        optionsBuilder.UseSqlServer(configuration.GetConnectionString("Default"));
-    }
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        //=> optionsBuilder.UseSqlServer("Server=TungLaptop;uid=sa;password=sa;database=NestFlowSystem;Encrypt=True;TrustServerCertificate=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -390,8 +381,28 @@ public partial class NestFlowSystemContext : DbContext
                 .HasConstraintName("fk_notifications_user");
         });
 
+        modelBuilder.Entity<PasswordResetToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Password__3214EC070066BFCA");
+
+            entity.HasIndex(e => e.ExpiresAt, "IX_PasswordResetTokens_ExpiresAt");
+
+            entity.HasIndex(e => e.Token, "IX_PasswordResetTokens_Token");
+
+            entity.HasIndex(e => e.UserId, "IX_PasswordResetTokens_UserId");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.Token).HasMaxLength(10);
+
+            entity.HasOne(d => d.User).WithMany(p => p.PasswordResetTokens)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_PasswordResetTokens_Users");
+        });
+
         modelBuilder.Entity<Payment>(entity =>
         {
+            entity.ToTable("Payments");
+            
             entity.HasKey(e => e.PaymentId).HasName("PK__Payments__ED1FC9EACC3DBF5D");
 
             entity.HasIndex(e => e.PayerUserId, "ix_payments_payer");

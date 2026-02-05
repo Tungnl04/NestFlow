@@ -1,0 +1,766 @@
+﻿@page
+@model NestFlow.Pages.Admin.UsersModel
+@{
+    ViewData["Title"] = "Quản lý người dùng - Nestflow";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="nf-sidebar">
+                <h4 class="mb-4">Menu quản lý</h4>
+                <ul class="nf-sidebar-menu">
+                    <li>
+                        <a asp-page="/Admin/Dashboard">
+                            <i class="fas fa-home"></i> Trang tổng quan
+                        </a>
+                    </li>
+
+                    <li class="active">
+                        <a asp-page="/Admin/Users">
+                            <i class="fas fa-users"></i> Quản lý người dùng
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Admin/Posts">
+                            <i class="fas fa-newspaper"></i> Quản lý tin đăng
+                        </a>
+                    </li>
+
+                    <li>
+                        <a asp-page="/Admin/Requests">
+                            <i class="fas fa-bell"></i> Quản lý yêu cầu
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Nội dung chính -->
+        <div class="col-md-9">
+            <h2 class="mb-4">Quản lý người dùng</h2>
+
+            <!-- Thống kê -->
+            <div class="row g-4 mb-4" id="statisticsContainer">
+                <div class="col-md-3">
+                    <div class="nf-stat-card">
+                        <div class="nf-stat-icon" style="background: #4A90E2;">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="nf-stat-content">
+                            <div class="nf-stat-value" id="totalUsers">-</div>
+                            <div class="nf-stat-label">Tổng người dùng</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="nf-stat-card">
+                        <div class="nf-stat-icon" style="background: #50C878;">
+                            <i class="fas fa-user-check"></i>
+                        </div>
+                        <div class="nf-stat-content">
+                            <div class="nf-stat-value" id="activeUsers">-</div>
+                            <div class="nf-stat-label">Đang hoạt động</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="nf-stat-card">
+                        <div class="nf-stat-icon" style="background: #FF6B6B;">
+                            <i class="fas fa-home"></i>
+                        </div>
+                        <div class="nf-stat-content">
+                            <div class="nf-stat-value" id="landlords">-</div>
+                            <div class="nf-stat-label">Chủ trọ</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="nf-stat-card">
+                        <div class="nf-stat-icon" style="background: #FFA500;">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                        <div class="nf-stat-content">
+                            <div class="nf-stat-value" id="renters">-</div>
+                            <div class="nf-stat-label">Người thuê</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bộ lọc và tìm kiếm -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="Tìm kiếm theo email, tên, SĐT...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="userTypeFilter">
+                                <option value="">Tất cả loại người dùng</option>
+                                <option value="landlord">Chủ trọ</option>
+                                <option value="renter">Người thuê</option>
+                                <option value="admin">Quản trị viên</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">Tất cả trạng thái</option>
+                                <option value="active">Hoạt động</option>
+                                <option value="inactive">Không hoạt động</option>
+                                <option value="banned">Bị khóa</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-primary w-100" id="filterBtn">
+                                <i class="fas fa-filter"></i> Lọc
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Danh sách người dùng -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Danh sách người dùng</h5>
+                </div>
+                <div class="card-body">
+                    <div id="loadingIndicator" class="text-center py-5" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Email</th>
+                                    <th>Họ tên</th>
+                                    <th>Số điện thoại</th>
+                                    <th>Loại</th>
+                                    <th>Trạng thái</th>
+                                    <th>Xác thực</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <!-- Data will be loaded via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Phân trang -->
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div id="paginationInfo" class="text-muted"></div>
+                        <nav>
+                            <ul class="pagination mb-0" id="pagination"></ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Chi tiết người dùng -->
+<div class="modal fade" id="userDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chi tiết người dùng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="userDetailContent">
+                <!-- Content will be loaded via JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xác nhận -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmModalTitle">Xác nhận</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="confirmActionBtn">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nf-sidebar {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        height: fit-content;
+        position: sticky;
+        top: 100px;
+    }
+
+    .nf-sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .nf-sidebar-menu li {
+        margin-bottom: 0.5rem;
+    }
+
+    .nf-sidebar-menu li a {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+        color: #333;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+
+    .nf-sidebar-menu li a:hover,
+    .nf-sidebar-menu li.active a {
+        background: #4A90E2;
+        color: #fff;
+    }
+
+    .nf-stat-card {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .nf-stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.5rem;
+    }
+
+    .nf-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .nf-stat-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .action-btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        margin: 0 0.125rem;
+    }
+
+    .detail-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-section h6 {
+        color: #4A90E2;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .detail-row {
+        display: flex;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: #666;
+        width: 150px;
+    }
+
+    .detail-value {
+        flex: 1;
+        color: #333;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        let currentPage = 1;
+        let currentFilters = {};
+        let confirmCallback = null;
+
+        // Load statistics
+        async function loadStatistics() {
+            try {
+                const response = await fetch('/api/users/statistics');
+                const stats = await response.json();
+                
+                document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+                document.getElementById('activeUsers').textContent = stats.activeUsers || 0;
+                document.getElementById('landlords').textContent = stats.landlords || 0;
+                document.getElementById('renters').textContent = stats.renters || 0;
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+            }
+        }
+
+        // Load users
+        async function loadUsers(page = 1) {
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const tableBody = document.getElementById('usersTableBody');
+            
+            loadingIndicator.style.display = 'block';
+            tableBody.innerHTML = '';
+
+            try {
+                const params = new URLSearchParams({
+                    page: page,
+                    pageSize: 10,
+                    ...currentFilters
+                });
+
+                const response = await fetch(`/api/users?${params}`);
+                const result = await response.json();
+                
+                displayUsers(result.data);
+                displayPagination(result.pagination);
+                currentPage = page;
+            } catch (error) {
+                console.error('Error loading users:', error);
+                tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>';
+            } finally {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+
+        // Display users
+        function displayUsers(users) {
+            const tableBody = document.getElementById('usersTableBody');
+            
+            if (users.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="9" class="text-center">Không có dữ liệu</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.userId}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            ${user.avatarUrl ? 
+                                `<img src="${user.avatarUrl}" class="user-avatar" alt="${user.fullName || 'User'}">` : 
+                                '<div class="user-avatar bg-secondary d-flex align-items-center justify-content-center text-white"><i class="fas fa-user"></i></div>'
+                            }
+                            <span>${user.fullName || '-'}</span>
+                        </div>
+                    </td>
+                    <td>${user.phone || '-'}</td>
+                    <td>
+                        <span class="badge bg-${getUserTypeBadgeColor(user.userType)}">
+                            ${getUserTypeLabel(user.userType)}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge bg-${getStatusBadgeColor(user.status)}">
+                            ${getStatusLabel(user.status)}
+                        </span>
+                    </td>
+                    <td>
+                        ${user.isVerified ? 
+                            '<i class="fas fa-check-circle text-success"></i>' : 
+                            '<i class="fas fa-times-circle text-danger"></i>'
+                        }
+                    </td>
+                    <td>${formatDate(user.createdAt)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info action-btn" onclick="viewUserDetail(${user.userId})" title="Chi tiết">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        ${!user.isVerified ? 
+                            `<button class="btn btn-sm btn-success action-btn" onclick="verifyUser(${user.userId})" title="Xác thực">
+                                <i class="fas fa-check"></i>
+                            </button>` : ''
+                        }
+                        ${user.status === 'active' ? 
+                            `<button class="btn btn-sm btn-warning action-btn" onclick="suspendUser(${user.userId})" title="Khóa">
+                                <i class="fas fa-lock"></i>
+                            </button>` :
+                            user.status === 'banned' ?
+                            `<button class="btn btn-sm btn-success action-btn" onclick="activateUser(${user.userId})" title="Mở khóa">
+                                <i class="fas fa-unlock"></i>
+                            </button>` : ''
+                        }
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Display pagination
+        function displayPagination(pagination) {
+            const paginationInfo = document.getElementById('paginationInfo');
+            const paginationEl = document.getElementById('pagination');
+            
+            const start = (pagination.currentPage - 1) * pagination.pageSize + 1;
+            const end = Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems);
+            
+            paginationInfo.textContent = `Hiển thị ${start}-${end} trong tổng số ${pagination.totalItems} người dùng`;
+            
+            let paginationHTML = '';
+            
+            // Previous button
+            paginationHTML += `
+                <li class="page-item ${pagination.currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadUsers(${pagination.currentPage - 1}); return false;">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+            `;
+            
+            // Page numbers
+            const maxPages = 5;
+            let startPage = Math.max(1, pagination.currentPage - Math.floor(maxPages / 2));
+            let endPage = Math.min(pagination.totalPages, startPage + maxPages - 1);
+            
+            if (endPage - startPage < maxPages - 1) {
+                startPage = Math.max(1, endPage - maxPages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                paginationHTML += `
+                    <li class="page-item ${i === pagination.currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="loadUsers(${i}); return false;">${i}</a>
+                    </li>
+                `;
+            }
+            
+            // Next button
+            paginationHTML += `
+                <li class="page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="loadUsers(${pagination.currentPage + 1}); return false;">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            `;
+            
+            paginationEl.innerHTML = paginationHTML;
+        }
+
+        // View user detail
+        async function viewUserDetail(userId) {
+            const modal = new bootstrap.Modal(document.getElementById('userDetailModal'));
+            const content = document.getElementById('userDetailContent');
+            
+            content.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div></div>';
+            modal.show();
+            
+            try {
+                const response = await fetch(`/api/users/${userId}`);
+                const user = await response.json();
+                
+                content.innerHTML = `
+                    <div class="detail-section">
+                        <h6><i class="fas fa-user"></i> Thông tin cơ bản</h6>
+                        <div class="detail-row">
+                            <div class="detail-label">Email:</div>
+                            <div class="detail-value">${user.email}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Họ tên:</div>
+                            <div class="detail-value">${user.fullName || '-'}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Số điện thoại:</div>
+                            <div class="detail-value">${user.phone || '-'}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Loại tài khoản:</div>
+                            <div class="detail-value">
+                                <span class="badge bg-${getUserTypeBadgeColor(user.userType)}">
+                                    ${getUserTypeLabel(user.userType)}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Trạng thái:</div>
+                            <div class="detail-value">
+                                <span class="badge bg-${getStatusBadgeColor(user.status)}">
+                                    ${getStatusLabel(user.status)}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Xác thực:</div>
+                            <div class="detail-value">
+                                ${user.isVerified ? 
+                                    '<i class="fas fa-check-circle text-success"></i> Đã xác thực' : 
+                                    '<i class="fas fa-times-circle text-danger"></i> Chưa xác thực'
+                                }
+                            </div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Ngày tạo:</div>
+                            <div class="detail-value">${formatDate(user.createdAt)}</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Cập nhật lần cuối:</div>
+                            <div class="detail-value">${formatDate(user.updatedAt)}</div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h6><i class="fas fa-chart-bar"></i> Thống kê hoạt động</h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4 class="text-primary">${user.statistics.totalListings}</h4>
+                                        <small class="text-muted">Tổng tin đăng</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4 class="text-success">${user.statistics.activeListings}</h4>
+                                        <small class="text-muted">Tin đăng đang hoạt động</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4 class="text-info">${user.statistics.totalBookings}</h4>
+                                        <small class="text-muted">Lượt đặt phòng</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light">
+                                    <div class="card-body text-center">
+                                        <h4 class="text-warning">${user.statistics.totalProperties}</h4>
+                                        <small class="text-muted">Tổng bất động sản</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading user detail:', error);
+                content.innerHTML = '<div class="alert alert-danger">Lỗi khi tải thông tin người dùng</div>';
+            }
+        }
+
+        // Verify user
+        function verifyUser(userId) {
+            showConfirmModal(
+                'Xác thực người dùng',
+                'Bạn có chắc chắn muốn xác thực người dùng này?',
+                async () => {
+                    try {
+                        const response = await fetch(`/api/users/${userId}/verify`, {
+                            method: 'PUT'
+                        });
+                        const result = await response.json();
+                        
+                        if (response.ok) {
+                            showAlert('success', result.message);
+                            loadUsers(currentPage);
+                        } else {
+                            showAlert('danger', result.message);
+                        }
+                    } catch (error) {
+                        console.error('Error verifying user:', error);
+                        showAlert('danger', 'Lỗi khi xác thực người dùng');
+                    }
+                }
+            );
+        }
+
+        // Suspend user
+        function suspendUser(userId) {
+            showConfirmModal(
+                'Khóa người dùng',
+                'Bạn có chắc chắn muốn khóa người dùng này?',
+                async () => {
+                    await updateUserStatus(userId, 'banned');
+                }
+            );
+        }
+
+        // Activate user
+        function activateUser(userId) {
+            showConfirmModal(
+                'Kích hoạt người dùng',
+                'Bạn có chắc chắn muốn kích hoạt lại người dùng này?',
+                async () => {
+                    await updateUserStatus(userId, 'active');
+                }
+            );
+        }
+
+        // Update user status
+        async function updateUserStatus(userId, status) {
+            try {
+                const response = await fetch(`/api/users/${userId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('success', result.message);
+                    loadUsers(currentPage);
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                console.error('Error updating user status:', error);
+                showAlert('danger', 'Lỗi khi cập nhật trạng thái');
+            }
+        }
+
+        // Show confirm modal
+        function showConfirmModal(title, message, callback) {
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalBody').textContent = message;
+            confirmCallback = callback;
+            
+            const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            modal.show();
+        }
+
+        // Confirm action
+        document.getElementById('confirmActionBtn').addEventListener('click', async function() {
+            if (confirmCallback) {
+                await confirmCallback();
+                confirmCallback = null;
+            }
+            bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+        });
+
+        // Show alert
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3`;
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Helper functions
+        function getUserTypeBadgeColor(type) {
+            const colors = {
+                'landlord': 'primary',
+                'renter': 'info',
+                'admin': 'danger'
+            };
+            return colors[type] || 'secondary';
+        }
+
+        function getUserTypeLabel(type) {
+            const labels = {
+                'landlord': 'Chủ trọ',
+                'renter': 'Người thuê',
+                'admin': 'Quản trị viên'
+            };
+            return labels[type] || type;
+        }
+
+        function getStatusBadgeColor(status) {
+            const colors = {
+                'active': 'success',
+                'inactive': 'secondary',
+                'banned': 'warning'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'active': 'Hoạt động',
+                'inactive': 'Không hoạt động',
+                'banned': 'Bị khóa'
+            };
+            return labels[status] || status;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Event listeners
+        document.getElementById('filterBtn').addEventListener('click', function() {
+            currentFilters = {
+                search: document.getElementById('searchInput').value,
+                userType: document.getElementById('userTypeFilter').value,
+                status: document.getElementById('statusFilter').value
+            };
+            loadUsers(1);
+        });
+
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('filterBtn').click();
+            }
+        });
+
+        // Initial load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStatistics();
+            loadUsers(1);
+        });
+    </script>
+}
