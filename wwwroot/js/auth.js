@@ -205,6 +205,34 @@ async function resetPassword(email, verificationCode, newPassword, confirmPasswo
 
 // ==================== UTILITY FUNCTIONS ====================
 
+// Switch between modals smoothly
+function switchModal(fromModalId, toModalId) {
+    const fromModal = document.getElementById(fromModalId);
+    const toModal = document.getElementById(toModalId);
+
+    if (fromModal && toModal) {
+        const bsFromModal = bootstrap.Modal.getInstance(fromModal);
+        if (bsFromModal) {
+            bsFromModal.hide();
+
+            // Wait for the modal to be fully hidden
+            fromModal.addEventListener('hidden.bs.modal', function () {
+                const bsToModal = new bootstrap.Modal(toModal);
+                bsToModal.show();
+            }, { once: true });
+        } else {
+            // If no instance exists, just hide and show
+            const newBsFromModal = new bootstrap.Modal(fromModal);
+            newBsFromModal.hide();
+
+            fromModal.addEventListener('hidden.bs.modal', function () {
+                const bsToModal = new bootstrap.Modal(toModal);
+                bsToModal.show();
+            }, { once: true });
+        }
+    }
+}
+
 // Check if user is logged in
 function isLoggedIn() {
     return currentUser !== null;
@@ -512,6 +540,46 @@ function initModalHandlers() {
             resetForgotPasswordModal();
         });
     }
+
+    // Initialize modal switching handlers
+    initModalSwitching();
+}
+
+// Initialize modal switching to prevent overlapping
+function initModalSwitching() {
+    // Handle all links that switch between modals
+    document.querySelectorAll('a[data-bs-toggle="modal"][data-bs-dismiss="modal"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const targetModalId = this.getAttribute('data-bs-target');
+            const currentModal = this.closest('.modal');
+
+            if (currentModal && targetModalId) {
+                switchModal(currentModal.id, targetModalId.substring(1)); // Remove # from target
+            }
+        });
+    });
+
+    // Handle the forgot password link specifically
+    const forgotPasswordLink = document.querySelector('a[href="#"][data-bs-target="#forgotPasswordModal"]');
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', function (e) {
+            e.preventDefault();
+            switchModal('loginModal', 'forgotPasswordModal');
+        });
+    }
+
+    // Handle back to login links
+    document.querySelectorAll('a[data-bs-target="#loginModal"]').forEach(link => {
+        link.addEventListener('click', function (e) {
+            const currentModal = this.closest('.modal');
+            if (currentModal) {
+                e.preventDefault();
+                switchModal(currentModal.id, 'loginModal');
+            }
+        });
+    });
 }
 
 // Resend verification code
@@ -592,5 +660,6 @@ window.NestFlowAuth = {
     forgotPassword,
     resetPassword,
     showToast,
-    resendVerificationCode
+    resendVerificationCode,
+    switchModal
 };
