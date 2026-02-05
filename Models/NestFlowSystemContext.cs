@@ -401,6 +401,8 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Payment>(entity =>
         {
+            entity.ToTable("Payments");
+            
             entity.HasKey(e => e.PaymentId).HasName("PK__Payments__ED1FC9EACC3DBF5D");
 
             entity.HasIndex(e => e.PayerUserId, "ix_payments_payer");

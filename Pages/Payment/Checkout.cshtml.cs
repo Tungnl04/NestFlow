@@ -3,13 +3,13 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using NestFlow.Models;
 
-namespace NestFlow.Pages.Room
+namespace NestFlow.Pages.Payment
 {
-    public class ContactModel : PageModel
+    public class CheckoutModel : PageModel
     {
         private readonly NestFlowSystemContext _context;
 
-        public ContactModel(NestFlowSystemContext context)
+        public CheckoutModel(NestFlowSystemContext context)
         {
             _context = context;
         }
@@ -42,6 +42,13 @@ namespace NestFlow.Pages.Room
             if (Property == null)
             {
                 return NotFound();
+            }
+
+            // Check if property is available
+            if (Property.Status != "Available")
+            {
+                TempData["ErrorMessage"] = "Bất động sản này hiện không khả dụng";
+                return RedirectToPage("/Room/Detail", new { id = Property.PropertyId });
             }
 
             return Page();

@@ -3,6 +3,7 @@ using NestFlow.Application.Services.Interfaces;
 using NestFlow.Application.Services;
 using NestFlow.Models;
 using NestFlow.Hubs;
+using Net.payOS;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +29,16 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFavoriteService, FavoriteService>();
+
+// Configure PayOS
+PayOS payOS = new PayOS(
+    builder.Configuration["PayOS:ClientId"] ?? throw new Exception("PayOS ClientId not found"),
+    builder.Configuration["PayOS:ApiKey"] ?? throw new Exception("PayOS ApiKey not found"),
+    builder.Configuration["PayOS:ChecksumKey"] ?? throw new Exception("PayOS ChecksumKey not found")
+);
+builder.Services.AddSingleton(payOS);
+builder.Services.AddHttpContextAccessor();
+
 // Swagger (OpenAPI)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
