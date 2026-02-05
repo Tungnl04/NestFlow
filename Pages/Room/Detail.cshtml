@@ -67,9 +67,12 @@
             <button class="btn btn-outline-secondary">
                 <i class="fas fa-share"></i> Chia sẻ
             </button>
-            <button class="btn btn-outline-danger nf-save-btn-detail">
-                <i class="far fa-heart"></i> Lưu tin
-            </button>
+            @if (HttpContext.Session.GetString("UserType") != "landlord")
+            {
+                <button class="btn btn-outline-danger nf-save-btn-detail">
+                    <i class="far fa-heart"></i> Lưu tin
+                </button>
+            }
         </div>
     </div>
 
@@ -198,6 +201,15 @@
                         Liên hệ / Đặt phòng
                     </a>
                     
+                    @if (HttpContext.Session.GetString("UserType") == "landlord")
+                    {
+                         <div class="mt-2 text-center">
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-info-circle"></i> Chế độ Chủ trọ (Không thể đặt)
+                            </span>
+                        </div>
+                    }
+
                     <p class="text-center text-muted small mt-2 mb-0">Không thanh toán ngay</p>
                 </div>
             </div>
