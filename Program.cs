@@ -33,14 +33,9 @@ builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFavoriteService, FavoriteService>();
-<<<<<<< HEAD
-builder.Services.AddScoped<IWalletService, WalletService>();
-=======
-
 builder.Services.AddScoped<IWalletService, WalletService>();
 builder.Services.AddScoped<IUserService, UserService>();
-
->>>>>>> Duy-dev
+builder.Services.AddScoped<IAIService, AIService>();
 
 // Configure PayOS
 PayOS payOS = new PayOS(

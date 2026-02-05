@@ -306,6 +306,9 @@
             bsToast.show();
         }
     </script>
+    <!-- AI Chat Widget -->
+    <partial name="_AIChatWidget" />
+    <script src="~/js/ai-chat.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
 
