@@ -37,12 +37,17 @@ namespace NestFlow.Controllers
         {
             try
             {
+                _logger.LogInformation($"=== START ApproveBooking {bookingId} ===");
+                
                 var landlordId = HttpContext.Session.GetInt32("UserId");
+                _logger.LogInformation($"LandlordId from session: {landlordId}");
+                
                 if (landlordId == null)
                 {
                     return Unauthorized(new { success = false, message = "Vui lòng đăng nhập" });
                 }
 
+                _logger.LogInformation("Loading booking from database...");
                 var booking = await _context.Bookings
                     .Include(b => b.Property)
                     .Include(b => b.Renter)
@@ -50,21 +55,27 @@ namespace NestFlow.Controllers
 
                 if (booking == null)
                 {
+                    _logger.LogWarning($"Booking {bookingId} not found");
                     return NotFound(new { success = false, message = "Không tìm thấy booking" });
                 }
+
+                _logger.LogInformation($"Booking found. PropertyId: {booking.PropertyId}, RenterId: {booking.RenterId}, Status: {booking.Status}");
 
                 // Kiểm tra quyền
                 if (booking.Property.LandlordId != landlordId)
                 {
+                    _logger.LogWarning($"Landlord {landlordId} không có quyền với booking {bookingId}");
                     return Forbid();
                 }
 
                 // Kiểm tra trạng thái
                 if (booking.Status != "Pending")
                 {
+                    _logger.LogWarning($"Booking {bookingId} đã được xử lý. Status: {booking.Status}");
                     return BadRequest(new { success = false, message = "Booking đã được xử lý" });
                 }
 
+                _logger.LogInformation("Finding payment...");
                 // Tìm payment tương ứng
                 var payment = await _context.Payments
                     .Where(p => p.PaymentType == "Deposit" && 
@@ -76,12 +87,18 @@ namespace NestFlow.Controllers
 
                 if (payment == null)
                 {
+                    _logger.LogError("Payment not found!");
                     return BadRequest(new { success = false, message = "Không tìm thấy thanh toán" });
                 }
 
+                _logger.LogInformation($"Payment found. PaymentId: {payment.PaymentId}, Amount: {payment.Amount}");
+
+                _logger.LogInformation("Getting or creating wallet...");
                 // Lấy hoặc tạo ví cho landlord
                 var wallet = await _walletService.GetOrCreateWalletAsync(booking.Property.LandlordId);
+                _logger.LogInformation($"Wallet: WalletId={wallet.WalletId}, Available={wallet.AvailableBalance}, Locked={wallet.LockedBalance}");
 
+                _logger.LogInformation("Transferring locked to available...");
                 // Chuyển tiền từ locked sang available
                 var transferSuccess = await _walletService.TransferLockedToAvailableAsync(
                     wallet.WalletId,
@@ -93,18 +110,22 @@ namespace NestFlow.Controllers
 
                 if (!transferSuccess)
                 {
+                    _logger.LogError("Transfer failed!");
                     return StatusCode(500, new { success = false, message = "Lỗi xử lý ví" });
                 }
 
+                _logger.LogInformation("Transfer successful. Updating booking status...");
                 // Cập nhật trạng thái booking
                 booking.Status = "Confirmed";
                 booking.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Booking status updated to Confirmed");
 
-                // Gửi thông báo cho renter
+                // Gửi thông báo cho renter (không throw nếu lỗi)
                 try
                 {
+                    _logger.LogInformation($"Sending email to {booking.Renter.Email}...");
                     await _emailService.SendEmailAsync(
                         booking.Renter.Email,
                         "Booking được chấp nhận",
@@ -114,9 +135,11 @@ namespace NestFlow.Controllers
                         $"Vui lòng liên hệ chủ nhà để sắp xếp chi tiết.<br><br>" +
                         $"Trân trọng,<br>NestFlow Team"
                     );
+                    _logger.LogInformation("Email sent successfully");
 
                     if (_notificationService != null)
                     {
+                        _logger.LogInformation("Sending notification...");
                         await _notificationService.CreateAndSendNotificationAsync(
                             booking.RenterId,
                             "Booking được chấp nhận",
@@ -124,13 +147,17 @@ namespace NestFlow.Controllers
                             "success",
                             $"/Room/Detail?id={booking.PropertyId}"
                         );
+                        _logger.LogInformation("Notification sent successfully");
                     }
                 }
-                catch (Exception ex)
+                catch (Exception emailEx)
                 {
-                    _logger.LogError($"Error sending notification: {ex.Message}");
+                    _logger.LogError($"Error sending email/notification: {emailEx.Message}");
+                    // Không throw - vì booking đã approve thành công
                 }
 
+                _logger.LogInformation("=== END ApproveBooking SUCCESS ===");
+                
                 return Ok(new
                 {
                     success = true,
@@ -141,8 +168,20 @@ namespace NestFlow.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error approving booking: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra" });
+                _logger.LogError($"=== ERROR ApproveBooking ===");
+                _logger.LogError($"Exception: {ex.GetType().Name}");
+                _logger.LogError($"Message: {ex.Message}");
+                _logger.LogError($"StackTrace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError($"InnerException: {ex.InnerException.Message}");
+                }
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Có lỗi xảy ra khi chấp nhận booking",
+                    error = ex.Message,
+                    details = ex.InnerException?.Message
+                });
             }
         }
 
@@ -154,12 +193,17 @@ namespace NestFlow.Controllers
         {
             try
             {
+                _logger.LogInformation($"=== START RejectBooking {bookingId} ===");
+                
                 var landlordId = HttpContext.Session.GetInt32("UserId");
+                _logger.LogInformation($"LandlordId from session: {landlordId}");
+                
                 if (landlordId == null)
                 {
                     return Unauthorized(new { success = false, message = "Vui lòng đăng nhập" });
                 }
 
+                _logger.LogInformation("Loading booking from database...");
                 var booking = await _context.Bookings
                     .Include(b => b.Property)
                     .Include(b => b.Renter)
@@ -167,21 +211,27 @@ namespace NestFlow.Controllers
 
                 if (booking == null)
                 {
+                    _logger.LogWarning($"Booking {bookingId} not found");
                     return NotFound(new { success = false, message = "Không tìm thấy booking" });
                 }
+
+                _logger.LogInformation($"Booking found. Status: {booking.Status}");
 
                 // Kiểm tra quyền
                 if (booking.Property.LandlordId != landlordId)
                 {
+                    _logger.LogWarning($"Landlord {landlordId} không có quyền với booking {bookingId}");
                     return Forbid();
                 }
 
                 // Kiểm tra trạng thái
                 if (booking.Status != "Pending")
                 {
+                    _logger.LogWarning($"Booking {bookingId} đã được xử lý. Status: {booking.Status}");
                     return BadRequest(new { success = false, message = "Booking đã được xử lý" });
                 }
 
+                _logger.LogInformation("Finding payment...");
                 // Tìm payment tương ứng
                 var payment = await _context.Payments
                     .Where(p => p.PaymentType == "Deposit" && 
@@ -193,12 +243,18 @@ namespace NestFlow.Controllers
 
                 if (payment == null)
                 {
+                    _logger.LogError("Payment not found!");
                     return BadRequest(new { success = false, message = "Không tìm thấy thanh toán" });
                 }
 
+                _logger.LogInformation($"Payment found. Amount: {payment.Amount}");
+
+                _logger.LogInformation("Getting landlord wallet...");
                 // Lấy ví landlord
                 var wallet = await _walletService.GetOrCreateWalletAsync(booking.Property.LandlordId);
+                _logger.LogInformation($"Wallet: WalletId={wallet.WalletId}, Locked={wallet.LockedBalance}");
 
+                _logger.LogInformation("Releasing locked balance...");
                 // Giải phóng locked balance
                 var releaseSuccess = await _walletService.ReleaseLockedBalanceAsync(
                     wallet.WalletId,
@@ -210,9 +266,11 @@ namespace NestFlow.Controllers
 
                 if (!releaseSuccess)
                 {
+                    _logger.LogError("Release locked balance failed!");
                     return StatusCode(500, new { success = false, message = "Lỗi xử lý ví landlord" });
                 }
 
+                _logger.LogInformation("Refunding to renter...");
                 // Hoàn tiền cho renter
                 var refundSuccess = await _walletService.RefundToRenterAsync(
                     booking.RenterId,
@@ -224,9 +282,11 @@ namespace NestFlow.Controllers
 
                 if (!refundSuccess)
                 {
+                    _logger.LogError("Refund to renter failed!");
                     return StatusCode(500, new { success = false, message = "Lỗi hoàn tiền" });
                 }
 
+                _logger.LogInformation("Updating booking and payment status...");
                 // Cập nhật trạng thái booking
                 booking.Status = "Rejected";
                 booking.Notes = $"{booking.Notes}\n[Lý do từ chối: {request.Reason}]";
@@ -236,10 +296,12 @@ namespace NestFlow.Controllers
                 payment.Status = "Refunded";
 
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Booking rejected and payment refunded");
 
-                // Gửi thông báo cho renter
+                // Gửi thông báo cho renter (không throw nếu lỗi)
                 try
                 {
+                    _logger.LogInformation($"Sending email to {booking.Renter.Email}...");
                     await _emailService.SendEmailAsync(
                         booking.Renter.Email,
                         "Booking bị từ chối - Đã hoàn tiền",
@@ -250,9 +312,11 @@ namespace NestFlow.Controllers
                         $"Bạn có thể sử dụng số tiền này để đặt phòng khác.<br><br>" +
                         $"Trân trọng,<br>NestFlow Team"
                     );
+                    _logger.LogInformation("Email sent successfully");
 
                     if (_notificationService != null)
                     {
+                        _logger.LogInformation("Sending notification...");
                         await _notificationService.CreateAndSendNotificationAsync(
                             booking.RenterId,
                             "Booking bị từ chối - Đã hoàn tiền",
@@ -260,13 +324,17 @@ namespace NestFlow.Controllers
                             "warning",
                             "/Home/Profile"
                         );
+                        _logger.LogInformation("Notification sent successfully");
                     }
                 }
-                catch (Exception ex)
+                catch (Exception emailEx)
                 {
-                    _logger.LogError($"Error sending notification: {ex.Message}");
+                    _logger.LogError($"Error sending email/notification: {emailEx.Message}");
+                    // Không throw - vì booking đã reject thành công
                 }
 
+                _logger.LogInformation("=== END RejectBooking SUCCESS ===");
+                
                 return Ok(new
                 {
                     success = true,
@@ -277,8 +345,20 @@ namespace NestFlow.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error rejecting booking: {ex.Message}");
-                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra" });
+                _logger.LogError($"=== ERROR RejectBooking ===");
+                _logger.LogError($"Exception: {ex.GetType().Name}");
+                _logger.LogError($"Message: {ex.Message}");
+                _logger.LogError($"StackTrace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError($"InnerException: {ex.InnerException.Message}");
+                }
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Có lỗi xảy ra khi từ chối booking",
+                    error = ex.Message,
+                    details = ex.InnerException?.Message
+                });
             }
         }
 

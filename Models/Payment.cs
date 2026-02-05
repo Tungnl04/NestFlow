@@ -35,6 +35,12 @@ public partial class Payment
 
     public string? RawWebhook { get; set; }
 
+    public decimal? PlatformCommission { get; set; }
+
+    public decimal? LandlordAmount { get; set; }
+
+    public decimal? UserDiscountApplied { get; set; }
+
     public virtual Invoice? Invoice { get; set; }
 
     public virtual User? Landlord { get; set; }

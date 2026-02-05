@@ -1,7 +1,8 @@
 ﻿@page
-@model NestFlow.Pages.Landlord.PostsModel
+@model NestFlow.Pages.Admin.ListingsModel
 @{
-    ViewData["Title"] = "Admin Site - Nestflow";
+    ViewData["Title"] = "Quản lý tin đăng - Nestflow";
+    Layout = "~/Pages/Shared/_LandlordLayout.cshtml";
 }
 
 <div class="container-fluid px-4 py-4">
@@ -10,7 +11,7 @@
             <div class="nf-sidebar">
                 <h4 class="mb-4">Menu quản lý</h4>
                 <ul class="nf-sidebar-menu">
-                    <li class="active">
+                    <li>
                         <a asp-page="/Admin/Dashboard">
                             <i class="fas fa-home"></i> Trang tổng quan
                         </a>
@@ -22,7 +23,7 @@
                         </a>
                     </li>
 
-                    <li>
+                    <li class="active">
                         <a asp-page="/Admin/Listings">
                             <i class="fas fa-newspaper"></i> Quản lý tin đăng
                         </a>
@@ -102,42 +103,3 @@
         </div>
     </div>
 </div>
-
-<style>
-    .nf-sidebar {
-        background: #fff;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        height: fit-content;
-        position: sticky;
-        top: 100px;
-    }
-
-    .nf-sidebar-menu {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-        .nf-sidebar-menu li {
-            margin-bottom: 0.5rem;
-        }
-
-            .nf-sidebar-menu li a {
-                display: flex;
-                align-items: center;
-                gap: 0.75rem;
-                padding: 0.75rem 1rem;
-                color: #333;
-                text-decoration: none;
-                border-radius: 8px;
-                transition: all 0.3s;
-            }
-
-                .nf-sidebar-menu li a:hover,
-                .nf-sidebar-menu li.active a {
-                    background: #4A90E2;
-                    color: #fff;
-                }
-</style>

@@ -51,6 +51,9 @@ namespace NestFlow.Application.Services
         {
             try
             {
+                _logger.LogInformation($"=== START LockBalanceAsync ===");
+                _logger.LogInformation($"WalletId: {walletId}, Amount: {amount}, Type: {relatedType}, Id: {relatedId}");
+                
                 var wallet = await _context.Wallets.FindAsync(walletId);
                 if (wallet == null)
                 {
@@ -58,9 +61,13 @@ namespace NestFlow.Application.Services
                     return false;
                 }
 
+                _logger.LogInformation($"Wallet found. Current LockedBalance: {wallet.LockedBalance}, AvailableBalance: {wallet.AvailableBalance}");
+
                 // Tăng locked balance
                 wallet.LockedBalance += amount;
                 wallet.UpdatedAt = DateTime.Now;
+
+                _logger.LogInformation($"Updating wallet. New LockedBalance: {wallet.LockedBalance}");
 
                 // Tạo transaction log
                 var transaction = new WalletTransaction
@@ -76,14 +83,24 @@ namespace NestFlow.Application.Services
                 };
 
                 _context.WalletTransactions.Add(transaction);
+                
+                _logger.LogInformation("Saving changes to database...");
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Locked {amount} VND in wallet {walletId} for {relatedType} {relatedId}");
+                _logger.LogInformation($"✅ Successfully locked {amount} VND in wallet {walletId} for {relatedType} {relatedId}");
+                _logger.LogInformation("=== END LockBalanceAsync SUCCESS ===");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error locking balance: {ex.Message}");
+                _logger.LogError($"=== ERROR LockBalanceAsync ===");
+                _logger.LogError($"Exception: {ex.GetType().Name}");
+                _logger.LogError($"Message: {ex.Message}");
+                _logger.LogError($"StackTrace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError($"InnerException: {ex.InnerException.Message}");
+                }
                 return false;
             }
         }
@@ -145,6 +162,9 @@ namespace NestFlow.Application.Services
         {
             try
             {
+                _logger.LogInformation($"=== START TransferLockedToAvailable ===");
+                _logger.LogInformation($"WalletId: {walletId}, Amount: {amount}, Type: {relatedType}, Id: {relatedId}");
+                
                 var wallet = await _context.Wallets.FindAsync(walletId);
                 if (wallet == null)
                 {
@@ -152,12 +172,15 @@ namespace NestFlow.Application.Services
                     return false;
                 }
 
+                _logger.LogInformation($"Wallet found. Available: {wallet.AvailableBalance}, Locked: {wallet.LockedBalance}");
+
                 if (wallet.LockedBalance < amount)
                 {
-                    _logger.LogError($"Insufficient locked balance in wallet {walletId}");
+                    _logger.LogError($"Insufficient locked balance! Need: {amount}, Have: {wallet.LockedBalance}");
                     return false;
                 }
 
+                _logger.LogInformation("Transferring from locked to available...");
                 // Chuyển từ locked sang available
                 wallet.LockedBalance -= amount;
                 wallet.AvailableBalance += amount;
@@ -179,12 +202,15 @@ namespace NestFlow.Application.Services
                 _context.WalletTransactions.Add(transaction);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Transferred {amount} VND from locked to available in wallet {walletId}");
+                _logger.LogInformation($"Transfer successful! New Available: {wallet.AvailableBalance}, New Locked: {wallet.LockedBalance}");
+                _logger.LogInformation("=== END TransferLockedToAvailable SUCCESS ===");
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Error transferring balance: {ex.Message}");
+                _logger.LogError($"=== ERROR TransferLockedToAvailable ===");
+                _logger.LogError($"Exception: {ex.Message}");
+                _logger.LogError($"StackTrace: {ex.StackTrace}");
                 return false;
             }
         }
