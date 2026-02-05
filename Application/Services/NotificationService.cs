@@ -2,16 +2,9 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using NestFlow.Hubs;
 using NestFlow.Models;
+using NestFlow.Application.Services.Interfaces;
 
 namespace NestFlow.Application.Services;
-
-public interface INotificationService
-{
-    Task CreateAndSendNotificationAsync(long userId, string title, string content, string type, string linkUrl = "");
-    Task<List<Notification>> GetUserNotificationsAsync(long userId);
-    Task MarkAsReadAsync(long notificationId);
-    Task MarkAllAsReadAsync(long userId);
-}
 
 public class NotificationService : INotificationService
 {

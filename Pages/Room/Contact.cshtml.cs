@@ -25,13 +25,18 @@ namespace NestFlow.Pages.Room
                 return NotFound();
             }
 
-            // Check if user is logged in (optional)
+            // Kiểm tra đăng nhập
             var userId = HttpContext.Session.GetInt32("UserId");
-            IsLoggedIn = userId != null;
-
-            if (IsLoggedIn)
+            
+            if (userId != null)
             {
+                IsLoggedIn = true;
                 CurrentUser = await _context.Users.FindAsync((long)userId.Value);
+            }
+            else
+            {
+                IsLoggedIn = false;
+                CurrentUser = null;
             }
 
             Property = await _context.Properties
