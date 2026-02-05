@@ -1,0 +1,68 @@
+@page
+@model NestFlow.Pages.Landlord.Posts.CreateModel
+@{
+    ViewData["Title"] = "Đăng tin mới";
+    Layout = "_Layout";
+}
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-page="./Index">Quản lý bài đăng</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Thêm mới</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow border-0">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">Nội dung bài đăng</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+                        <div class="mb-3">
+                            <label asp-for="NewListing.Title" class="form-label">Tiêu đề tin <span class="text-danger">*</span></label>
+                            <input asp-for="NewListing.Title" class="form-control" placeholder="Viết tiêu đề hấp dẫn..." required />
+                            <span asp-validation-for="NewListing.Title" class="text-danger"></span>
+                        </div>
+
+                         <div class="mb-3">
+                            <label asp-for="NewListing.PropertyId" class="form-label">Chọn phòng trọ <span class="text-danger">*</span></label>
+                            <select asp-for="NewListing.PropertyId" class="form-select" asp-items="Model.PropertyOptions" required>
+                                <option value="">-- Chọn phòng --</option>
+                            </select>
+                            <span asp-validation-for="NewListing.PropertyId" class="text-danger"></span>
+                            <small class="text-muted">Chỉ hiển thị các phòng chưa có tin đang hoạt động.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="NewListing.Content" class="form-label">Nội dung chi tiết</label>
+                            <textarea asp-for="NewListing.Content" class="form-control" rows="8"></textarea>
+                        </div>
+
+                        <div class="row">
+                             <div class="col-md-6 mb-3">
+                                <label class="form-label">Trạng thái khởi tạo</label>
+                                <select asp-for="NewListing.Status" class="form-select">
+                                    <option value="draft">Bản nháp</option>
+                                    <option value="active">Đăng ngay</option>
+                                </select>
+                             </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-page="./Index" class="btn btn-secondary">Hủy bỏ</a>
+                            <button type="submit" class="btn btn-primary">Lưu bài đăng</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

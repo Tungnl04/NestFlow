@@ -41,6 +41,10 @@ public partial class Property
 
     public DateTime? UpdatedAt { get; set; }
 
+    public decimal? CommissionRate { get; set; }
+
+    public decimal? UserDiscount { get; set; }
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();

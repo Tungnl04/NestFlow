@@ -1,0 +1,139 @@
+@page
+@model NestFlow.Pages.Landlord.Posts.IndexModel
+@{
+    ViewData["Title"] = "Quản lý bài đăng";
+    Layout = "_Layout";
+}
+
+<div class="row mb-4 align-items-center">
+    <div class="col">
+        <h2 class="text-primary fw-bold">Quản lý bài đăng</h2>
+        <p class="text-muted">Danh sách các tin đăng cho thuê</p>
+    </div>
+    <div class="col-auto">
+        <a asp-page="/Landlord/Posts/Create" class="btn btn-primary">
+            <i class="fa-solid fa-plus me-2"></i> Đăng tin mới
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-body">
+        @if (Model.Listings.Count == 0)
+        {
+            <div class="text-center py-5">
+                <img src="~/images/empty_state.svg" alt="No data" class="mb-3" style="width: 150px; opacity: 0.5;" onerror="this.style.display='none'">
+                <p class="text-muted">Bạn chưa có bài đăng nào.</p>
+                <a asp-page="/Landlord/Posts/Create" class="btn btn-outline-primary btn-sm">Tạo bài đăng</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="bg-light">
+                        <tr>
+                            <th scope="col">Tiêu đề tin</th>
+                            <th scope="col">Phòng trọ</th>
+                            <th scope="col">Ngày đăng/Hết hạn</th>
+                            <th scope="col">Lượt xem</th>
+                            <th scope="col">Trạng thái</th>
+                            <th scope="col" class="text-end">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Listings)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-truncate" style="max-width: 200px;">@item.Title</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@item.Property.Title</span>
+                                </td>
+                                <td>
+                                    <small class="d-block text-muted">Đăng: @(item.PublishedAt?.ToString("dd/MM/yyyy") ?? "-")</small>
+                                    <small class="d-block text-danger">Hết hạn: @(item.ExpiresAt?.ToString("dd/MM/yyyy") ?? "-")</small>
+                                </td>
+                                <td>@item.ViewCount</td>
+                                <td>
+                                    @if(item.Status == "active")
+                                    {
+                                        <span class="badge bg-success">Đang hiển thị</span>
+                                    }
+                                    else if(item.Status == "draft")
+                                    {
+                                        <span class="badge bg-secondary">Bản nháp</span>
+                                    }
+                                    else if(item.Status == "expired")
+                                    {
+                                        <span class="badge bg-warning text-dark">Hết hạn</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-dark">Đã ẩn</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <a asp-page="./Edit" asp-route-id="@item.ListingId" class="btn btn-sm btn-outline-secondary me-1" title="Sửa">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </a>
+                                    <form method="post" asp-page-handler="ToggleStatus" asp-route-id="@item.ListingId" class="d-inline">
+                                        @if(item.Status == "active")
+                                        {
+                                            <button type="submit" name="status" value="inactive" class="btn btn-sm btn-outline-warning" title="Ẩn tin">
+                                                <i class="fa-solid fa-eye-slash"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                             <button type="submit" name="status" value="active" class="btn btn-sm btn-outline-success" title="Hiện tin">
+                                                <i class="fa-solid fa-eye"></i>
+                                            </button>
+                                        }
+                                    </form>
+                                     <button class="btn btn-sm btn-outline-danger ms-1" title="Xóa" onclick="confirmDelete(@item.ListingId, '@item.Title')">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Bạn có chắc chắn muốn xóa tin đăng <strong id="delete-name"></strong> không?
+            </div>
+            <div class="modal-footer">
+                <form method="post" asp-page-handler="Delete">
+                    <input type="hidden" name="id" id="delete-id" />
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger">Xóa bỏ</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete(id, name) {
+            document.getElementById('delete-id').value = id;
+            document.getElementById('delete-name').innerText = name;
+            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            deleteModal.show();
+        }
+    </script>
+}
