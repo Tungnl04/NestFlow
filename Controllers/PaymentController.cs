@@ -36,6 +36,35 @@ namespace NestFlow.Controllers
         }
 
         /// <summary>
+        /// Helper: Tính toán commission và số tiền
+        /// </summary>
+        private (decimal userPayAmount, decimal landlordAmount, decimal platformCommission, decimal userDiscount) CalculateCommission(Property property)
+        {
+            var depositAmount = (decimal)(property.Deposit ?? 0);
+            
+            // Tính commission
+            var commissionRate = property.CommissionRate ?? 50.00m; // Default 50%
+            var platformCommission = depositAmount * (commissionRate / 100);
+            
+            // Tính user discount (từ commission)
+            var userDiscount = property.UserDiscount ?? 500000m; // Default 500K
+            
+            // Đảm bảo discount không vượt quá commission
+            if (userDiscount > platformCommission)
+            {
+                userDiscount = platformCommission;
+            }
+            
+            // Số tiền user phải trả
+            var userPayAmount = depositAmount - userDiscount;
+            
+            // Số tiền landlord sẽ nhận (sau khi trừ commission)
+            var landlordAmount = depositAmount - platformCommission;
+            
+            return (userPayAmount, landlordAmount, platformCommission, userDiscount);
+        }
+
+        /// <summary>
         /// Tạo link thanh toán PayOS cho booking
         /// </summary>
         [HttpPost("create-booking-payment")]
@@ -115,21 +144,29 @@ namespace NestFlow.Controllers
 
                 Console.WriteLine($"User found: {user.FullName}, UserId={userId}");
 
-                // Calculate amount (deposit) - ÁP DỤNG GIẢM GIÁ 500K
-                var amount = (int)(property.Deposit ?? 0);
-                if (amount <= 0)
+                // Calculate amount (deposit) - ÁP DỤNG COMMISSION VÀ DISCOUNT
+                var depositAmount = (decimal)(property.Deposit ?? 0);
+                if (depositAmount <= 0)
                 {
-                    Console.WriteLine($"Invalid deposit amount: {amount}");
+                    Console.WriteLine($"Invalid deposit amount: {depositAmount}");
                     return BadRequest(new { success = false, message = "Số tiền đặt cọc không hợp lệ" });
                 }
 
-                Console.WriteLine($"Deposit amount: {amount}");
+                Console.WriteLine($"Original deposit: {depositAmount}");
 
-                decimal platformDiscount = 500000;
-                amount = amount - (int)platformDiscount;
-                if (amount < 0) amount = 0;
+                // Tính commission bằng helper method
+                var (userPayAmount, landlordAmount, platformCommission, userDiscount) = CalculateCommission(property);
 
-                Console.WriteLine($"Amount after discount: {amount}");
+                Console.WriteLine($"Commission calculation:");
+                Console.WriteLine($"  Deposit gốc:        {depositAmount:N0} VNĐ");
+                Console.WriteLine($"  Commission rate:    {property.CommissionRate ?? 50}%");
+                Console.WriteLine($"  Commission amount:  {platformCommission:N0} VNĐ");
+                Console.WriteLine($"  User discount:      {userDiscount:N0} VNĐ");
+                Console.WriteLine($"  User trả:           {userPayAmount:N0} VNĐ");
+                Console.WriteLine($"  Landlord nhận:      {landlordAmount:N0} VNĐ");
+                Console.WriteLine($"  Platform giữ:       {(platformCommission - userDiscount):N0} VNĐ");
+
+                var amount = (int)userPayAmount;
 
                 // KIỂM TRA VÍ USER - Nếu có số dư, cho phép dùng ví
                 var userWallet = await _context.Wallets
@@ -196,15 +233,38 @@ namespace NestFlow.Controllers
                 if (useWallet)
                 {
                     // Thanh toán bằng ví - Không cần PayOS
-                    // Khóa tiền vào ví landlord ngay
+                    // Khóa tiền vào ví landlord ngay (chỉ lock số tiền landlord nhận)
                     var landlordWallet = await _walletService.GetOrCreateWalletAsync(property.LandlordId);
-                    await _walletService.LockBalanceAsync(
+                    var lockSuccess = await _walletService.LockBalanceAsync(
                         landlordWallet.WalletId,
-                        amount,
+                        landlordAmount, // Lock số tiền landlord nhận, không phải amount user trả
                         "booking",
                         booking.BookingId,
                         $"Đặt cọc booking #{booking.BookingId} - {property.Title}"
                     );
+
+                    if (!lockSuccess)
+                    {
+                        Console.WriteLine($"CRITICAL ERROR: Failed to lock balance for wallet payment booking {booking.BookingId}");
+                        
+                        // Rollback: Xóa booking và hoàn tiền
+                        _context.Bookings.Remove(booking);
+                        
+                        // Hoàn tiền vào ví user
+                        userWallet!.AvailableBalance += amount;
+                        userWallet.UpdatedAt = DateTime.Now;
+                        
+                        await _context.SaveChangesAsync();
+                        
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message = "Không thể khóa tiền vào ví chủ nhà. Đã hoàn tiền vào ví của bạn.",
+                            error = "wallet_lock_failed"
+                        });
+                    }
+
+                    Console.WriteLine($"Successfully locked {amount} VND for wallet payment booking {booking.BookingId}");
 
                     // Tạo payment record
                     var payment = new Models.Payment
@@ -217,7 +277,10 @@ namespace NestFlow.Controllers
                         ProviderOrderCode = $"WALLET_{booking.BookingId}",
                         Status = "Completed",
                         CreatedAt = DateTime.Now,
-                        PaidAt = DateTime.Now
+                        PaidAt = DateTime.Now,
+                        PlatformCommission = platformCommission,
+                        LandlordAmount = landlordAmount,
+                        UserDiscountApplied = userDiscount
                     };
                     _context.Payments.Add(payment);
                     await _context.SaveChangesAsync();
@@ -272,7 +335,10 @@ namespace NestFlow.Controllers
                     ProviderOrderCode = orderCode.ToString(),
                     PayUrl = createPayment.checkoutUrl,
                     Status = "Pending",
-                    CreatedAt = DateTime.Now
+                    CreatedAt = DateTime.Now,
+                    PlatformCommission = platformCommission,
+                    LandlordAmount = landlordAmount,
+                    UserDiscountApplied = userDiscount
                 };
 
                 Console.WriteLine($"Creating payment record: PayerUserId={payosPayment.PayerUserId}, LandlordId={payosPayment.LandlordId}, Amount={payosPayment.Amount}");
@@ -394,6 +460,8 @@ namespace NestFlow.Controllers
         {
             try
             {
+                Console.WriteLine($"=== START PaymentSuccess for booking {bookingId} ===");
+                
                 var booking = await _context.Bookings
                     .Include(b => b.Property)
                     .Include(b => b.Renter)
@@ -401,8 +469,11 @@ namespace NestFlow.Controllers
 
                 if (booking == null)
                 {
+                    Console.WriteLine($"ERROR: Booking {bookingId} not found");
                     return NotFound(new { success = false, message = "Không tìm thấy booking" });
                 }
+
+                Console.WriteLine($"Booking found: PropertyId={booking.PropertyId}, RenterId={booking.RenterId}, Status={booking.Status}");
 
                 // Update booking status
                 booking.Status = "Confirmed";
@@ -416,28 +487,53 @@ namespace NestFlow.Controllers
 
                 if (payment != null)
                 {
+                    Console.WriteLine($"Payment found: PaymentId={payment.PaymentId}, Amount={payment.Amount}");
                     payment.Status = "Completed";
                     payment.PaidAt = DateTime.Now;
                 }
+                else
+                {
+                    Console.WriteLine("WARNING: No pending payment found");
+                }
 
+                Console.WriteLine("Saving booking and payment status...");
                 await _context.SaveChangesAsync();
+                Console.WriteLine("Booking and payment status saved");
 
                 // KHÓA TIỀN VÀO VÍ LANDLORD (chờ approve)
-                try
+                Console.WriteLine($"Getting wallet for landlord {booking.Property.LandlordId}...");
+                var wallet = await _walletService.GetOrCreateWalletAsync(booking.Property.LandlordId);
+                Console.WriteLine($"Wallet: WalletId={wallet.WalletId}, Available={wallet.AvailableBalance}, Locked={wallet.LockedBalance}");
+                
+                // Tính lại commission để biết landlord nhận bao nhiêu
+                var (_, landlordAmountToLock, _, _) = CalculateCommission(booking.Property);
+                
+                Console.WriteLine($"Locking balance: Amount={landlordAmountToLock}...");
+                var lockSuccess = await _walletService.LockBalanceAsync(
+                    wallet.WalletId,
+                    landlordAmountToLock, // Lock số tiền landlord nhận, không phải deposit gốc
+                    "booking",
+                    booking.BookingId,
+                    $"Đặt cọc booking #{booking.BookingId} - {booking.Property.Title}"
+                );
+
+                if (!lockSuccess)
                 {
-                    var wallet = await _walletService.GetOrCreateWalletAsync(booking.Property.LandlordId);
-                    await _walletService.LockBalanceAsync(
-                        wallet.WalletId,
-                        booking.Property.Deposit ?? 0,
-                        "booking",
-                        booking.BookingId,
-                        $"Đặt cọc booking #{booking.BookingId} - {booking.Property.Title}"
-                    );
+                    Console.WriteLine($"CRITICAL ERROR: Failed to lock balance for booking {booking.BookingId}");
+                    
+                    // Rollback booking status về Pending
+                    booking.Status = "Pending";
+                    if (payment != null)
+                    {
+                        payment.Status = "Pending";
+                    }
+                    await _context.SaveChangesAsync();
+                    
+                    Console.WriteLine($"Rolled back booking {booking.BookingId} to Pending status");
+                    return Redirect($"/Room/Detail?id={booking.PropertyId}&bookingError=wallet_lock_failed");
                 }
-                catch (Exception walletEx)
-                {
-                    Console.WriteLine($"Error locking balance: {walletEx.Message}");
-                }
+
+                Console.WriteLine($"Successfully locked {booking.Property.Deposit ?? 0} VND for booking {booking.BookingId}");
 
                 // Send notification to RENTER
                 if (booking.Renter != null && !string.IsNullOrEmpty(booking.Renter.Email))
@@ -508,11 +604,20 @@ namespace NestFlow.Controllers
                 }
 
                 // Redirect to success page
+                Console.WriteLine($"Redirecting to success page for property {booking.PropertyId}");
+                Console.WriteLine("=== END PaymentSuccess SUCCESS ===");
                 return Redirect($"/Room/Detail?id={booking.PropertyId}&bookingSuccess=true");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in payment success: {ex.Message}");
+                Console.WriteLine($"=== ERROR PaymentSuccess ===");
+                Console.WriteLine($"Exception: {ex.GetType().Name}");
+                Console.WriteLine($"Message: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                }
                 return StatusCode(500, new { success = false, message = "Có lỗi xảy ra" });
             }
         }

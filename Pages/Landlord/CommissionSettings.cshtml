@@ -1,0 +1,171 @@
+@page
+@model NestFlow.Pages.Landlord.CommissionSettingsModel
+@{
+    ViewData["Title"] = "Cài đặt hoa hồng - Nestflow";
+    Layout = "~/Pages/Shared/_LandlordLayout.cshtml";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Cài đặt hoa hồng</h2>
+            <p class="text-muted">Quản lý % hoa hồng và giảm giá cho từng property</p>
+        </div>
+    </div>
+
+    <!-- Info Card -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle"></i> Cách tính hoa hồng</h5>
+                <p class="mb-2"><strong>Ví dụ:</strong> Deposit = 2,000,000 VNĐ, Commission = 50%, Discount = 500,000 VNĐ</p>
+                <ul class="mb-0">
+                    <li>Khách trả: <strong>1,500,000 VNĐ</strong> (Deposit - Discount)</li>
+                    <li>Bạn nhận: <strong>1,000,000 VNĐ</strong> (Deposit - Commission)</li>
+                    <li>Platform giữ: <strong>500,000 VNĐ</strong> (Commission - Discount)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Properties List -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Deposit</th>
+                            <th>Commission %</th>
+                            <th>User Discount</th>
+                            <th>Bạn nhận</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var property in Model.Properties)
+                        {
+                            var commissionRate = property.CommissionRate ?? 50;
+                            var userDiscount = property.UserDiscount ?? 500000;
+                            var deposit = property.Deposit ?? 0;
+                            var commission = deposit * (commissionRate / 100);
+                            var landlordReceives = deposit - commission;
+                            
+                            <tr>
+                                <td>
+                                    <strong>@property.Title</strong><br>
+                                    <small class="text-muted">ID: @property.PropertyId</small>
+                                </td>
+                                <td>
+                                    <strong>@deposit.ToString("N0") VNĐ</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">@commissionRate%</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">@userDiscount.ToString("N0") VNĐ</span>
+                                </td>
+                                <td>
+                                    <strong class="text-success">@landlordReceives.ToString("N0") VNĐ</strong>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" 
+                                            onclick="editCommission(@property.PropertyId, @commissionRate, @userDiscount)">
+                                        <i class="fas fa-edit"></i> Sửa
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Commission Modal -->
+<div class="modal fade" id="editCommissionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chỉnh sửa hoa hồng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCommissionForm">
+                    <input type="hidden" id="propertyId" />
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Commission Rate (%)</label>
+                        <input type="number" class="form-control" id="commissionRate" 
+                               min="0" max="100" step="0.01" required />
+                        <small class="text-muted">% hoa hồng platform nhận từ deposit</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">User Discount (VNĐ)</label>
+                        <input type="number" class="form-control" id="userDiscount" 
+                               min="0" step="1000" required />
+                        <small class="text-muted">Số tiền giảm giá cho khách (từ commission)</small>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>Lưu ý:</strong> Discount không được vượt quá commission amount
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveCommission()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let editModal;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            editModal = new bootstrap.Modal(document.getElementById('editCommissionModal'));
+        });
+
+        function editCommission(propertyId, commissionRate, userDiscount) {
+            document.getElementById('propertyId').value = propertyId;
+            document.getElementById('commissionRate').value = commissionRate;
+            document.getElementById('userDiscount').value = userDiscount;
+            editModal.show();
+        }
+
+        async function saveCommission() {
+            const propertyId = document.getElementById('propertyId').value;
+            const commissionRate = document.getElementById('commissionRate').value;
+            const userDiscount = document.getElementById('userDiscount').value;
+
+            try {
+                const response = await fetch('/api/commission/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        propertyId: parseInt(propertyId),
+                        commissionRate: parseFloat(commissionRate),
+                        userDiscount: parseFloat(userDiscount)
+                    })
+                });
+
+                if (response.ok) {
+                    alert('✅ Đã cập nhật hoa hồng!');
+                    editModal.hide();
+                    location.reload();
+                } else {
+                    const error = await response.json();
+                    alert('❌ Lỗi: ' + (error.message || 'Không thể cập nhật'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Có lỗi xảy ra!');
+            }
+        }
+    </script>
+}

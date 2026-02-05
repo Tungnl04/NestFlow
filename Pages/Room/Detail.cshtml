@@ -211,6 +211,20 @@
         const roomId = "@Model.Property.PropertyId";
         const btnSave = document.querySelector('.nf-save-btn-detail');
 
+        // Check for booking errors from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const bookingError = urlParams.get('bookingError');
+        const bookingSuccess = urlParams.get('bookingSuccess');
+        const bookingCancelled = urlParams.get('bookingCancelled');
+
+        if (bookingError === 'wallet_lock_failed') {
+            alert('❌ Lỗi: Không thể khóa tiền vào ví chủ nhà.\n\nBooking của bạn đã được rollback về trạng thái Pending.\n\nVui lòng thử lại hoặc liên hệ admin.');
+        } else if (bookingSuccess === 'true') {
+            alert('✅ Đặt phòng thành công!\n\nChủ nhà sẽ xem xét và phản hồi sớm nhất.');
+        } else if (bookingCancelled === 'true') {
+            alert('❌ Thanh toán đã bị hủy.\n\nVui lòng thử lại nếu bạn muốn đặt phòng.');
+        }
+
         // 1. Check current status
         async function checkFavoriteStatus() {
             if (!roomId || !btnSave) return;

@@ -445,6 +445,15 @@ public partial class NestFlowSystemContext : DbContext
                 .HasDefaultValue("created")
                 .HasColumnName("status");
             entity.Property(e => e.SubscriptionId).HasColumnName("subscription_id");
+            entity.Property(e => e.PlatformCommission)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("platform_commission");
+            entity.Property(e => e.LandlordAmount)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("landlord_amount");
+            entity.Property(e => e.UserDiscountApplied)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("user_discount_applied");
 
             entity.HasOne(d => d.Invoice).WithMany(p => p.Payments)
                 .HasForeignKey(d => d.InvoiceId)
@@ -549,6 +558,12 @@ public partial class NestFlowSystemContext : DbContext
             entity.Property(e => e.Ward)
                 .HasMaxLength(100)
                 .HasColumnName("ward");
+            entity.Property(e => e.CommissionRate)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("commission_rate");
+            entity.Property(e => e.UserDiscount)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("user_discount");
 
             entity.HasOne(d => d.Landlord).WithMany(p => p.Properties)
                 .HasForeignKey(d => d.LandlordId)
