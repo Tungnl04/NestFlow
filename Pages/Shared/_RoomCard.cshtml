@@ -20,9 +20,12 @@
         <a href="/Room/Detail?id=@Model.Id">
             <img src="@Model.Image" alt="@Model.Name" />
         </a>
-        <button class="nf-save-btn" data-room-id="@Model.Id" onclick="event.stopPropagation();">
-            <i class="far fa-heart"></i>
-        </button>
+        @if (Context.Session.GetString("UserType") != "landlord")
+        {
+            <button class="nf-save-btn" data-room-id="@Model.Id" onclick="event.stopPropagation();">
+                <i class="far fa-heart"></i>
+            </button>
+        }
     </div>
     <div class="nf-room-info">
         <h5 class="nf-room-name">

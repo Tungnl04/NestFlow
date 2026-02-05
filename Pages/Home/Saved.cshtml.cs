@@ -46,6 +46,14 @@ namespace NestFlow.Pages.Home
             IsLoggedIn = true;
 
             // userId at this point is guaranteed to be long
+
+            // Check if user is landlord
+            var userType = HttpContext.Session.GetString("UserType");
+            if (userType == "landlord")
+            {
+                return RedirectToPage("/Home/Index");
+            }
+
             {
                 var favorites = await _favoriteService.GetUserFavoritesAsync(userId.Value);
                 

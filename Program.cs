@@ -36,7 +36,7 @@ builder.Services.AddScoped<IFavoriteService, FavoriteService>();
 
 builder.Services.AddScoped<IWalletService, WalletService>();
 builder.Services.AddScoped<IUserService, UserService>();
-
+builder.Services.AddScoped<IAIService, AIService>();
 
 
 // Configure PayOS
