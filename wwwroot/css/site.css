@@ -785,34 +785,17 @@ body {
 }
 
 /* Disable booking for landlord/admin view */
-.landlord-view-mode .nf-booking-card,
-.landlord-view-mode .nf-contact-btn,
-.landlord-view-mode .nf-book-btn,
-.landlord-view-mode .nf-call-btn {
-    opacity: 0.6;
+.landlord-view-mode .nf-booking-card .nf-contact-btn,
+.landlord-view-mode .nf-booking-card .nf-book-btn,
+.landlord-view-mode .nf-booking-card .nf-call-btn {
+    opacity: 0.5;
     pointer-events: none;
-    position: relative;
-    cursor: not-allowed !important;
+    cursor: not-allowed;
+    background-color: #ccc !important;
+    border-color: #ccc !important;
 }
 
-.landlord-view-mode .nf-booking-card::after,
-.landlord-view-mode .nf-contact-btn::after,
-.landlord-view-mode .nf-book-btn::after,
-.landlord-view-mode .nf-call-btn::after {
-    content: 'Chỉ người thuê mới có thể đặt phòng';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(43, 52, 72, 0.95);
-    color: #fff;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    white-space: nowrap;
-    z-index: 10;
-    pointer-events: none;
-}
+/* Overlay removed - replaced with cleaner UI */
 
 .landlord-view-mode .nf-room-card {
     cursor: default;
