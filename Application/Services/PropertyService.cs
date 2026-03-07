@@ -96,5 +96,40 @@ namespace NestFlow.Application.Services
                 return false;
             }
         }
+
+        public async Task<PropertyImage> AddPropertyImageAsync(long propertyId, string imageUrl, bool isPrimary = false)
+        {
+            // Auto order logic
+            int displayOrder = 1;
+            var currentMaxOrder = await _context.PropertyImages
+                .Where(x => x.PropertyId == propertyId)
+                .MaxAsync(x => (int?)x.DisplayOrder);
+            
+            if (currentMaxOrder.HasValue) 
+                displayOrder = currentMaxOrder.Value + 1;
+
+            var img = new PropertyImage
+            {
+                PropertyId = propertyId,
+                ImageUrl = imageUrl,
+                IsPrimary = isPrimary,
+                DisplayOrder = displayOrder,
+                UploadedAt = DateTime.UtcNow
+            };
+
+            _context.PropertyImages.Add(img);
+            await _context.SaveChangesAsync();
+            return img;
+        }
+
+        public async Task<bool> DeletePropertyImageAsync(long imageId)
+        {
+            var img = await _context.PropertyImages.FindAsync(imageId);
+            if (img == null) return false;
+
+            _context.PropertyImages.Remove(img);
+            await _context.SaveChangesAsync();
+            return true;
+        }
     }
 }

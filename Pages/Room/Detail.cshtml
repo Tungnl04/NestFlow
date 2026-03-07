@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model NestFlow.Pages.Room.DetailModel
 @{
     ViewData["Title"] = $"{Model.Property.Title} - Nestflow";
@@ -36,9 +36,22 @@
         </button>
     </div>
 
-    <!-- Hình ảnh trọ -->
+    <!-- Tabs for 360 Toggle -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0">Hình ảnh trọ</h3>
+        <div class="btn-group rounded-pill border p-1" role="group">
+            <input type="radio" class="btn-check" name="viewType" id="view2d" autocomplete="off" checked onchange="toggleView('2d')">
+            <label class="btn btn-sm btn-outline-primary border-0 rounded-pill px-3 m-0" for="view2d"><i class="fas fa-image"></i> Ảnh thường</label>
+
+            <input type="radio" class="btn-check" name="viewType" id="view360" autocomplete="off" onchange="toggleView('360')">
+            <label class="btn btn-sm btn-outline-primary border-0 rounded-pill px-3 m-0" for="view360"><i class="fas fa-street-view"></i> Toàn cảnh 360</label>
+        </div>
+    </div>
+
+    <!-- Hình ảnh trọ Container -->
     <div class="nf-room-gallery mb-4">
-        <div class="row g-2">
+        <!-- Ảnh thường (2D) -->
+        <div id="view-2d-container" class="row g-2">
             <div class="col-md-8">
                 <img src="@mainImage" class="img-fluid rounded w-100" alt="@Model.Property.Title" id="mainImage" style="height: 500px; object-fit: cover;" />
             </div>
@@ -63,6 +76,15 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Ảnh toàn cảnh (360) -->
+        <div id="view-360-container" class="row g-2 d-none">
+            <div class="col-12">
+                <div id="panorama" style="width: 100%; height: 500px; border-radius: 8px;"></div>
+                <div class="text-center mt-2 text-muted small"><i class="fas fa-info-circle"></i> Dùng chuột để xoay và kéo để xem góc 360 độ</div>
+            </div>
+        </div>
+
         <div class="d-flex gap-2 mt-3">
             <button class="btn btn-outline-secondary">
                 <i class="fas fa-share"></i> Chia sẻ
@@ -206,6 +228,13 @@
 </div>
 
 @section Scripts {
+    <!-- Thư viện Pannellum -->
+    <link rel="stylesheet" href="~/lib/pannellum/pannellum.css" />
+    <script src="~/lib/pannellum/pannellum.js"></script>
+    <style>
+        .pnlm-container { border-radius: 8px; }
+    </style>
+
     <script>
         // Global config
         const roomId = "@Model.Property.PropertyId";
@@ -286,5 +315,37 @@
 
         // Initialize
         checkFavoriteStatus();
+
+        // --- Logic Pannellum 360 ---
+        function toggleView(type) {
+            const view2d = document.getElementById('view-2d-container');
+            const view360 = document.getElementById('view-360-container');
+            
+            if (type === '2d') {
+                view2d.classList.remove('d-none');
+                view360.classList.add('d-none');
+            } else {
+                view2d.classList.add('d-none');
+                view360.classList.remove('d-none');
+                initPannellum();
+            }
+        }
+
+        let viewer = null;
+        function initPannellum() {
+            if (viewer) return; // Chỉ khởi tạo 1 lần
+            
+            // Xử lý lấy ảnh 360: Tìm ảnh nào có _360 trong tên, nếu không có thì dùng ảnh demo của Pannellum
+            const allImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(images));
+            let panoramaUrl = allImages.find(url => url.toLowerCase().includes("360")) || "https://pannellum.org/images/alma.jpg";
+
+            viewer = pannellum.viewer('panorama', {
+                "type": "equirectangular",
+                "panorama": panoramaUrl,
+                "autoLoad": true,
+                "compass": true,
+                "showZoomCtrl": true
+            });
+        }
     </script>
 }
