@@ -15,12 +15,13 @@ namespace NestFlow.Pages.Landlord.Properties
         }
 
         public List<Property> Properties { get; set; } = new List<Property>();
-
+        public long LandlordId { get; set; }
         public async Task<IActionResult> OnGetAsync()
         {
             // Check session for login
             var userId = HttpContext.Session.GetInt32("UserId");
             var userType = HttpContext.Session.GetString("UserType");
+            LandlordId = 1;
 
             if (userId == null || userType != "landlord")
             {

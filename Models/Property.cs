@@ -45,9 +45,25 @@ public partial class Property
 
     public decimal? UserDiscount { get; set; }
 
+    public long? BuildingId { get; set; }
+
+    public long? FloorId { get; set; }
+
+    public string? RoomNumber { get; set; }
+
+    public int CurrentOccupantsCount { get; set; }
+
+    public long? CurrentRentalId { get; set; }
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
+    public virtual Building? Building { get; set; }
+
+    public virtual Rental? CurrentRental { get; set; }
+
     public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+
+    public virtual Floor? Floor { get; set; }
 
     public virtual User Landlord { get; set; } = null!;
 
@@ -64,4 +80,5 @@ public partial class Property
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
     public virtual ICollection<Amenity> Amenities { get; set; } = new List<Amenity>();
+    public virtual ICollection<PropertyAmenity> PropertyAmenities { get; set; }= new List<PropertyAmenity>();
 }
