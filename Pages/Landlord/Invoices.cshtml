@@ -1,0 +1,461 @@
+@page
+@model NestFlow.Pages.Landlord.InvoicesModel
+@{
+    ViewData["Title"] = "Quản lý hóa đơn";
+    Layout = "~/Pages/Shared/_LandlordLayout.cshtml";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Quản lý hóa đơn</h2>
+            <p class="text-muted mb-0">Quản lý hóa đơn điện, nước, phí dịch vụ</p>
+        </div>
+        <div>
+            <button class="btn btn-success" onclick="openCreateInvoiceModal()">
+                <i class="fas fa-plus"></i> Tạo hóa đơn mới
+            </button>
+            <button class="btn btn-primary" onclick="exportToExcel()">
+                <i class="fas fa-file-excel"></i> Xuất Excel
+            </button>
+        </div>
+    </div>
+
+    <!-- Thống kê -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 text-primary rounded p-3">
+                                <i class="fas fa-file-invoice fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Tổng hóa đơn</h6>
+                            <h3 class="mb-0" id="totalInvoices">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-opacity-10 text-success rounded p-3">
+                                <i class="fas fa-check-circle fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Đã thanh toán</h6>
+                            <h3 class="mb-0" id="paidInvoices">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-danger bg-opacity-10 text-danger rounded p-3">
+                                <i class="fas fa-exclamation-circle fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Quá hạn</h6>
+                            <h3 class="mb-0" id="overdueInvoices">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-opacity-10 text-info rounded p-3">
+                                <i class="fas fa-dollar-sign fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Doanh thu</h6>
+                            <h3 class="mb-0" id="totalRevenue">0đ</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Trạng thái</label>
+                    <select class="form-select" id="filterStatus" onchange="loadInvoices()">
+                        <option value="">Tất cả</option>
+                        <option value="pending">Chờ thanh toán</option>
+                        <option value="paid">Đã thanh toán</option>
+                        <option value="overdue">Quá hạn</option>
+                        <option value="cancelled">Đã hủy</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Từ ngày</label>
+                    <input type="date" class="form-control" id="filterFromDate">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Đến ngày</label>
+                    <input type="date" class="form-control" id="filterToDate">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button class="btn btn-primary w-100" onclick="loadInvoices()">
+                        <i class="fas fa-search"></i> Lọc
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoices Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Mã HĐ</th>
+                            <th>Phòng</th>
+                            <th>Người thuê</th>
+                            <th>Ngày phát hành</th>
+                            <th>Hạn thanh toán</th>
+                            <th>Tổng tiền</th>
+                            <th>Trạng thái</th>
+                            <th>Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoicesTableBody">
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal tạo/sửa hóa đơn -->
+<div class="modal fade" id="invoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="invoiceModalTitle">Tạo hóa đơn mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="invoiceId">
+                
+                <div class="mb-3">
+                    <label class="form-label">Hợp đồng thuê <span class="text-danger">*</span></label>
+                    <select class="form-select" id="rentalId" required>
+                        <option value="">Chọn hợp đồng...</option>
+                    </select>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Tháng hóa đơn</label>
+                        <input type="text" class="form-control" id="invoiceMonth" placeholder="VD: 03/2026">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Hạn thanh toán <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="dueDate" required>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Tiền thuê (VNĐ)</label>
+                        <input type="text" class="form-control money-input" id="roomRent" value="0" onkeyup="formatMoney(this)" onchange="calculateTotal()">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Phí internet (VNĐ)</label>
+                        <input type="text" class="form-control money-input" id="internetFee" value="0" onkeyup="formatMoney(this)" onchange="calculateTotal()">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Điện cũ (kWh)</label>
+                        <input type="number" class="form-control" id="electricOldReading" value="0" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Điện mới (kWh)</label>
+                        <input type="number" class="form-control" id="electricNewReading" value="0" min="0" onchange="calculateElectric()">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Số điện (kWh)</label>
+                        <input type="number" class="form-control bg-light" id="electricUsage" value="0" min="0" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tiền điện (VNĐ)</label>
+                        <input type="text" class="form-control money-input" id="electricAmount" value="0" onkeyup="formatMoney(this)" onchange="calculateTotal()">
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Nước cũ (m³)</label>
+                        <input type="number" class="form-control" id="waterOldReading" value="0" min="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Nước mới (m³)</label>
+                        <input type="number" class="form-control" id="waterNewReading" value="0" min="0" onchange="calculateWater()">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Số nước (m³)</label>
+                        <input type="number" class="form-control bg-light" id="waterUsage" value="0" min="0" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tiền nước (VNĐ)</label>
+                        <input type="text" class="form-control money-input" id="waterAmount" value="0" onkeyup="formatMoney(this)" onchange="calculateTotal()">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Phí khác</label>
+                    <textarea class="form-control" id="otherFees" rows="2" placeholder="VD: Phí vệ sinh 50000, Phí gửi xe 100000"></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Ghi chú</label>
+                    <textarea class="form-control" id="notes" rows="3"></textarea>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>Tổng tiền:</strong> <span id="totalAmountDisplay">0</span> VNĐ
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveInvoice()">Lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal đánh dấu đã thanh toán -->
+<div class="modal fade" id="markPaidModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Đánh dấu đã thanh toán</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="paidInvoiceId">
+                
+                <div class="mb-3">
+                    <label class="form-label">Ngày thanh toán</label>
+                    <input type="date" class="form-control" id="paidDate" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Phương thức thanh toán</label>
+                    <select class="form-select" id="paymentMethod">
+                        <option value="cash">Tiền mặt</option>
+                        <option value="bank_transfer">Chuyển khoản</option>
+                        <option value="momo">MoMo</option>
+                        <option value="zalopay">ZaloPay</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-success" onclick="markAsPaid()">Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thông báo -->
+<div class="modal fade" id="messageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" id="messageModalHeader">
+                <h5 class="modal-title" id="messageModalTitle">Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="messageModalBody">
+                <!-- Message content -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Xác nhận xóa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa hóa đơn này không?</p>
+                <p class="text-muted mb-0">Hành động này không thể hoàn tác.</p>
+                <input type="hidden" id="deleteInvoiceId">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Xóa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xem chi tiết hóa đơn -->
+<div class="modal fade" id="viewInvoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-file-invoice"></i> Chi tiết hóa đơn</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Thông tin chung</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" style="width: 40%;">Mã hóa đơn:</td>
+                                <td><strong id="viewInvoiceId"></strong></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Tháng:</td>
+                                <td id="viewInvoiceMonth"></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Ngày tạo:</td>
+                                <td id="viewCreatedAt"></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Hạn thanh toán:</td>
+                                <td id="viewDueDate"></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Trạng thái:</td>
+                                <td id="viewStatus"></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Thông tin thuê</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td class="text-muted" style="width: 40%;">Phòng:</td>
+                                <td id="viewPropertyTitle"></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Người thuê:</td>
+                                <td id="viewRenterName"></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Ngày thanh toán:</td>
+                                <td id="viewPaymentDate"></td>
+                            </tr>
+                            <tr>
+                                <td class="text-muted">Phương thức:</td>
+                                <td id="viewPaymentMethod"></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6 class="text-muted mb-3">Chi tiết chi phí</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Khoản thu</th>
+                                <th class="text-end">Số lượng</th>
+                                <th class="text-end">Đơn giá</th>
+                                <th class="text-end">Thành tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Tiền thuê phòng</td>
+                                <td class="text-end">-</td>
+                                <td class="text-end">-</td>
+                                <td class="text-end" id="viewRoomRent"></td>
+                            </tr>
+                            <tr>
+                                <td>Tiền điện</td>
+                                <td class="text-end" id="viewElectricUsage"></td>
+                                <td class="text-end" id="viewElectricReading"></td>
+                                <td class="text-end" id="viewElectricAmount"></td>
+                            </tr>
+                            <tr>
+                                <td>Tiền nước</td>
+                                <td class="text-end" id="viewWaterUsage"></td>
+                                <td class="text-end" id="viewWaterReading"></td>
+                                <td class="text-end" id="viewWaterAmount"></td>
+                            </tr>
+                            <tr>
+                                <td>Phí internet</td>
+                                <td class="text-end">-</td>
+                                <td class="text-end">-</td>
+                                <td class="text-end" id="viewInternetFee"></td>
+                            </tr>
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <th colspan="3" class="text-end">Tổng cộng:</th>
+                                <th class="text-end text-primary" id="viewTotalAmount"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div id="viewOtherFeesSection" class="mb-3" style="display: none;">
+                    <h6 class="text-muted mb-2">Phí khác</h6>
+                    <div class="alert alert-info mb-0" id="viewOtherFees"></div>
+                </div>
+
+                <div id="viewNotesSection" class="mb-0" style="display: none;">
+                    <h6 class="text-muted mb-2">Ghi chú</h6>
+                    <div class="alert alert-secondary mb-0" id="viewNotes"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" onclick="printInvoice()">
+                    <i class="fas fa-print"></i> In hóa đơn
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="~/js/invoices.js"></script>
+}
