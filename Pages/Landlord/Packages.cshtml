@@ -6,10 +6,31 @@
 }
 
 <div class="container-fluid px-4 py-4">
-            <h2 class="mb-2">Gói đăng tin</h2>
-            <p class="text-muted mb-4">Chọn gói phù hợp để tăng hiển thị và thu hút khách thuê nhanh chóng</p>
+    <h2 class="mb-2">Gói đăng tin</h2>
+    <p class="text-muted mb-4">Chọn gói phù hợp để tăng hiển thị và thu hút khách thuê nhanh chóng</p>
 
-            <!-- Package Cards -->
+    @if (Model.ActiveSubscription != null)
+    {
+        <div class="alert alert-success mb-4">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h5 class="mb-1"><i class="fas fa-check-circle"></i> Bạn đang sử dụng: <strong>@Model.ActivePlan?.PlanName</strong></h5>
+                    <p class="mb-0">
+                        Hiệu lực từ: <strong>@Model.ActiveSubscription.StartAt.ToString("dd/MM/yyyy")</strong> 
+                        đến: <strong>@Model.ActiveSubscription.EndAt.ToString("dd/MM/yyyy")</strong>
+                        <span class="badge bg-primary ms-2">Còn @((Model.ActiveSubscription.EndAt - DateTime.Now).Days) ngày</span>
+                    </p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-success" onclick="showRenewModal()">
+                        <i class="fas fa-sync-alt"></i> Gia hạn
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Package Cards -->
             <div class="row g-4 mb-5">
                 <div class="col-md-4">
                     <div class="nf-package-card">
@@ -28,7 +49,16 @@
                                 <li><i class="fas fa-times text-danger"></i> Không ưu tiên hiển thị</li>
                                 <li><i class="fas fa-check text-success"></i> Hiển thị 30 ngày</li>
                             </ul>
-                            <button class="btn nf-btn-primary w-100 mt-3">Mua gói</button>
+                            @if (Model.ActivePlan != null && Model.ActivePlan.PlanId == 1)
+                            {
+                                <button class="btn btn-success w-100 mt-3" disabled>
+                                    <i class="fas fa-check-circle"></i> Đang sử dụng
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn nf-btn-primary w-100 mt-3" onclick="openPlanModal('basic')">Mua gói</button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -51,7 +81,16 @@
                                 <li><i class="fas fa-check text-success"></i> Màu sắc tiêu đề nổi bật</li>
                                 <li><i class="fas fa-check text-success"></i> Hiển thị 30 ngày</li>
                             </ul>
-                            <button class="btn btn-success w-100 mt-3">Mua gói này</button>
+                            @if (Model.ActivePlan != null && Model.ActivePlan.PlanId == 2)
+                            {
+                                <button class="btn btn-success w-100 mt-3" disabled>
+                                    <i class="fas fa-check-circle"></i> Đang sử dụng
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-success w-100 mt-3" onclick="openPlanModal('vip1')">Mua gói này</button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -74,7 +113,16 @@
                                 <li><i class="fas fa-check text-success"></i> Nút gọi điện trực tiếp</li>
                                 <li><i class="fas fa-check text-success"></i> Ưu tiên tư vấn (VIP3)</li>
                             </ul>
-                            <button class="btn nf-btn-primary w-100 mt-3">Mua gói này</button>
+                            @if (Model.ActivePlan != null && Model.ActivePlan.PlanId == 3)
+                            {
+                                <button class="btn btn-success w-100 mt-3" disabled>
+                                    <i class="fas fa-check-circle"></i> Đang sử dụng
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn nf-btn-primary w-100 mt-3" onclick="openPlanModal('vip2')">Mua gói này</button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -99,7 +147,16 @@
                                 <li><i class="fas fa-check text-success"></i> Theo dõi khách hàng</li>
                                 <li><i class="fas fa-check text-success"></i> Tính toán điện/nước</li>
                             </ul>
-                            <button class="btn btn-info w-100 mt-3">Mua gói này</button>
+                            @if (Model.ActivePlan != null && Model.ActivePlan.PlanId == 4)
+                            {
+                                <button class="btn btn-success w-100 mt-3" disabled>
+                                    <i class="fas fa-check-circle"></i> Đang sử dụng
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-info w-100 mt-3" onclick="openPlanModal('management')">Mua gói này</button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -121,7 +178,16 @@
                                 <li><i class="fas fa-check text-success"></i> Tính toán điện/nước</li>
                                 <li><i class="fas fa-check text-success"></i> Tiện ích quản lý kèm theo</li>
                             </ul>
-                            <button class="btn btn-secondary w-100 mt-3">Mua gói này</button>
+                            @if (Model.ActivePlan != null && Model.ActivePlan.PlanId == 5)
+                            {
+                                <button class="btn btn-success w-100 mt-3" disabled>
+                                    <i class="fas fa-check-circle"></i> Đang sử dụng
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-secondary w-100 mt-3" onclick="openPlanModal('management_only')">Mua gói này</button>
+                            }
                         </div>
                     </div>
                 </div>
@@ -506,3 +572,234 @@
                 text-align: left;
             }
 </style>
+
+<!-- Modal chọn thời hạn -->
+<div class="modal fade" id="planModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Chọn thời hạn gói</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="planInfo" class="mb-3"></div>
+                
+                <div class="mb-3" id="durationOptions">
+                    <label class="form-label">Chọn thời hạn:</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="duration" id="durationMonth" value="month" checked>
+                        <label class="form-check-label" for="durationMonth">
+                            <strong>Theo tháng</strong> <span id="monthPrice"></span>
+                        </label>
+                    </div>
+                    <div class="form-check" id="dayOption">
+                        <input class="form-check-input" type="radio" name="duration" id="durationDay" value="day">
+                        <label class="form-check-label" for="durationDay">
+                            <strong>Theo ngày</strong> (tối thiểu 3 ngày)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-3" id="daysInput" style="display: none;">
+                    <label class="form-label">Số ngày:</label>
+                    <input type="number" class="form-control" id="numDays" min="3" value="3">
+                    <small class="text-muted">Giá: <span id="dayPrice"></span>/ngày</small>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="useWallet">
+                        <label class="form-check-label" for="useWallet">
+                            Sử dụng số dư ví (nếu đủ)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>Tổng tiền:</strong> <span id="totalAmount">0</span> VNĐ
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="processPlanPayment()">Thanh toán</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal thông báo -->
+<div class="modal fade" id="messageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" id="messageModalHeader">
+                <h5 class="modal-title" id="messageModalTitle">Thông báo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="messageModalBody">
+                <!-- Message content -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentPlanType = '';
+    const planPrices = {
+        basic: { day: 2000, month: 54000, name: 'Gói Thường' },
+        vip1: { day: 20000, month: 510000, name: 'Gói VIP1' },
+        vip2: { day: 35000, month: 840000, name: 'Gói VIP2' },
+        management: { month: 1400000, name: 'Sử dụng quản lý' },
+        management_only: { month: 560000, name: 'Chỉ sử dụng quản lý' }
+    };
+
+    function showMessage(title, message, type = 'info') {
+        const modal = new bootstrap.Modal(document.getElementById('messageModal'));
+        const header = document.getElementById('messageModalHeader');
+        const titleEl = document.getElementById('messageModalTitle');
+        const body = document.getElementById('messageModalBody');
+        
+        // Set color based on type
+        header.className = 'modal-header';
+        if (type === 'success') {
+            header.classList.add('bg-success', 'text-white');
+            titleEl.innerHTML = '<i class="fas fa-check-circle"></i> ' + title;
+        } else if (type === 'error') {
+            header.classList.add('bg-danger', 'text-white');
+            titleEl.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + title;
+        } else if (type === 'warning') {
+            header.classList.add('bg-warning', 'text-dark');
+            titleEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + title;
+        } else {
+            header.classList.add('bg-info', 'text-white');
+            titleEl.innerHTML = '<i class="fas fa-info-circle"></i> ' + title;
+        }
+        
+        body.innerHTML = message;
+        modal.show();
+    }
+
+    function openPlanModal(planType) {
+        currentPlanType = planType;
+        const plan = planPrices[planType];
+        
+        document.getElementById('planInfo').innerHTML = `<h6>${plan.name}</h6>`;
+        
+        // Hiển thị/ẩn option theo ngày
+        if (plan.day) {
+            document.getElementById('dayOption').style.display = 'block';
+            document.getElementById('dayPrice').textContent = plan.day.toLocaleString('vi-VN');
+        } else {
+            document.getElementById('dayOption').style.display = 'none';
+            document.getElementById('durationDay').checked = false;
+            document.getElementById('durationMonth').checked = true;
+        }
+        
+        document.getElementById('monthPrice').textContent = `(${plan.month.toLocaleString('vi-VN')} VNĐ)`;
+        
+        updateTotalAmount();
+        
+        const modal = new bootstrap.Modal(document.getElementById('planModal'));
+        modal.show();
+    }
+
+    function showRenewModal() {
+        showMessage('Gia hạn gói', 'Chức năng gia hạn đang được phát triển. Vui lòng liên hệ admin để được hỗ trợ.', 'info');
+    }
+
+    document.querySelectorAll('input[name="duration"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'day') {
+                document.getElementById('daysInput').style.display = 'block';
+            } else {
+                document.getElementById('daysInput').style.display = 'none';
+            }
+            updateTotalAmount();
+        });
+    });
+
+    document.getElementById('numDays').addEventListener('input', updateTotalAmount);
+
+    function updateTotalAmount() {
+        const plan = planPrices[currentPlanType];
+        const duration = document.querySelector('input[name="duration"]:checked').value;
+        let amount = 0;
+        
+        if (duration === 'month') {
+            amount = plan.month;
+        } else {
+            const days = parseInt(document.getElementById('numDays').value) || 3;
+            amount = plan.day * days;
+        }
+        
+        document.getElementById('totalAmount').textContent = amount.toLocaleString('vi-VN');
+    }
+
+    async function processPlanPayment() {
+        const duration = document.querySelector('input[name="duration"]:checked').value;
+        const days = parseInt(document.getElementById('numDays').value) || 3;
+        const useWallet = document.getElementById('useWallet').checked;
+
+        if (duration === 'day' && days < 3) {
+            showMessage('Lỗi', 'Số ngày tối thiểu là 3', 'error');
+            return;
+        }
+
+        // Đóng modal chọn gói
+        const planModal = bootstrap.Modal.getInstance(document.getElementById('planModal'));
+        planModal.hide();
+
+        try {
+            const response = await fetch('/api/Payment/create-plan-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    planType: currentPlanType,
+                    duration: duration,
+                    days: days,
+                    useWallet: useWallet
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                if (data.paymentMethod === 'wallet') {
+                    // Thanh toán bằng ví thành công
+                    showMessage('Thành công', 'Mua gói thành công! Trang sẽ tự động tải lại sau 2 giây.', 'success');
+                    setTimeout(() => {
+                        window.location.href = data.redirectUrl;
+                    }, 2000);
+                } else {
+                    // Chuyển đến PayOS
+                    window.location.href = data.checkoutUrl;
+                }
+            } else {
+                showMessage('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            showMessage('Lỗi', 'Có lỗi xảy ra khi xử lý thanh toán', 'error');
+        }
+    }
+
+    // Hiển thị thông báo kết quả
+    window.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.get('success') === 'true') {
+            showMessage('Thành công', 'Mua gói thành công! Gói của bạn đã được kích hoạt.', 'success');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (urlParams.get('cancelled') === 'true') {
+            showMessage('Đã hủy', 'Bạn đã hủy thanh toán.', 'warning');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        } else if (urlParams.get('error')) {
+            showMessage('Lỗi', 'Có lỗi xảy ra: ' + urlParams.get('error'), 'error');
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    });
+</script>
