@@ -11,7 +11,7 @@ public partial class Rental
 
     public long LandlordId { get; set; }
 
-    public long RenterId { get; set; }
+    public long? RenterId { get; set; }
 
     public DateOnly StartDate { get; set; }
 
@@ -48,6 +48,8 @@ public partial class Rental
     public virtual User Landlord { get; set; } = null!;
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+
+    public virtual ICollection<Property> Properties { get; set; } = new List<Property>();
 
     public virtual Property Property { get; set; } = null!;
 

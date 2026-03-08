@@ -2,122 +2,2575 @@
 @model NestFlow.Pages.Landlord.Properties.IndexModel
 @{
     ViewData["Title"] = "Quản lý phòng trọ";
-    Layout = "_Layout";
+    Layout = "_LandlordLayout";
 }
 
-<div class="row mb-4 align-items-center">
-    <div class="col">
-        <h2 class="text-primary fw-bold">Quản lý phòng trọ</h2>
-        <p class="text-muted">Danh sách tất cả các phòng trọ của bạn</p>
-    </div>
-    <div class="col-auto">
-        <a asp-page="/Landlord/Properties/Create" class="btn btn-primary">
-            <i class="fa-solid fa-plus me-2"></i> Thêm phòng mới
-        </a>
+<!-- CSS -->
+<style>
+    .building-selector-section {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+
+    .statistics-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: white;
+    }
+
+    .stat-content h3 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .stat-content p {
+        margin: 0;
+        color: #666;
+        font-size: 14px;
+    }
+
+    .floor-section {
+        background: white;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .floor-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 15px 20px;
+        font-size: 18px;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .rooms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 15px;
+        padding: 20px;
+    }
+
+    .room-card {
+        border: 3px solid;
+        border-radius: 10px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        position: relative;
+    }
+
+        .room-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .room-card.status-available {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-color: #28a745;
+        }
+
+        .room-card.status-occupied {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-color: #dc3545;
+        }
+
+        .room-card.status-maintenance {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-color: #ffc107;
+        }
+
+        .room-card.status-inactive {
+            background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
+            border-color: #6c757d;
+            opacity: 0.7;
+        }
+
+    .room-number {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: #333;
+    }
+
+    .room-status {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 15px;
+        font-size: 12px;
+        font-weight: bold;
+        margin-bottom: 8px;
+        color: white;
+    }
+
+    .status-available .room-status {
+        background: #28a745;
+    }
+
+    .status-occupied .room-status {
+        background: #dc3545;
+    }
+
+    .status-maintenance .room-status {
+        background: #ffc107;
+        color: #333;
+    }
+
+    .status-inactive .room-status {
+        background: #6c757d;
+    }
+
+    .room-info {
+        font-size: 13px;
+        color: #555;
+    }
+
+    .room-renter {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(0,0,0,0.1);
+        font-weight: bold;
+        color: #333;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        overflow-y: auto;
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 50px auto;
+        padding: 0;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 800px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+    .modal-body {
+        padding: 20px;
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .modal-footer {
+        padding: 15px 20px;
+        border-top: 1px solid #ddd;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        background: none;
+        border: none;
+        opacity: 0.8;
+    }
+
+        .close:hover {
+            opacity: 1;
+        }
+
+    .detail-section {
+        margin-bottom: 25px;
+    }
+
+        .detail-section h3 {
+            color: #667eea;
+            font-size: 18px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .detail-item {
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+
+    .detail-label {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .detail-value {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .occupants-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .occupant-item {
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .occupant-info {
+        flex: 1;
+    }
+
+    .occupant-name {
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 5px;
+    }
+
+    .occupant-details {
+        font-size: 13px;
+        color: #666;
+    }
+
+    .invoice-card {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .invoice-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+        .invoice-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 18px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid #ffc107;
+        }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+            .form-group input:focus,
+            .form-group select:focus,
+            .form-group textarea:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+
+    .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: all 0.3s;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+    .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    .btn-success {
+        background: #28a745;
+        color: white;
+    }
+
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+    }
+
+    .btn-warning {
+        background: #ffc107;
+        color: #333;
+    }
+
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #666;
+    }
+
+        .empty-state i {
+            font-size: 64px;
+            color: #ddd;
+            margin-bottom: 20px;
+        }
+
+    .loading {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+
+    .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #667eea;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .alert {
+        padding: 15px 20px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+    }
+
+    .alert-warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+    }
+
+    .filters-section {
+        background: white;
+        padding: 15px 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filter-item {
+        flex: 1;
+        min-width: 200px;
+    }
+
+        .filter-item input,
+        .filter-item select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+    /* =============================================
+           TOAST NOTIFICATION
+        ============================================= */
+    #toastContainer {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+    }
+
+    .toast-notification {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        min-width: 320px;
+        max-width: 420px;
+        padding: 16px 18px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10);
+        font-size: 14px;
+        font-weight: 500;
+        pointer-events: all;
+        animation: toastSlideIn 0.35s cubic-bezier(.21,1.02,.73,1) forwards;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .toast-notification.toast-hide {
+            animation: toastSlideOut 0.3s ease forwards;
+        }
+
+        .toast-notification.toast-success {
+            background: #fff;
+            border-left: 5px solid #28a745;
+            color: #1a5c2e;
+        }
+
+        .toast-notification.toast-danger {
+            background: #fff;
+            border-left: 5px solid #dc3545;
+            color: #7b1520;
+        }
+
+        .toast-notification.toast-warning {
+            background: #fff;
+            border-left: 5px solid #ffc107;
+            color: #6b4e00;
+        }
+
+        .toast-notification.toast-info {
+            background: #fff;
+            border-left: 5px solid #667eea;
+            color: #2c3a7a;
+        }
+
+    .toast-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+    .toast-notification.toast-success .toast-icon {
+        color: #28a745;
+    }
+
+    .toast-notification.toast-danger .toast-icon {
+        color: #dc3545;
+    }
+
+    .toast-notification.toast-warning .toast-icon {
+        color: #ffc107;
+    }
+
+    .toast-notification.toast-info .toast-icon {
+        color: #667eea;
+    }
+
+    .toast-body {
+        flex: 1;
+        line-height: 1.5;
+    }
+
+    .toast-title {
+        font-weight: 700;
+        margin-bottom: 2px;
+        font-size: 14px;
+    }
+
+    .toast-message {
+        font-size: 13px;
+        opacity: 0.85;
+    }
+
+    .toast-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #aaa;
+        font-size: 18px;
+        padding: 0;
+        line-height: 1;
+        flex-shrink: 0;
+        transition: color 0.2s;
+    }
+
+        .toast-close:hover {
+            color: #555;
+        }
+
+    .toast-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        border-radius: 0 0 0 12px;
+        animation: toastProgress 4s linear forwards;
+    }
+
+    .toast-success .toast-progress {
+        background: #28a745;
+    }
+
+    .toast-danger .toast-progress {
+        background: #dc3545;
+    }
+
+    .toast-warning .toast-progress {
+        background: #ffc107;
+    }
+
+    .toast-info .toast-progress {
+        background: #667eea;
+    }
+
+    @@keyframes toastSlideIn {
+        from {
+            opacity: 0;
+            transform: translateX(60px) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+    }
+
+    @@keyframes toastSlideOut {
+        from {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateX(60px);
+        }
+    }
+
+    @@keyframes toastProgress {
+        from {
+            width: 100%;
+        }
+
+        to {
+            width: 0%;
+        }
+    }
+
+    /* =============================================
+           CUSTOM DIALOG MODAL (replaces confirm/prompt)
+        ============================================= */
+    #dialogOverlay {
+        display: none;
+        position: fixed;
+        z-index: 90000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(3px);
+        align-items: center;
+        justify-content: center;
+    }
+
+        #dialogOverlay.active {
+            display: flex;
+        }
+
+    .dialog-box {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        width: 90%;
+        max-width: 480px;
+        overflow: hidden;
+        animation: dialogPop 0.3s cubic-bezier(.21,1.02,.73,1) forwards;
+    }
+
+    @@keyframes dialogPop {
+        from {
+            opacity: 0;
+            transform: scale(0.88) translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    .dialog-header {
+        padding: 22px 24px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .dialog-icon-wrap {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+
+        .dialog-icon-wrap.icon-danger {
+            background: #fde8ea;
+            color: #dc3545;
+        }
+
+        .dialog-icon-wrap.icon-warning {
+            background: #fff5d6;
+            color: #e08f00;
+        }
+
+        .dialog-icon-wrap.icon-info {
+            background: #eef0fd;
+            color: #667eea;
+        }
+
+    .dialog-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1a1a2e;
+        margin: 0;
+    }
+
+    .dialog-subtitle {
+        font-size: 13px;
+        color: #888;
+        margin: 2px 0 0;
+    }
+
+    .dialog-body {
+        padding: 0 24px 20px;
+        color: #444;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+        .dialog-body p {
+            margin: 0 0 14px;
+        }
+
+    .dialog-field {
+        margin-top: 14px;
+    }
+
+        .dialog-field label {
+            display: block;
+            font-weight: 600;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 6px;
+        }
+
+        .dialog-field input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #333;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+            .dialog-field input:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102,126,234,0.12);
+            }
+
+    .dialog-footer {
+        padding: 16px 24px;
+        background: #f8f9fa;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .dialog-btn {
+        padding: 10px 22px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .dialog-btn-cancel {
+        background: #f0f0f0;
+        color: #555;
+    }
+
+        .dialog-btn-cancel:hover {
+            background: #e4e4e4;
+        }
+
+    .dialog-btn-confirm-danger {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        box-shadow: 0 3px 10px rgba(220,53,69,0.3);
+    }
+
+        .dialog-btn-confirm-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgba(220,53,69,0.4);
+        }
+
+    .dialog-btn-confirm-warning {
+        background: linear-gradient(135deg, #ffc107, #e0a800);
+        color: #333;
+        box-shadow: 0 3px 10px rgba(255,193,7,0.3);
+    }
+
+        .dialog-btn-confirm-warning:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgba(255,193,7,0.4);
+        }
+
+    .dialog-btn-confirm-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 3px 10px rgba(102,126,234,0.3);
+    }
+
+        .dialog-btn-confirm-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 14px rgba(102,126,234,0.4);
+        }
+</style>
+
+<!-- Toast Container -->
+<div id="toastContainer"></div>
+
+<!-- Custom Dialog Overlay -->
+<div id="dialogOverlay">
+    <div class="dialog-box" id="dialogBox">
+        <div class="dialog-header">
+            <div class="dialog-icon-wrap" id="dialogIconWrap">
+                <i id="dialogIcon" class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div>
+                <p class="dialog-title" id="dialogTitle">Xác nhận</p>
+                <p class="dialog-subtitle" id="dialogSubtitle"></p>
+            </div>
+        </div>
+        <div class="dialog-body" id="dialogBody"></div>
+        <div class="dialog-footer" id="dialogFooter"></div>
     </div>
 </div>
 
-<div class="card shadow-sm border-0">
-    <div class="card-body">
-        @if (Model.Properties.Count == 0)
-        {
-            <div class="text-center py-5">
-                <img src="~/images/empty_state.svg" alt="No data" class="mb-3" style="width: 150px; opacity: 0.5;" onerror="this.style.display='none'">
-                <p class="text-muted">Bạn chưa có phòng trọ nào.</p>
-                <a asp-page="/Landlord/Properties/Create" class="btn btn-outline-primary btn-sm">Tạo phòng ngay</a>
+<!-- HTML Content -->
+<div class="container-fluid px-4 py-4">
+    <h1 class="mb-4">
+        <i class="fas fa-building"></i> Quản lý phòng trọ
+    </h1>
+
+    <!-- Building Selector -->
+    <div class="building-selector-section">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <label for="buildingSelector" class="form-label fw-bold">
+                    <i class="fas fa-home"></i> Chọn nhà trọ:
+                </label>
+                <select id="buildingSelector" class="form-select form-select-lg">
+                    <option value="">-- Đang tải danh sách nhà trọ... --</option>
+                </select>
             </div>
-        }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="bg-light">
-                        <tr>
-                            <th scope="col">Tên phòng/Dự án</th>
-                            <th scope="col">Loại</th>
-                            <th scope="col">Giá thuê</th>
-                            <th scope="col">Khu vực</th>
-                            <th scope="col">Trạng thái</th>
-                            <th scope="col" class="text-end">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Model.Properties)
-                        {
-                            <tr>
-                                <td>
-                                    <div class="fw-bold">@item.Title</div>
-                                    <small class="text-muted">ID: @item.PropertyId</small>
-                                </td>
-                                <td>
-                                    @if(item.PropertyType == "phong_tro") { <span>Phòng trọ</span> }
-                                    else if(item.PropertyType == "chung_cu") { <span>Chung cư mini</span> }
-                                    else { <span>@item.PropertyType</span> }
-                                </td>
-                                <td class="text-success fw-bold">@item.Price?.ToString("N0") đ</td>
-                                <td>@item.District, @item.City</td>
-                                <td>
-                                    @if(item.Status == "available")
-                                    {
-                                        <span class="badge bg-success">Còn trống</span>
-                                    }
-                                    else if(item.Status == "rented")
-                                    {
-                                        <span class="badge bg-danger">Đang thuê</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary">Ngừng hoạt động</span>
-                                    }
-                                </td>
-                                <td class="text-end">
-                                    <a asp-page="./Edit" asp-route-id="@item.PropertyId" class="btn btn-sm btn-outline-secondary me-1" title="Sửa">
-                                        <i class="fa-solid fa-pen"></i>
-                                    </a>
-                                    <button class="btn btn-sm btn-outline-danger" title="Xóa" onclick="confirmDelete(@item.PropertyId, '@item.Title')">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-success" onclick="showCreateBuildingModal()">
+                    <i class="fas fa-plus"></i> Tạo nhà trọ mới
+                </button>
             </div>
-        }
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div id="statisticsSection" class="statistics-section" style="display: none;">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <i class="fas fa-door-open"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="totalRooms">0</h3>
+                <p>Tổng số phòng</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="availableRooms">0</h3>
+                <p>Phòng trống</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="occupiedRooms">0</h3>
+                <p>Đang cho thuê</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #ffc107 0%, #ff6b6b 100%);">
+                <i class="fas fa-coins"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="monthlyRevenue">0đ</h3>
+                <p>Doanh thu/tháng</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div id="filtersSection" class="filters-section" style="display: none;">
+        <div class="filter-item">
+            <input type="text" id="searchRoom" placeholder="🔍 Tìm phòng theo mã...">
+        </div>
+        <div class="filter-item">
+            <select id="statusFilter">
+                <option value="">Tất cả trạng thái</option>
+                <option value="available">Trống</option>
+                <option value="occupied">Đang thuê</option>
+                <option value="maintenance">Bảo trì</option>
+                <option value="inactive">Ngừng hoạt động</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="applyFilters()">
+            <i class="fas fa-filter"></i> Lọc
+        </button>
+        <button class="btn btn-secondary" onclick="clearFilters()">
+            <i class="fas fa-redo"></i> Đặt lại
+        </button>
+        <button class="btn btn-success" onclick="showAddRoomModal()">
+            <i class="fas fa-plus"></i> Thêm phòng
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Đang tải dữ liệu...</p>
+    </div>
+
+    <!-- Floors Container -->
+    <div id="floorsContainer"></div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="empty-state" style="display: none;">
+        <i class="fas fa-building"></i>
+        <h3>Chưa có nhà trọ nào</h3>
+        <p>Vui lòng tạo nhà trọ mới để bắt đầu quản lý phòng trọ</p>
+        <button class="btn btn-primary" onclick="showCreateBuildingModal()">
+            <i class="fas fa-plus"></i> Tạo nhà trọ ngay
+        </button>
     </div>
 </div>
 
-<!-- Delete Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Xác nhận xóa</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<!-- Modal: Setup Building (First Time) -->
+<div id="setupModal" class="modal">
+    <div class="modal-content" style="max-width: 560px;">
+        <div class="modal-header">
+            <h2><i class="fas fa-cog"></i> Thiết lập nhà trọ</h2>
+            <button class="close" onclick="closeSetupModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>Nhà trọ này chưa được thiết lập. Vui lòng nhập thông tin:</p>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Số tầng:</label>
+                        <input type="number" id="totalFloors" min="1" max="20" value="3" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Số phòng mỗi tầng:</label>
+                        <input type="number" id="roomsPerFloor" min="1" max="50" value="4" class="form-control">
+                    </div>
+                </div>
             </div>
-            <div class="modal-body">
-                Bạn có chắc chắn muốn xóa phòng <strong id="delete-name"></strong> không?
-                <br />
-                <span class="text-danger small">Lưu ý: Không thể xóa nếu đã có booking hoặc lịch sử thuê.</span>
+
+            <hr style="margin: 15px 0; border-color: #e0e0e0;">
+            <h6 style="color: #667eea; font-weight: 700; margin-bottom: 12px;">
+                <i class="fas fa-door-open"></i> Thông tin mặc định cho mỗi phòng
+            </h6>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Diện tích (m²):</label>
+                        <input type="number" id="setupDefaultArea" min="1" step="0.1" value="25" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Số người tối đa:</label>
+                        <input type="number" id="setupDefaultMaxOccupants" min="1" value="2" class="form-control">
+                    </div>
+                </div>
             </div>
-            <div class="modal-footer">
-                <form method="post" asp-page-handler="Delete">
-                    <input type="hidden" name="id" id="delete-id" />
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-danger">Xóa bỏ</button>
-                </form>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Giá thuê (đ/tháng):</label>
+                        <input type="number" id="setupDefaultPrice" min="0" step="100000" value="2000000" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>Tiền cọc (đ):</label>
+                        <input type="number" id="setupDefaultDeposit" min="0" step="100000" value="2000000" class="form-control">
+                    </div>
+                </div>
             </div>
+
+            <div class="alert alert-warning" style="margin-top: 5px;">
+                <i class="fas fa-info-circle"></i>
+                <strong>Lưu ý:</strong> Hệ thống sẽ tự động tạo tất cả các phòng với thông tin trên.
+                Bạn có thể chỉnh sửa từng phòng sau.
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeSetupModal()">Hủy</button>
+            <button class="btn btn-primary" onclick="initializeBuilding()">
+                <i class="fas fa-check"></i> Khởi tạo
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Room Detail -->
+<div id="roomDetailModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="roomDetailTitle">Chi tiết phòng</h2>
+            <button class="close" onclick="closeRoomDetailModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="roomDetailContent">
+            <!-- Content loaded via JavaScript -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeRoomDetailModal()">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Add Occupant -->
+<div id="addOccupantModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h2><i class="fas fa-user-plus"></i> Thêm người thuê</h2>
+            <button class="close" onclick="closeAddOccupantModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="addOccupantForm">
+                <input type="hidden" id="occupantPropertyId">
+
+                <div class="form-group">
+                    <label>Họ và tên: <span class="text-danger">*</span></label>
+                    <input type="text" id="occupantFullName" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Số điện thoại:</label>
+                    <input type="tel" id="occupantPhone">
+                </div>
+
+                <div class="form-group">
+                    <label>Số CMND/CCCD:</label>
+                    <input type="text" id="occupantIdNumber">
+                </div>
+
+                <div class="form-group">
+                    <label>Ngày vào ở: <span class="text-danger">*</span></label>
+                    <input type="date" id="occupantMoveInDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Ngày dự kiến chuyển đi:</label>
+                    <input type="date" id="occupantMoveOutExpected">
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="occupantIsPrimary">
+                        Là người thuê chính (chịu trách nhiệm thanh toán)
+                    </label>
+                </div>
+
+                <div id="rentalInfoSection" style="display: none;">
+                    <hr>
+                    <h4>Thông tin thuê (người đầu tiên)</h4>
+
+                    <div class="form-group">
+                        <label>Tiền thuê/tháng: <span class="text-danger">*</span></label>
+                        <input type="number" id="monthlyRent" min="0" step="100000">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Tiền cọc: <span class="text-danger">*</span></label>
+                        <input type="number" id="depositAmount" min="0" step="100000">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ngày đóng tiền hàng tháng:</label>
+                        <select id="paymentDueDate">
+                            @for (int i = 1; i <= 31; i++)
+                            {
+                                var selected = i == 5 ? "selected" : "";
+                                <option value="@i" selected="@selected">Ngày @i</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeAddOccupantModal()">Hủy</button>
+            <button class="btn btn-primary" onclick="submitAddOccupant()">
+                <i class="fas fa-save"></i> Lưu
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Create Building -->
+<div id="createBuildingModal" class="modal">
+    <div class="modal-content" style="max-width: 650px;">
+        <div class="modal-header">
+            <h2><i class="fas fa-building"></i> Tạo nhà trọ mới</h2>
+            <button class="close" onclick="closeCreateBuildingModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="createBuildingForm">
+                <div class="form-group">
+                    <label>Tên nhà trọ: <span class="text-danger">*</span></label>
+                    <input type="text" id="newBuildingName" required placeholder="VD: Nhà trọ Hòa Bình">
+                </div>
+
+                <div class="form-group">
+                    <label>Địa chỉ:</label>
+                    <input type="text" id="newBuildingAddress" placeholder="Số nhà, tên đường">
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Phường/Xã:</label>
+                            <input type="text" id="newBuildingWard">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Quận/Huyện:</label>
+                            <input type="text" id="newBuildingDistrict">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label>Tỉnh/TP:</label>
+                            <input type="text" id="newBuildingCity">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Mô tả:</label>
+                    <textarea id="newBuildingDescription" rows="2" placeholder="Mô tả về nhà trọ..."></textarea>
+                </div>
+
+                <hr style="margin: 20px 0 15px; border-color: #e0e0e0;">
+                <h5 style="color: #667eea; font-weight: 700; margin-bottom: 14px;">
+                    <i class="fas fa-door-open"></i> Thông tin mặc định cho phòng
+                    <small style="font-weight: 400; color: #888; font-size: 12px; display: block; margin-top: 3px;">
+                        Áp dụng cho tất cả phòng khi khởi tạo — có thể chỉnh sửa từng phòng sau
+                    </small>
+                </h5>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Diện tích (m²): <span class="text-danger">*</span></label>
+                            <input type="number" id="newBuildingDefaultArea" value="25" step="0.1" min="1" required placeholder="VD: 25">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Số người tối đa: <span class="text-danger">*</span></label>
+                            <input type="number" id="newBuildingDefaultMaxOccupants" value="2" min="1" max="20" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Giá thuê (đ/tháng): <span class="text-danger">*</span></label>
+                            <input type="number" id="newBuildingDefaultPrice" value="2000000" step="100000" min="0" required placeholder="VD: 2000000">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label>Tiền cọc (đ): <span class="text-danger">*</span></label>
+                            <input type="number" id="newBuildingDefaultDeposit" value="2000000" step="100000" min="0" required placeholder="VD: 2000000">
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeCreateBuildingModal()">Hủy</button>
+            <button class="btn btn-primary" onclick="submitCreateBuilding()">
+                <i class="fas fa-save"></i> Tạo nhà trọ
+            </button>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        function confirmDelete(id, name) {
-            document.getElementById('delete-id').value = id;
-            document.getElementById('delete-name').innerText = name;
-            var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-            deleteModal.show();
+        // Global variables
+        const LANDLORD_ID = @Model.LandlordId;
+        let currentBuildingId = null;
+        let currentBuildingData = null;
+        let allFloorsData = [];
+
+        // =================================================================
+        // TOAST NOTIFICATION SYSTEM
+        // =================================================================
+        const toastTitles = {
+            success: 'Thành công',
+            danger: 'Lỗi',
+            warning: 'Cảnh báo',
+            info: 'Thông báo'
+        };
+
+        const toastIcons = {
+            success: 'fas fa-check-circle',
+            danger: 'fas fa-times-circle',
+            warning: 'fas fa-exclamation-triangle',
+            info: 'fas fa-info-circle'
+        };
+
+        function showAlert(type, message) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast-notification toast-${type}`;
+
+            toast.innerHTML = `
+                <div class="toast-icon"><i class="${toastIcons[type] || toastIcons.info}"></i></div>
+                <div class="toast-body">
+                    <div class="toast-title">${toastTitles[type] || 'Thông báo'}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <button class="toast-close" onclick="dismissToast(this.parentElement)">&times;</button>
+                <div class="toast-progress"></div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => dismissToast(toast), 4800);
+        }
+
+        function dismissToast(toast) {
+            if (!toast || !toast.parentElement) return;
+            toast.classList.add('toast-hide');
+            setTimeout(() => toast.remove(), 300);
+        }
+
+        // =================================================================
+        // CUSTOM DIALOG SYSTEM (replaces confirm + prompt)
+        // =================================================================
+        let dialogResolve = null;
+
+        function showDialog({ title, subtitle = '', message, icon = 'fas fa-question-circle',
+                              iconClass = 'icon-warning', confirmLabel = 'Xác nhận',
+                              confirmClass = 'dialog-btn-confirm-warning', cancelLabel = 'Hủy',
+                              fields = [] }) {
+            return new Promise(resolve => {
+                dialogResolve = resolve;
+
+                document.getElementById('dialogTitle').textContent = title;
+                document.getElementById('dialogSubtitle').textContent = subtitle;
+                document.getElementById('dialogIconWrap').className = `dialog-icon-wrap ${iconClass}`;
+                document.getElementById('dialogIcon').className = icon;
+
+                const body = document.getElementById('dialogBody');
+                let bodyHtml = message ? `<p>${message}</p>` : '';
+
+                fields.forEach(field => {
+                    bodyHtml += `
+                        <div class="dialog-field">
+                            <label for="dlg_${field.id}">${field.label}</label>
+                            <input type="${field.type || 'text'}" id="dlg_${field.id}"
+                                   value="${field.defaultValue || ''}"
+                                   placeholder="${field.placeholder || ''}"
+                                   ${field.required ? 'required' : ''}>
+                        </div>
+                    `;
+                });
+                body.innerHTML = bodyHtml;
+
+                const footer = document.getElementById('dialogFooter');
+                footer.innerHTML = `
+                    <button class="dialog-btn dialog-btn-cancel" onclick="closeDialog(false)">
+                        <i class="fas fa-times"></i> ${cancelLabel}
+                    </button>
+                    <button class="dialog-btn ${confirmClass}" onclick="closeDialog(true)">
+                        ${confirmLabel}
+                    </button>
+                `;
+
+                const overlay = document.getElementById('dialogOverlay');
+                overlay.classList.add('active');
+
+                // Focus first input if exists
+                setTimeout(() => {
+                    const firstInput = overlay.querySelector('input');
+                    if (firstInput) firstInput.focus();
+                }, 100);
+            });
+        }
+
+        function closeDialog(confirmed) {
+            const overlay = document.getElementById('dialogOverlay');
+            overlay.classList.remove('active');
+
+            if (!dialogResolve) return;
+
+            if (!confirmed) {
+                dialogResolve(null);
+                dialogResolve = null;
+                return;
+            }
+
+            // Collect field values
+            const fields = overlay.querySelectorAll('.dialog-field input');
+            if (fields.length === 0) {
+                dialogResolve(true);
+            } else if (fields.length === 1) {
+                dialogResolve(fields[0].value || '');
+            } else {
+                const result = {};
+                fields.forEach(input => {
+                    const key = input.id.replace('dlg_', '');
+                    result[key] = input.value;
+                });
+                dialogResolve(result);
+            }
+
+            dialogResolve = null;
+        }
+
+        // Close dialog on overlay click
+        document.getElementById('dialogOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeDialog(false);
+        });
+
+        // =================================================================
+        // INITIALIZATION
+        // =================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            loadBuildings();
+
+            document.getElementById('buildingSelector').addEventListener('change', function() {
+                const buildingId = this.value;
+                if (buildingId) loadBuildingDetail(buildingId);
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeDialog(false);
+                    closeAllModals();
+                }
+                if (e.key === 'Enter') {
+                    const overlay = document.getElementById('dialogOverlay');
+                    if (overlay.classList.contains('active')) closeDialog(true);
+                }
+            });
+        });
+
+        // =================================================================
+        // LOAD BUILDINGS
+        // =================================================================
+        async function loadBuildings() {
+            try {
+                const response = await fetch(`/api/building/landlord/${LANDLORD_ID}`);
+                const buildings = await response.json();
+
+                const selector = document.getElementById('buildingSelector');
+                selector.innerHTML = '<option value="">-- Chọn nhà trọ --</option>';
+
+                if (buildings.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                    return;
+                }
+
+                buildings.forEach(building => {
+                    const option = document.createElement('option');
+                    option.value = building.buildingId;
+                    option.textContent = `${building.buildingName}`;
+                    selector.appendChild(option);
+                });
+
+                if (buildings.length > 0) {
+                    selector.value = buildings[0].buildingId;
+                    loadBuildingDetail(buildings[0].buildingId);
+                }
+            } catch (error) {
+                console.error('Error loading buildings:', error);
+                showAlert('danger', 'Lỗi khi tải danh sách nhà trọ');
+            }
+        }
+
+        // =================================================================
+        // LOAD BUILDING DETAIL
+        // =================================================================
+        async function loadBuildingDetail(buildingId) {
+            showLoading();
+            currentBuildingId = buildingId;
+
+            try {
+                const response = await fetch(`/api/building/${buildingId}/landlord/${LANDLORD_ID}`);
+                const building = await response.json();
+                currentBuildingData = building;
+
+                if (!building.isSetupCompleted) {
+                    hideLoading();
+                    showSetupModal();
+                    return;
+                }
+
+                displayStatistics(building.statistics);
+                allFloorsData = building.floors;
+                displayFloors(building.floors);
+
+                document.getElementById('statisticsSection').style.display = 'grid';
+                document.getElementById('filtersSection').style.display = 'flex';
+                document.getElementById('emptyState').style.display = 'none';
+
+                hideLoading();
+            } catch (error) {
+                console.error('Error loading building detail:', error);
+                hideLoading();
+                showAlert('danger', 'Lỗi khi tải thông tin nhà trọ');
+            }
+        }
+
+        // =================================================================
+        // DISPLAY STATISTICS
+        // =================================================================
+        function displayStatistics(stats) {
+            document.getElementById('totalRooms').textContent = stats.totalRooms;
+            document.getElementById('availableRooms').textContent = stats.availableRooms;
+            document.getElementById('occupiedRooms').textContent = stats.occupiedRooms;
+            document.getElementById('monthlyRevenue').textContent = formatPrice(stats.monthlyRevenue);
+        }
+
+        // =================================================================
+        // DISPLAY FLOORS
+        // =================================================================
+        function displayFloors(floors) {
+            const container = document.getElementById('floorsContainer');
+            container.innerHTML = '';
+
+            if (!floors || floors.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>Chưa có tầng nào</p></div>';
+                return;
+            }
+
+            const sortedFloors = [...floors].sort((a, b) => b.floorNumber - a.floorNumber);
+
+            sortedFloors.forEach(floor => {
+                const floorDiv = document.createElement('div');
+                floorDiv.className = 'floor-section';
+
+                floorDiv.innerHTML = `
+                    <div class="floor-header">
+                        <span><i class="fas fa-layer-group"></i> ${floor.floorName}</span>
+                        <span>${floor.rooms.length} phòng</span>
+                    </div>
+                    <div class="rooms-grid" id="floor-${floor.floorId}"></div>
+                `;
+
+                container.appendChild(floorDiv);
+
+                const roomsGrid = document.getElementById(`floor-${floor.floorId}`);
+                floor.rooms.forEach(room => {
+                    roomsGrid.appendChild(createRoomCard(room));
+                });
+            });
+        }
+
+        // =================================================================
+        // CREATE ROOM CARD
+        // =================================================================
+        function createRoomCard(room) {
+            const card = document.createElement('div');
+            card.className = `room-card status-${room.status}`;
+            card.onclick = () => showRoomDetail(room.propertyId);
+
+            let renterInfo = '';
+            if (room.renterName) {
+                renterInfo = `
+                    <div class="room-renter">
+                        <i class="fas fa-user"></i> ${room.renterName}
+                    </div>
+                `;
+            }
+
+            card.innerHTML = `
+                <div class="room-number">${room.roomNumber}</div>
+                <div class="room-status">${room.statusDisplay}</div>
+                <div class="room-info">
+                    <div><i class="fas fa-ruler-combined"></i> ${room.area}m²</div>
+                    <div><i class="fas fa-money-bill-wave"></i> ${formatPrice(room.price)}</div>
+                    <div><i class="fas fa-users"></i> ${room.currentOccupants}/${room.maxOccupants} người</div>
+                </div>
+                ${renterInfo}
+            `;
+
+            return card;
+        }
+
+        // =================================================================
+        // SHOW ROOM DETAIL
+        // =================================================================
+        async function showRoomDetail(propertyId) {
+            const modal = document.getElementById('roomDetailModal');
+            const content = document.getElementById('roomDetailContent');
+            const title = document.getElementById('roomDetailTitle');
+
+            content.innerHTML = '<div class="loading"><div class="spinner"></div><p>Đang tải...</p></div>';
+            modal.style.display = 'block';
+
+            try {
+                const response = await fetch(`/api/room/${propertyId}/landlord/${LANDLORD_ID}`);
+                const room = await response.json();
+
+                title.textContent = `Phòng ${room.roomNumber} - ${room.statusDisplay}`;
+
+                let html = `
+                    <div class="detail-section">
+                        <h3><i class="fas fa-info-circle"></i> Thông tin phòng</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <div class="detail-label">Diện tích</div>
+                                <div class="detail-value">${room.area}m²</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Giá thuê</div>
+                                <div class="detail-value">${formatPrice(room.price)}/tháng</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Tiền cọc</div>
+                                <div class="detail-value">${formatPrice(room.deposit)}</div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Số người tối đa</div>
+                                <div class="detail-value">${room.maxOccupants} người</div>
+                            </div>
+                        </div>
+                        ${room.amenities.length > 0 ? `
+                            <div style="margin-top: 15px;">
+                                <strong>Tiện nghi:</strong> ${room.amenities.join(', ')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+
+                const rental = room.currentRental;
+
+                if (rental) {
+                    html += `
+                        <div class="detail-section">
+                            <h3><i class="fas fa-users"></i> Người thuê hiện tại (${room.currentRental.occupants.length}/${room.maxOccupants})</h3>
+                            <ul class="occupants-list">
+                                ${rental.occupants.map(occ => `
+                                    <li class="occupant-item">
+                                        <div class="occupant-info">
+                                            <div class="occupant-name">
+                                                ${occ.fullName} ${occ.isPrimaryRenter ? '<span class="badge bg-primary">Người thuê chính</span>' : ''}
+                                            </div>
+                                            <div class="occupant-details">
+                                                ${occ.phone ? `<i class="fas fa-phone"></i> ${occ.phone}` : ''}
+                                                ${occ.idNumber ? ` | <i class="fas fa-id-card"></i> ${occ.idNumber}` : ''}
+                                            </div>
+                                        </div>
+                                        <button class="btn btn-danger btn-sm" onclick="removeOccupant(${occ.occupantId}, '${occ.fullName}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </li>
+                                `).join('')}
+                            </ul>
+
+                            <div class="mt-3">
+                                <strong>Thời gian thuê:</strong> ${formatDate(rental.startDate)}
+                                ${rental.endDate ? ` → ${formatDate(rental.endDate)}` : ''}
+                                ${rental.daysRemaining > 0 ? `<span class="text-muted">(còn ${rental.daysRemaining} ngày)</span>` : ''}
+                            </div>
+
+                            <div class="mt-2">
+                                <button class="btn btn-warning" onclick="endRental(${rental.rentalId})">
+                                    <i class="fas fa-stop-circle"></i> Kết thúc hợp đồng
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (room.currentRental && room.latestInvoice) {
+                    const inv = room.latestInvoice;
+                    html += `
+                        <div class="detail-section">
+                            <h3><i class="fas fa-file-invoice-dollar"></i> Hóa đơn tháng ${inv.invoiceMonth}</h3>
+                            <div class="invoice-card">
+                                <div class="invoice-row">
+                                    <span>Tiền phòng:</span>
+                                    <strong>${formatPrice(inv.roomRent)}</strong>
+                                </div>
+                                <div class="invoice-row">
+                                    <span>Tiền điện:</span>
+                                    <strong>${formatPrice(inv.electricAmount)}</strong>
+                                </div>
+                                <div class="invoice-row">
+                                    <span>Tiền nước:</span>
+                                    <strong>${formatPrice(inv.waterAmount)}</strong>
+                                </div>
+                                <div class="invoice-row">
+                                    <span>Internet:</span>
+                                    <strong>${formatPrice(inv.internetFee)}</strong>
+                                </div>
+                                <div class="invoice-row">
+                                    <span>TỔNG CỘNG:</span>
+                                    <strong>${formatPrice(inv.totalAmount)}</strong>
+                                </div>
+                                <div class="mt-2">
+                                    Trạng thái: <strong>${inv.status === 'paid' ? '✅ Đã thanh toán' : '⏳ Chưa thanh toán'}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (!room.currentRental) {
+                    html += `
+                        <div class="detail-section">
+                            <div class="empty-state">
+                                <i class="fas fa-user-plus" style="font-size: 48px;"></i>
+                                <p>Phòng chưa có người thuê</p>
+                                <button class="btn btn-success" onclick="openAddOccupantModal(${propertyId})">
+                                    <i class="fas fa-user-plus"></i> Thêm người thuê
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="detail-section">
+                        <h3><i class="fas fa-cog"></i> Thao tác</h3>
+                        <div class="d-flex gap-2 flex-wrap">
+                            ${room.status === 'occupied' && room.currentRental && rental.occupants.length < room.maxOccupants ? `
+                                <button class="btn btn-primary" onclick="openAddOccupantModal(${propertyId})">
+                                    <i class="fas fa-user-plus"></i> Thêm người ở cùng
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-warning" onclick="editRoom(${propertyId})">
+                                <i class="fas fa-edit"></i> Sửa thông tin phòng
+                            </button>
+                            ${room.status !== 'occupied' ? `
+                                <button class="btn btn-danger" onclick="deleteRoom(${propertyId})">
+                                    <i class="fas fa-trash"></i> Xóa phòng
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading room detail:', error);
+                content.innerHTML = '<div class="alert alert-danger">Lỗi khi tải thông tin phòng</div>';
+            }
+        }
+
+        // =================================================================
+        // INITIALIZE BUILDING
+        // =================================================================
+        async function initializeBuilding() {
+            const totalFloors = parseInt(document.getElementById('totalFloors').value);
+            const roomsPerFloor = parseInt(document.getElementById('roomsPerFloor').value);
+            const defaultArea = parseFloat(document.getElementById('setupDefaultArea').value);
+            const defaultMaxOccupants = parseInt(document.getElementById('setupDefaultMaxOccupants').value);
+            const defaultPrice = parseFloat(document.getElementById('setupDefaultPrice').value);
+            const defaultDeposit = parseFloat(document.getElementById('setupDefaultDeposit').value);
+
+            if (!totalFloors || !roomsPerFloor || totalFloors < 1 || roomsPerFloor < 1) {
+                showAlert('warning', 'Vui lòng nhập số tầng và số phòng hợp lệ');
+                return;
+            }
+            if (totalFloors > 20 || roomsPerFloor > 50) {
+                showAlert('warning', 'Số tầng tối đa 20, số phòng mỗi tầng tối đa 50');
+                return;
+            }
+            if (!defaultArea || defaultArea <= 0) {
+                showAlert('warning', 'Vui lòng nhập diện tích hợp lệ');
+                return;
+            }
+            if (!defaultMaxOccupants || defaultMaxOccupants < 1) {
+                showAlert('warning', 'Vui lòng nhập số người tối đa hợp lệ');
+                return;
+            }
+            if (!defaultPrice || defaultPrice < 0) {
+                showAlert('warning', 'Vui lòng nhập giá thuê hợp lệ');
+                return;
+            }
+
+            showLoading();
+            closeSetupModal();
+
+            try {
+                const response = await fetch(`/api/building/${currentBuildingId}/landlord/${LANDLORD_ID}/initialize`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        totalFloors, roomsPerFloor,
+                        defaultArea, defaultMaxOccupants, defaultPrice, defaultDeposit
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                    loadBuildingDetail(currentBuildingId);
+                } else {
+                    hideLoading();
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                console.error('Error initializing building:', error);
+                hideLoading();
+                showAlert('danger', 'Lỗi khi khởi tạo nhà trọ');
+            }
+        }
+
+        // =================================================================
+        // ADD OCCUPANT
+        // =================================================================
+        function openAddOccupantModal(propertyId) {
+            document.getElementById('occupantPropertyId').value = propertyId;
+            document.getElementById('addOccupantForm').reset();
+
+            fetch(`/api/room/${propertyId}/landlord/${LANDLORD_ID}`)
+                .then(r => r.json())
+                .then(room => {
+                    // Kiểm tra đã đủ người chưa
+                    if (room.currentRental) {
+                        const activeCount = room.currentRental.occupants ? room.currentRental.occupants.length : room.currentOccupants;
+                        if (activeCount >= room.maxOccupants) {
+                            showAlert('warning', `Phòng đã đủ ${room.maxOccupants} người. Vui lòng cập nhật số người tối đa trước khi thêm.`);
+                            return;
+                        }
+                    }
+
+                    const isFirstOccupant = !room.currentRental;
+                    document.getElementById('rentalInfoSection').style.display = isFirstOccupant ? 'block' : 'none';
+
+                    if (isFirstOccupant) {
+                        document.getElementById('monthlyRent').value = room.price || 0;
+                        document.getElementById('depositAmount').value = room.deposit || 0;
+                    }
+
+                    closeRoomDetailModal();
+                    document.getElementById('addOccupantModal').style.display = 'block';
+                });
+        }
+
+        async function submitAddOccupant() {
+            const propertyId = document.getElementById('occupantPropertyId').value;
+            const fullName = document.getElementById('occupantFullName').value;
+            const phone = document.getElementById('occupantPhone').value;
+            const idNumber = document.getElementById('occupantIdNumber').value;
+            const moveInDate = document.getElementById('occupantMoveInDate').value;
+            const moveOutExpected = document.getElementById('occupantMoveOutExpected').value;
+            const isPrimary = document.getElementById('occupantIsPrimary').checked;
+
+            if (!fullName || !moveInDate) {
+                showAlert('warning', 'Vui lòng nhập họ tên và ngày vào ở');
+                return;
+            }
+
+            const data = {
+                propertyId: parseInt(propertyId),
+                fullName, phone, idNumber, moveInDate,
+                moveOutExpected: moveOutExpected || null,
+                isPrimaryRenter: isPrimary
+            };
+
+            const rentalSection = document.getElementById('rentalInfoSection');
+            if (rentalSection.style.display !== 'none') {
+                data.monthlyRent = parseFloat(document.getElementById('monthlyRent').value);
+                data.depositAmount = parseFloat(document.getElementById('depositAmount').value);
+                data.paymentDueDate = parseInt(document.getElementById('paymentDueDate').value);
+
+                if (!data.monthlyRent || !data.depositAmount) {
+                    showAlert('warning', 'Vui lòng nhập đầy đủ thông tin thuê');
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(`/api/room/landlord/${LANDLORD_ID}/add-occupant`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                    closeAddOccupantModal();
+                    loadBuildingDetail(currentBuildingId);
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                console.error('Error adding occupant:', error);
+                showAlert('danger', 'Lỗi khi thêm người thuê');
+            }
+        }
+
+        // =================================================================
+        // CREATE BUILDING
+        // =================================================================
+        function showCreateBuildingModal() {
+            document.getElementById('createBuildingForm').reset();
+            document.getElementById('createBuildingModal').style.display = 'block';
+        }
+
+        async function submitCreateBuilding() {
+            const name = document.getElementById('newBuildingName').value.trim();
+            const address = document.getElementById('newBuildingAddress').value;
+            const ward = document.getElementById('newBuildingWard').value;
+            const district = document.getElementById('newBuildingDistrict').value;
+            const city = document.getElementById('newBuildingCity').value;
+            const description = document.getElementById('newBuildingDescription').value;
+            const defaultArea = parseFloat(document.getElementById('newBuildingDefaultArea').value);
+            const defaultMaxOccupants = parseInt(document.getElementById('newBuildingDefaultMaxOccupants').value);
+            const defaultPrice = parseFloat(document.getElementById('newBuildingDefaultPrice').value);
+            const defaultDeposit = parseFloat(document.getElementById('newBuildingDefaultDeposit').value);
+
+            if (!name) {
+                showAlert('warning', 'Vui lòng nhập tên nhà trọ');
+                return;
+            }
+            if (!defaultArea || defaultArea <= 0) {
+                showAlert('warning', 'Vui lòng nhập diện tích mặc định hợp lệ');
+                return;
+            }
+            if (!defaultMaxOccupants || defaultMaxOccupants < 1) {
+                showAlert('warning', 'Vui lòng nhập số người tối đa hợp lệ');
+                return;
+            }
+            if (!defaultPrice || defaultPrice < 0) {
+                showAlert('warning', 'Vui lòng nhập giá thuê mặc định hợp lệ');
+                return;
+            }
+            if (defaultDeposit === undefined || defaultDeposit < 0 || isNaN(defaultDeposit)) {
+                showAlert('warning', 'Vui lòng nhập tiền cọc mặc định hợp lệ');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/building/landlord/${LANDLORD_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        buildingName: name, address, ward, district, city, description,
+                        defaultArea, defaultMaxOccupants, defaultPrice, defaultDeposit
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', 'Tạo nhà trọ thành công!');
+                    closeCreateBuildingModal();
+                    loadBuildings();
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                console.error('Error creating building:', error);
+                showAlert('danger', 'Lỗi khi tạo nhà trọ');
+            }
+        }
+
+        // =================================================================
+        // FILTERS
+        // =================================================================
+        function applyFilters() {
+            const searchText = document.getElementById('searchRoom').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filteredFloors = JSON.parse(JSON.stringify(allFloorsData));
+
+            filteredFloors.forEach(floor => {
+                floor.rooms = floor.rooms.filter(room => {
+                    const matchSearch = !searchText || room.roomNumber.toLowerCase().includes(searchText);
+                    const matchStatus = !statusFilter || room.status === statusFilter;
+                    return matchSearch && matchStatus;
+                });
+            });
+
+            displayFloors(filteredFloors);
+        }
+
+        function clearFilters() {
+            document.getElementById('searchRoom').value = '';
+            document.getElementById('statusFilter').value = '';
+            displayFloors(allFloorsData);
+        }
+
+        // =================================================================
+        // UTILITY FUNCTIONS
+        // =================================================================
+        function formatPrice(price) {
+            if (!price) return '0đ';
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        function showLoading() {
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('floorsContainer').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('floorsContainer').style.display = 'block';
+        }
+
+        // =================================================================
+        // MODAL FUNCTIONS
+        // =================================================================
+        function showSetupModal() {
+            // Pre-fill từ thông tin building nếu có
+            if (currentBuildingData) {
+                if (currentBuildingData.defaultArea) document.getElementById('setupDefaultArea').value = currentBuildingData.defaultArea;
+                if (currentBuildingData.defaultMaxOccupants) document.getElementById('setupDefaultMaxOccupants').value = currentBuildingData.defaultMaxOccupants;
+                if (currentBuildingData.defaultPrice) document.getElementById('setupDefaultPrice').value = currentBuildingData.defaultPrice;
+                if (currentBuildingData.defaultDeposit !== undefined) document.getElementById('setupDefaultDeposit').value = currentBuildingData.defaultDeposit;
+            }
+            document.getElementById('setupModal').style.display = 'block';
+        }
+
+        function closeSetupModal() {
+            document.getElementById('setupModal').style.display = 'none';
+        }
+
+        function closeRoomDetailModal() {
+            document.getElementById('roomDetailModal').style.display = 'none';
+        }
+
+        function closeAddOccupantModal() {
+            document.getElementById('addOccupantModal').style.display = 'none';
+        }
+
+        function closeCreateBuildingModal() {
+            document.getElementById('createBuildingModal').style.display = 'none';
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+        }
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // =================================================================
+        // REMOVE OCCUPANT — uses custom dialog
+        // =================================================================
+        async function removeOccupant(occupantId, occupantName) {
+            // Step 1: Confirm
+            const confirmed = await showDialog({
+                title: 'Xóa người thuê',
+                subtitle: occupantName || '',
+                message: `Bạn có chắc chắn muốn xóa <strong>${occupantName || 'người thuê này'}</strong> ra khỏi phòng?`,
+                icon: 'fas fa-user-minus',
+                iconClass: 'icon-danger',
+                confirmLabel: '<i class="fas fa-trash"></i> Xóa',
+                confirmClass: 'dialog-btn-confirm-danger',
+            });
+
+            if (!confirmed) return;
+
+            // Step 2: Move-out date
+            const moveOutDate = await showDialog({
+                title: 'Ngày chuyển đi',
+                subtitle: occupantName || '',
+                icon: 'fas fa-calendar-alt',
+                iconClass: 'icon-info',
+                confirmLabel: '<i class="fas fa-check"></i> Tiếp tục',
+                confirmClass: 'dialog-btn-confirm-primary',
+                fields: [{
+                    id: 'moveOutDate',
+                    label: 'Ngày chuyển đi',
+                    type: 'date',
+                    defaultValue: new Date().toISOString().split('T')[0],
+                    required: true
+                }]
+            });
+
+            if (moveOutDate === null) return;
+
+            // Step 3: Reason
+            const reasonResult = await showDialog({
+                title: 'Lý do chuyển đi',
+                subtitle: 'Tùy chọn — có thể để trống',
+                icon: 'fas fa-comment-alt',
+                iconClass: 'icon-info',
+                confirmLabel: '<i class="fas fa-save"></i> Lưu',
+                confirmClass: 'dialog-btn-confirm-primary',
+                fields: [{
+                    id: 'reason',
+                    label: 'Lý do chuyển đi (tùy chọn)',
+                    type: 'text',
+                    placeholder: 'Nhập lý do hoặc để trống...'
+                }]
+            });
+
+            if (reasonResult === null) return;
+
+            fetch(`/api/room/landlord/${LANDLORD_ID}/remove-occupant`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    occupantId,
+                    moveOutDate: typeof moveOutDate === 'object' ? moveOutDate.moveOutDate : moveOutDate,
+                    reason: typeof reasonResult === 'object' ? reasonResult.reason : reasonResult
+                })
+            })
+            .then(r => r.json())
+            .then(result => {
+                if (result.success) {
+                    showAlert('success', result.message);
+                    closeRoomDetailModal();
+                    loadBuildingDetail(currentBuildingId);
+                } else {
+                    showAlert('danger', result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error removing occupant:', error);
+                showAlert('danger', 'Lỗi khi xóa người thuê');
+            });
+        }
+
+        // =================================================================
+        // END RENTAL — uses custom dialog
+        // =================================================================
+        async function endRental(rentalId) {
+            // Step 1: Confirm
+            const confirmed = await showDialog({
+                title: 'Kết thúc hợp đồng thuê',
+                message: 'Tất cả người thuê sẽ bị xóa và phòng sẽ chuyển về trạng thái <strong>trống</strong>. Hành động này không thể hoàn tác.',
+                icon: 'fas fa-stop-circle',
+                iconClass: 'icon-danger',
+                confirmLabel: '<i class="fas fa-stop-circle"></i> Kết thúc',
+                confirmClass: 'dialog-btn-confirm-danger',
+            });
+
+            if (!confirmed) return;
+
+            // Step 2: Termination date
+            const dateResult = await showDialog({
+                title: 'Ngày kết thúc hợp đồng',
+                icon: 'fas fa-calendar-times',
+                iconClass: 'icon-warning',
+                confirmLabel: '<i class="fas fa-check"></i> Tiếp tục',
+                confirmClass: 'dialog-btn-confirm-warning',
+                fields: [{
+                    id: 'terminationDate',
+                    label: 'Ngày kết thúc',
+                    type: 'date',
+                    defaultValue: new Date().toISOString().split('T')[0],
+                    required: true
+                }]
+            });
+
+            if (dateResult === null) return;
+
+            // Step 3: Reason
+            const reasonResult = await showDialog({
+                title: 'Lý do kết thúc hợp đồng',
+                subtitle: 'Tùy chọn — có thể để trống',
+                icon: 'fas fa-comment-dots',
+                iconClass: 'icon-info',
+                confirmLabel: '<i class="fas fa-save"></i> Xác nhận kết thúc',
+                confirmClass: 'dialog-btn-confirm-primary',
+                fields: [{
+                    id: 'terminationReason',
+                    label: 'Lý do (tùy chọn)',
+                    type: 'text',
+                    placeholder: 'VD: Hết hạn hợp đồng, người thuê tự chuyển đi...'
+                }]
+            });
+
+            if (reasonResult === null) return;
+
+            showLoading();
+
+            fetch(`/api/room/landlord/${LANDLORD_ID}/end-rental`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    rentalId,
+                    terminationDate: typeof dateResult === 'object' ? dateResult.terminationDate : dateResult,
+                    terminationReason: typeof reasonResult === 'object' ? reasonResult.terminationReason : reasonResult
+                })
+            })
+            .then(r => r.json())
+            .then(result => {
+                hideLoading();
+                if (result.success) {
+                    showAlert('success', result.message);
+                    closeRoomDetailModal();
+                    loadBuildingDetail(currentBuildingId);
+                } else {
+                    showAlert('danger', result.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error ending rental:', error);
+                hideLoading();
+                showAlert('danger', 'Lỗi khi kết thúc hợp đồng');
+            });
+        }
+
+        // =================================================================
+        // EDIT ROOM
+        // =================================================================
+        let currentEditingPropertyId = null;
+        let currentEditingRoomIsOccupied = false;
+        let currentEditingRoomOccupantsCount = 0;
+
+        function editRoom(propertyId) {
+            currentEditingPropertyId = propertyId;
+
+            fetch(`/api/room/${propertyId}/landlord/${LANDLORD_ID}`)
+                .then(r => r.json())
+                .then(room => {
+                    closeRoomDetailModal();
+
+                    const isOccupied = room.status === 'occupied';
+                    currentEditingRoomIsOccupied = isOccupied;
+                    currentEditingRoomOccupantsCount = room.currentOccupants || 0;
+
+                    const editModal = document.createElement('div');
+                    editModal.id = 'editRoomModal';
+                    editModal.className = 'modal';
+                    editModal.style.display = 'block';
+
+                    // Build status options — nếu đang có người thuê thì disable available & inactive
+                    const statusOptions = [
+                        { value: 'available', label: 'Trống', disableIfOccupied: true },
+                        { value: 'occupied', label: 'Đang thuê', disableIfOccupied: false },
+                        { value: 'maintenance', label: 'Bảo trì', disableIfOccupied: false },
+                        { value: 'inactive', label: 'Ngừng hoạt động', disableIfOccupied: true }
+                    ].map(opt => {
+                        const isDisabled = isOccupied && opt.disableIfOccupied;
+                        const isSelected = room.status === opt.value;
+                        return `<option value="${opt.value}" ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}>
+                            ${opt.label}${isDisabled ? ' (không khả dụng khi đang có người thuê)' : ''}
+                        </option>`;
+                    }).join('');
+
+                    const occupiedWarning = isOccupied ? `
+                        <div class="alert alert-warning" style="margin-bottom: 15px;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Phòng đang có người thuê.</strong>
+                            Không thể chuyển sang trạng thái <em>Trống</em> hoặc <em>Ngừng hoạt động</em>.
+                            Hãy kết thúc hợp đồng trước.
+                        </div>
+                    ` : '';
+
+                    const maxOccupantsHint = isOccupied ? `
+                        <small class="text-muted">
+                            Hiện có <strong>${currentEditingRoomOccupantsCount}</strong> người — số tối đa phải ≥ số hiện tại
+                        </small>
+                    ` : '';
+
+                    editModal.innerHTML = `
+                        <div class="modal-content" style="max-width: 600px;">
+                            <div class="modal-header">
+                                <h2><i class="fas fa-edit"></i> Sửa thông tin phòng ${room.roomNumber}</h2>
+                                <button class="close" onclick="closeEditRoomModal()">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                ${occupiedWarning}
+                                <form id="editRoomForm">
+                                    <div class="form-group">
+                                        <label>Tên phòng:</label>
+                                        <input type="text" id="editRoomTitle" value="${room.title}" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Mô tả:</label>
+                                        <textarea id="editRoomDescription" rows="3" class="form-control">${room.description || ''}</textarea>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Diện tích (m²):</label>
+                                                <input type="number" id="editRoomArea" value="${room.area}" step="0.1" min="0" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Số người tối đa:</label>
+                                                <input type="number" id="editRoomMaxOccupants" value="${room.maxOccupants}"
+                                                    min="${isOccupied ? currentEditingRoomOccupantsCount : 1}" class="form-control">
+                                                ${maxOccupantsHint}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Giá thuê (đ/tháng):</label>
+                                                <input type="number" id="editRoomPrice" value="${room.price}" step="100000" min="0" class="form-control">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Tiền cọc (đ):</label>
+                                                <input type="number" id="editRoomDeposit" value="${room.deposit}" step="100000" min="0" class="form-control">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Trạng thái:</label>
+                                        <select id="editRoomStatus" class="form-control">
+                                            ${statusOptions}
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button class="btn btn-secondary" onclick="closeEditRoomModal()">Hủy</button>
+                                <button class="btn btn-primary" onclick="submitEditRoom()">
+                                    <i class="fas fa-save"></i> Lưu thay đổi
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+                    document.body.appendChild(editModal);
+                })
+                .catch(error => {
+                    console.error('Error loading room for edit:', error);
+                    showAlert('danger', 'Lỗi khi tải thông tin phòng');
+                });
+        }
+
+        function closeEditRoomModal() {
+            const modal = document.getElementById('editRoomModal');
+            if (modal) modal.remove();
+            currentEditingPropertyId = null;
+            currentEditingRoomIsOccupied = false;
+            currentEditingRoomOccupantsCount = 0;
+        }
+
+        async function submitEditRoom() {
+            if (!currentEditingPropertyId) return;
+
+            const newStatus = document.getElementById('editRoomStatus').value;
+            const newMaxOccupants = parseInt(document.getElementById('editRoomMaxOccupants').value);
+
+            // Validate: không được chuyển về trống/ngừng hoạt động khi đang có người thuê
+            if (currentEditingRoomIsOccupied && (newStatus === 'available' || newStatus === 'inactive')) {
+                showAlert('warning', `Không thể chuyển sang trạng thái "${newStatus === 'available' ? 'Trống' : 'Ngừng hoạt động'}" khi phòng đang có người thuê. Vui lòng kết thúc hợp đồng trước.`);
+                return;
+            }
+
+            // Validate: số người tối đa phải >= số hiện tại
+            if (currentEditingRoomIsOccupied && newMaxOccupants < currentEditingRoomOccupantsCount) {
+                showAlert('warning', `Số người tối đa không thể nhỏ hơn số người hiện tại (${currentEditingRoomOccupantsCount} người).`);
+                return;
+            }
+
+            const data = {
+                title: document.getElementById('editRoomTitle').value,
+                description: document.getElementById('editRoomDescription').value,
+                area: parseFloat(document.getElementById('editRoomArea').value),
+                price: parseFloat(document.getElementById('editRoomPrice').value),
+                deposit: parseFloat(document.getElementById('editRoomDeposit').value),
+                maxOccupants: newMaxOccupants,
+                status: newStatus
+            };
+
+            if (!data.title || !data.area || !data.price || !data.deposit || !data.maxOccupants) {
+                showAlert('warning', 'Vui lòng nhập đầy đủ thông tin');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/room/${currentEditingPropertyId}/landlord/${LANDLORD_ID}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                    closeEditRoomModal();
+                    loadBuildingDetail(currentBuildingId);
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                console.error('Error updating room:', error);
+                showAlert('danger', 'Lỗi khi cập nhật phòng');
+            }
+        }
+
+        // =================================================================
+        // DELETE ROOM — uses custom dialog
+        // =================================================================
+        async function deleteRoom(propertyId) {
+            const confirmed = await showDialog({
+                title: 'Xóa phòng',
+                message: 'Bạn có chắc chắn muốn xóa phòng này? <br><small style="color:#888">Lưu ý: Không thể xóa phòng đang được thuê.</small>',
+                icon: 'fas fa-trash-alt',
+                iconClass: 'icon-danger',
+                confirmLabel: '<i class="fas fa-trash"></i> Xóa phòng',
+                confirmClass: 'dialog-btn-confirm-danger',
+            });
+
+            if (!confirmed) return;
+
+            showLoading();
+
+            fetch(`/api/room/${propertyId}/landlord/${LANDLORD_ID}`, { method: 'DELETE' })
+                .then(r => r.json())
+                .then(result => {
+                    hideLoading();
+                    if (result.success) {
+                        showAlert('success', result.message);
+                        closeRoomDetailModal();
+                        loadBuildingDetail(currentBuildingId);
+                    } else {
+                        showAlert('danger', result.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting room:', error);
+                    hideLoading();
+                    showAlert('danger', 'Lỗi khi xóa phòng');
+                });
+        }
+
+        // =================================================================
+        // ADD ROOM MODAL
+        // =================================================================
+        function showAddRoomModal() {
+            if (!currentBuildingData || !currentBuildingData.floors || currentBuildingData.floors.length === 0) {
+                showAlert('warning', 'Vui lòng thiết lập tầng trước khi thêm phòng');
+                return;
+            }
+
+            const addRoomModal = document.createElement('div');
+            addRoomModal.id = 'addRoomModal';
+            addRoomModal.className = 'modal';
+            addRoomModal.style.display = 'block';
+
+            let floorOptions = '';
+            currentBuildingData.floors.forEach(floor => {
+                floorOptions += `<option value="${floor.floorId}">${floor.floorName}</option>`;
+            });
+
+            const lastFloor = currentBuildingData.floors[currentBuildingData.floors.length - 1];
+            const suggestedRoomNumber = lastFloor && lastFloor.rooms.length > 0
+                ? generateNextRoomNumber(lastFloor)
+                : 'P101';
+
+            addRoomModal.innerHTML = `
+                <div class="modal-content" style="max-width: 700px;">
+                    <div class="modal-header">
+                        <h2><i class="fas fa-plus"></i> Thêm phòng mới</h2>
+                        <button class="close" onclick="closeAddRoomModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addRoomForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Chọn tầng: <span class="text-danger">*</span></label>
+                                        <select id="newRoomFloorId" class="form-control" required onchange="updateRoomNumberSuggestion()">
+                                            ${floorOptions}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Mã phòng: <span class="text-danger">*</span></label>
+                                        <input type="text" id="newRoomNumber" value="${suggestedRoomNumber}" required class="form-control" placeholder="VD: P101, P201">
+                                        <small class="text-muted">Gợi ý: <span id="roomNumberSuggestion">${suggestedRoomNumber}</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Tên phòng: <span class="text-danger">*</span></label>
+                                <input type="text" id="newRoomTitle" required class="form-control" placeholder="VD: Phòng P101">
+                            </div>
+                            <div class="form-group">
+                                <label>Mô tả:</label>
+                                <textarea id="newRoomDescription" rows="3" class="form-control" placeholder="Mô tả về phòng..."></textarea>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Diện tích (m²): <span class="text-danger">*</span></label>
+                                        <input type="number" id="newRoomArea" value="25" step="0.1" min="0" required class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Số người tối đa: <span class="text-danger">*</span></label>
+                                        <input type="number" id="newRoomMaxOccupants" value="2" min="1" required class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Giá thuê (đ/tháng): <span class="text-danger">*</span></label>
+                                        <input type="number" id="newRoomPrice" value="2000000" step="100000" min="0" required class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label>Tiền cọc (đ): <span class="text-danger">*</span></label>
+                                        <input type="number" id="newRoomDeposit" value="2000000" step="100000" min="0" required class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Lưu ý:</strong> Phòng mới sẽ được tạo với trạng thái "Trống".
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="closeAddRoomModal()">Hủy</button>
+                        <button class="btn btn-primary" onclick="submitAddRoom()">
+                            <i class="fas fa-save"></i> Tạo phòng
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(addRoomModal);
+        }
+
+        function closeAddRoomModal() {
+            const modal = document.getElementById('addRoomModal');
+            if (modal) modal.remove();
+        }
+
+        function generateNextRoomNumber(floor) {
+            if (!floor.rooms || floor.rooms.length === 0) return `P${floor.floorNumber}01`;
+
+            const lastRoom = floor.rooms[floor.rooms.length - 1];
+            const match = lastRoom.roomNumber.match(/\d+$/);
+            if (match) return `P${parseInt(match[0]) + 1}`;
+            return `P${floor.floorNumber}01`;
+        }
+
+        function updateRoomNumberSuggestion() {
+            const floorId = document.getElementById('newRoomFloorId').value;
+            const floor = currentBuildingData.floors.find(f => f.floorId == floorId);
+
+            if (floor) {
+                const suggestion = generateNextRoomNumber(floor);
+                document.getElementById('roomNumberSuggestion').textContent = suggestion;
+                document.getElementById('newRoomNumber').value = suggestion;
+                document.getElementById('newRoomTitle').value = `Phòng ${suggestion}`;
+            }
+        }
+
+        async function submitAddRoom() {
+            const floorId = document.getElementById('newRoomFloorId').value;
+            const roomNumber = document.getElementById('newRoomNumber').value.trim();
+            const title = document.getElementById('newRoomTitle').value.trim();
+            const description = document.getElementById('newRoomDescription').value.trim();
+            const area = parseFloat(document.getElementById('newRoomArea').value);
+            const maxOccupants = parseInt(document.getElementById('newRoomMaxOccupants').value);
+            const price = parseFloat(document.getElementById('newRoomPrice').value);
+            const deposit = parseFloat(document.getElementById('newRoomDeposit').value);
+
+            if (!floorId || !roomNumber || !title || !area || !maxOccupants || !price || !deposit) {
+                showAlert('warning', 'Vui lòng nhập đầy đủ thông tin bắt buộc');
+                return;
+            }
+
+            if (!/^P\d+$/.test(roomNumber)) {
+                showAlert('warning', 'Mã phòng phải có dạng P + số (VD: P101, P201)');
+                return;
+            }
+
+            const data = {
+                buildingId: currentBuildingId,
+                floorId: parseInt(floorId),
+                roomNumber, title, description, area, maxOccupants, price, deposit
+            };
+
+            try {
+                const response = await fetch(`/api/room/landlord/${LANDLORD_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', result.message);
+                    closeAddRoomModal();
+                    loadBuildingDetail(currentBuildingId);
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                console.error('Error adding room:', error);
+                showAlert('danger', 'Lỗi khi tạo phòng');
+            }
         }
     </script>
 }

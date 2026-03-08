@@ -19,7 +19,11 @@ public partial class NestFlowSystemContext : DbContext
 
     public virtual DbSet<Booking> Bookings { get; set; }
 
+    public virtual DbSet<Building> Buildings { get; set; }
+
     public virtual DbSet<Favorite> Favorites { get; set; }
+
+    public virtual DbSet<Floor> Floors { get; set; }
 
     public virtual DbSet<Invoice> Invoices { get; set; }
 
@@ -55,19 +59,38 @@ public partial class NestFlowSystemContext : DbContext
 
     public virtual DbSet<User> Users { get; set; }
 
+    public virtual DbSet<VwBuildingStatistic> VwBuildingStatistics { get; set; }
+
+    public virtual DbSet<VwRoomDetail> VwRoomDetails { get; set; }
+    public virtual DbSet<PropertyAmenity> PropertyAmenities { get; set; }
     public virtual DbSet<Wallet> Wallets { get; set; }
 
     public virtual DbSet<WalletTransaction> WalletTransactions { get; set; }
 
     public virtual DbSet<WithdrawRequest> WithdrawRequests { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=.;Database=NestFlowSystem;Trusted_Connection=True;TrustServerCertificate=True");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<PropertyAmenity>(entity =>
+        {
+            entity.HasKey(e => new { e.PropertyId, e.AmenityId });
+
+            entity.HasOne(d => d.Property)
+                .WithMany(p => p.PropertyAmenities)
+                .HasForeignKey(d => d.PropertyId);
+
+            entity.HasOne(d => d.Amenity)
+                .WithMany()
+                .HasForeignKey(d => d.AmenityId);
+        });
+
         modelBuilder.Entity<Amenity>(entity =>
         {
-            entity.HasKey(e => e.AmenityId).HasName("PK__Amenitie__E908452D5F4C85D8");
-
-            entity.HasIndex(e => e.Name, "UQ__Amenitie__72E12F1BFC3CE0F2").IsUnique();
+            entity.HasIndex(e => e.Name, "UQ_Amenities_Name").IsUnique();
 
             entity.Property(e => e.AmenityId).HasColumnName("amenity_id");
             entity.Property(e => e.Category)
@@ -83,8 +106,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Booking>(entity =>
         {
-            entity.HasKey(e => e.BookingId).HasName("PK__Bookings__5DE3A5B1165E52E7");
-
             entity.Property(e => e.BookingId).HasColumnName("booking_id");
             entity.Property(e => e.BookingDate).HasColumnName("booking_date");
             entity.Property(e => e.BookingTime).HasColumnName("booking_time");
@@ -115,11 +136,53 @@ public partial class NestFlowSystemContext : DbContext
                 .HasConstraintName("fk_bookings_renter");
         });
 
+        modelBuilder.Entity<Building>(entity =>
+        {
+            entity.HasIndex(e => e.LandlordId, "IX_Buildings_Landlord");
+
+            entity.Property(e => e.BuildingId).HasColumnName("building_id");
+            entity.Property(e => e.Address)
+                .HasMaxLength(255)
+                .HasColumnName("address");
+            entity.Property(e => e.BuildingName)
+                .HasMaxLength(255)
+                .HasColumnName("building_name");
+            entity.Property(e => e.City)
+                .HasMaxLength(100)
+                .HasColumnName("city");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.District)
+                .HasMaxLength(100)
+                .HasColumnName("district");
+            entity.Property(e => e.IsSetupCompleted).HasColumnName("is_setup_completed");
+            entity.Property(e => e.LandlordId).HasColumnName("landlord_id");
+            entity.Property(e => e.TotalFloors)
+                .HasDefaultValue(0)
+                .HasColumnName("total_floors");
+            entity.Property(e => e.TotalRooms)
+                .HasDefaultValue(0)
+                .HasColumnName("total_rooms");
+            entity.Property(e => e.UpdatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+            entity.Property(e => e.Ward)
+                .HasMaxLength(100)
+                .HasColumnName("ward");
+
+            entity.HasOne(d => d.Landlord).WithMany(p => p.Buildings)
+                .HasForeignKey(d => d.LandlordId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Buildings_Landlord");
+        });
+
         modelBuilder.Entity<Favorite>(entity =>
         {
-            entity.HasKey(e => e.FavoriteId).HasName("PK__Favorite__46ACF4CBF5086EC0");
-
-            entity.HasIndex(e => new { e.UserId, e.PropertyId }, "uq_favorites").IsUnique();
+            entity.HasIndex(e => new { e.UserId, e.PropertyId }, "UQ_Favorites").IsUnique();
 
             entity.Property(e => e.FavoriteId).HasColumnName("favorite_id");
             entity.Property(e => e.CreatedAt)
@@ -140,10 +203,34 @@ public partial class NestFlowSystemContext : DbContext
                 .HasConstraintName("fk_favorites_user");
         });
 
+        modelBuilder.Entity<Floor>(entity =>
+        {
+            entity.HasIndex(e => e.BuildingId, "IX_Floors_Building");
+
+            entity.HasIndex(e => new { e.BuildingId, e.DisplayOrder }, "IX_Floors_DisplayOrder");
+
+            entity.HasIndex(e => new { e.BuildingId, e.FloorNumber }, "UQ_Floors_BuildingFloorNumber").IsUnique();
+
+            entity.Property(e => e.FloorId).HasColumnName("floor_id");
+            entity.Property(e => e.BuildingId).HasColumnName("building_id");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.DisplayOrder).HasColumnName("display_order");
+            entity.Property(e => e.FloorName)
+                .HasMaxLength(50)
+                .HasColumnName("floor_name");
+            entity.Property(e => e.FloorNumber).HasColumnName("floor_number");
+            entity.Property(e => e.RoomsCount).HasColumnName("rooms_count");
+
+            entity.HasOne(d => d.Building).WithMany(p => p.Floors)
+                .HasForeignKey(d => d.BuildingId)
+                .HasConstraintName("FK_Floors_Building");
+        });
+
         modelBuilder.Entity<Invoice>(entity =>
         {
-            entity.HasKey(e => e.InvoiceId).HasName("PK__Invoices__F58DFD49314AAE46");
-
             entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -203,7 +290,7 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<LandlordSubscription>(entity =>
         {
-            entity.HasKey(e => e.SubscriptionId).HasName("PK__Landlord__863A7EC1D068B802");
+            entity.HasKey(e => e.SubscriptionId);
 
             entity.HasIndex(e => e.LandlordId, "ix_subscriptions_landlord");
 
@@ -245,8 +332,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Listing>(entity =>
         {
-            entity.HasKey(e => e.ListingId).HasName("PK__Listings__89D81774EF122552");
-
             entity.HasIndex(e => e.LandlordId, "ix_listings_landlord");
 
             entity.HasIndex(e => e.PropertyId, "ix_listings_property");
@@ -294,11 +379,9 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<ListingFavorite>(entity =>
         {
-            entity.HasKey(e => e.ListingFavoriteId).HasName("PK__ListingF__55A0774524E8A0C1");
+            entity.HasIndex(e => new { e.ListingId, e.RenterId }, "UQ_ListingFavorites").IsUnique();
 
             entity.HasIndex(e => e.RenterId, "ix_listingfavorites_renter");
-
-            entity.HasIndex(e => new { e.ListingId, e.RenterId }, "uq_listingfavorites").IsUnique();
 
             entity.Property(e => e.ListingFavoriteId).HasColumnName("listing_favorite_id");
             entity.Property(e => e.CreatedAt)
@@ -321,8 +404,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Message>(entity =>
         {
-            entity.HasKey(e => e.MessageId).HasName("PK__Messages__0BBF6EE64A3BF7CF");
-
             entity.Property(e => e.MessageId).HasColumnName("message_id");
             entity.Property(e => e.Content).HasColumnName("content");
             entity.Property(e => e.CreatedAt)
@@ -353,8 +434,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__E059842FD5297161");
-
             entity.Property(e => e.NotificationId).HasColumnName("notification_id");
             entity.Property(e => e.Content).HasColumnName("content");
             entity.Property(e => e.CreatedAt)
@@ -383,8 +462,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<PasswordResetToken>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__Password__3214EC070066BFCA");
-
             entity.HasIndex(e => e.ExpiresAt, "IX_PasswordResetTokens_ExpiresAt");
 
             entity.HasIndex(e => e.Token, "IX_PasswordResetTokens_Token");
@@ -401,10 +478,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Payment>(entity =>
         {
-            entity.ToTable("Payments");
-            
-            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__ED1FC9EACC3DBF5D");
-
             entity.HasIndex(e => e.PayerUserId, "ix_payments_payer");
 
             entity.HasIndex(e => e.ProviderOrderCode, "ix_payments_provider_order_code");
@@ -420,6 +493,9 @@ public partial class NestFlowSystemContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
             entity.Property(e => e.InvoiceId).HasColumnName("invoice_id");
+            entity.Property(e => e.LandlordAmount)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("landlord_amount");
             entity.Property(e => e.LandlordId).HasColumnName("landlord_id");
             entity.Property(e => e.PaidAt)
                 .HasColumnType("datetime")
@@ -431,6 +507,9 @@ public partial class NestFlowSystemContext : DbContext
             entity.Property(e => e.PaymentType)
                 .HasMaxLength(20)
                 .HasColumnName("payment_type");
+            entity.Property(e => e.PlatformCommission)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("platform_commission");
             entity.Property(e => e.Provider)
                 .HasMaxLength(20)
                 .HasDefaultValue("payos")
@@ -445,12 +524,6 @@ public partial class NestFlowSystemContext : DbContext
                 .HasDefaultValue("created")
                 .HasColumnName("status");
             entity.Property(e => e.SubscriptionId).HasColumnName("subscription_id");
-            entity.Property(e => e.PlatformCommission)
-                .HasColumnType("decimal(18, 2)")
-                .HasColumnName("platform_commission");
-            entity.Property(e => e.LandlordAmount)
-                .HasColumnType("decimal(18, 2)")
-                .HasColumnName("landlord_amount");
             entity.Property(e => e.UserDiscountApplied)
                 .HasColumnType("decimal(18, 2)")
                 .HasColumnName("user_discount_applied");
@@ -479,8 +552,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Plan>(entity =>
         {
-            entity.HasKey(e => e.PlanId).HasName("PK__Plans__BE9F8F1DDAD13903");
-
             entity.Property(e => e.PlanId).HasColumnName("plan_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -509,7 +580,11 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Property>(entity =>
         {
-            entity.HasKey(e => e.PropertyId).HasName("PK__Properti__735BA463438E9ED8");
+            entity.HasIndex(e => e.BuildingId, "IX_Properties_Building");
+
+            entity.HasIndex(e => e.FloorId, "IX_Properties_Floor");
+
+            entity.HasIndex(e => new { e.BuildingId, e.RoomNumber }, "IX_Properties_RoomNumber");
 
             entity.Property(e => e.PropertyId).HasColumnName("property_id");
             entity.Property(e => e.Address)
@@ -519,13 +594,19 @@ public partial class NestFlowSystemContext : DbContext
                 .HasColumnType("decimal(6, 2)")
                 .HasColumnName("area");
             entity.Property(e => e.AvailableFrom).HasColumnName("available_from");
+            entity.Property(e => e.BuildingId).HasColumnName("building_id");
             entity.Property(e => e.City)
                 .HasMaxLength(100)
                 .HasColumnName("city");
+            entity.Property(e => e.CommissionRate)
+                .HasColumnType("decimal(5, 2)")
+                .HasColumnName("commission_rate");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("created_at");
+            entity.Property(e => e.CurrentOccupantsCount).HasColumnName("current_occupants_count");
+            entity.Property(e => e.CurrentRentalId).HasColumnName("current_rental_id");
             entity.Property(e => e.Deposit)
                 .HasColumnType("decimal(12, 2)")
                 .HasColumnName("deposit");
@@ -533,6 +614,7 @@ public partial class NestFlowSystemContext : DbContext
             entity.Property(e => e.District)
                 .HasMaxLength(100)
                 .HasColumnName("district");
+            entity.Property(e => e.FloorId).HasColumnName("floor_id");
             entity.Property(e => e.LandlordId).HasColumnName("landlord_id");
             entity.Property(e => e.MaxOccupants).HasColumnName("max_occupants");
             entity.Property(e => e.Price)
@@ -541,6 +623,9 @@ public partial class NestFlowSystemContext : DbContext
             entity.Property(e => e.PropertyType)
                 .HasMaxLength(30)
                 .HasColumnName("property_type");
+            entity.Property(e => e.RoomNumber)
+                .HasMaxLength(20)
+                .HasColumnName("room_number");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
                 .HasDefaultValue("available")
@@ -552,47 +637,37 @@ public partial class NestFlowSystemContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("updated_at");
+            entity.Property(e => e.UserDiscount)
+                .HasColumnType("decimal(18, 2)")
+                .HasColumnName("user_discount");
             entity.Property(e => e.ViewCount)
                 .HasDefaultValue(0)
                 .HasColumnName("view_count");
             entity.Property(e => e.Ward)
                 .HasMaxLength(100)
                 .HasColumnName("ward");
-            entity.Property(e => e.CommissionRate)
-                .HasColumnType("decimal(5, 2)")
-                .HasColumnName("commission_rate");
-            entity.Property(e => e.UserDiscount)
-                .HasColumnType("decimal(18, 2)")
-                .HasColumnName("user_discount");
+
+            entity.HasOne(d => d.Building).WithMany(p => p.Properties)
+                .HasForeignKey(d => d.BuildingId)
+                .HasConstraintName("FK_Properties_Building");
+
+            entity.HasOne(d => d.CurrentRental).WithMany(p => p.Properties)
+                .HasForeignKey(d => d.CurrentRentalId)
+                .HasConstraintName("FK_Properties_CurrentRental");
+
+            entity.HasOne(d => d.Floor).WithMany(p => p.Properties)
+                .HasForeignKey(d => d.FloorId)
+                .HasConstraintName("FK_Properties_Floor");
 
             entity.HasOne(d => d.Landlord).WithMany(p => p.Properties)
                 .HasForeignKey(d => d.LandlordId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_properties_landlord");
-
-            entity.HasMany(d => d.Amenities).WithMany(p => p.Properties)
-                .UsingEntity<Dictionary<string, object>>(
-                    "PropertyAmenity",
-                    r => r.HasOne<Amenity>().WithMany()
-                        .HasForeignKey("AmenityId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("fk_pa_amenity"),
-                    l => l.HasOne<Property>().WithMany()
-                        .HasForeignKey("PropertyId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
-                        .HasConstraintName("fk_pa_property"),
-                    j =>
-                    {
-                        j.HasKey("PropertyId", "AmenityId").HasName("pk_property_amenities");
-                        j.ToTable("PropertyAmenities");
-                        j.IndexerProperty<long>("PropertyId").HasColumnName("property_id");
-                        j.IndexerProperty<long>("AmenityId").HasColumnName("amenity_id");
-                    });
         });
 
         modelBuilder.Entity<PropertyImage>(entity =>
         {
-            entity.HasKey(e => e.ImageId).HasName("PK__Property__DC9AC9558EEAEA5A");
+            entity.HasKey(e => e.ImageId);
 
             entity.Property(e => e.ImageId).HasColumnName("image_id");
             entity.Property(e => e.DisplayOrder)
@@ -618,11 +693,11 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<RentSchedule>(entity =>
         {
-            entity.HasKey(e => e.ScheduleId).HasName("PK__RentSche__C46A8A6F1FDFE5B5");
+            entity.HasKey(e => e.ScheduleId);
+
+            entity.HasIndex(e => new { e.RentalId, e.PeriodMonth }, "UQ_RentSchedules").IsUnique();
 
             entity.HasIndex(e => e.Status, "ix_rentschedules_status");
-
-            entity.HasIndex(e => new { e.RentalId, e.PeriodMonth }, "uq_rentschedules").IsUnique();
 
             entity.Property(e => e.ScheduleId).HasColumnName("schedule_id");
             entity.Property(e => e.Amount)
@@ -664,8 +739,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Rental>(entity =>
         {
-            entity.HasKey(e => e.RentalId).HasName("PK__Rentals__67DB611BA22B0456");
-
             entity.Property(e => e.RentalId).HasColumnName("rental_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -723,7 +796,7 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<RentalOccupant>(entity =>
         {
-            entity.HasKey(e => e.OccupantId).HasName("PK__RentalOc__6F2B18EB1B4516F1");
+            entity.HasKey(e => e.OccupantId);
 
             entity.HasIndex(e => e.RentalId, "ix_occupants_rental");
 
@@ -762,8 +835,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Report>(entity =>
         {
-            entity.HasKey(e => e.ReportId).HasName("PK__Reports__779B7C5801B35724");
-
             entity.Property(e => e.ReportId).HasColumnName("report_id");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -796,8 +867,6 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<Review>(entity =>
         {
-            entity.HasKey(e => e.ReviewId).HasName("PK__Reviews__60883D904EBD2212");
-
             entity.Property(e => e.ReviewId).HasColumnName("review_id");
             entity.Property(e => e.Comment).HasColumnName("comment");
             entity.Property(e => e.CreatedAt)
@@ -826,9 +895,7 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__B9BE370F1D9A0ABF");
-
-            entity.HasIndex(e => e.Email, "UQ__Users__AB6E616490D4A6DA").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ_Users_Email").IsUnique();
 
             entity.Property(e => e.UserId).HasColumnName("user_id");
             entity.Property(e => e.AvatarUrl)
@@ -866,11 +933,85 @@ public partial class NestFlowSystemContext : DbContext
                 .HasColumnName("user_type");
         });
 
+        modelBuilder.Entity<VwBuildingStatistic>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("vw_BuildingStatistics");
+
+            entity.Property(e => e.ActualRoomsCount).HasColumnName("actual_rooms_count");
+            entity.Property(e => e.AvailableRooms).HasColumnName("available_rooms");
+            entity.Property(e => e.BuildingId).HasColumnName("building_id");
+            entity.Property(e => e.BuildingName)
+                .HasMaxLength(255)
+                .HasColumnName("building_name");
+            entity.Property(e => e.InactiveRooms).HasColumnName("inactive_rooms");
+            entity.Property(e => e.LandlordId).HasColumnName("landlord_id");
+            entity.Property(e => e.MaintenanceRooms).HasColumnName("maintenance_rooms");
+            entity.Property(e => e.MonthlyRevenue)
+                .HasColumnType("decimal(38, 2)")
+                .HasColumnName("monthly_revenue");
+            entity.Property(e => e.OccupiedRooms).HasColumnName("occupied_rooms");
+            entity.Property(e => e.TotalFloors).HasColumnName("total_floors");
+            entity.Property(e => e.TotalRooms).HasColumnName("total_rooms");
+        });
+
+        modelBuilder.Entity<VwRoomDetail>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("vw_RoomDetails");
+
+            entity.Property(e => e.Area)
+                .HasColumnType("decimal(6, 2)")
+                .HasColumnName("area");
+            entity.Property(e => e.BuildingId).HasColumnName("building_id");
+            entity.Property(e => e.BuildingName)
+                .HasMaxLength(255)
+                .HasColumnName("building_name");
+            entity.Property(e => e.CurrentOccupantsCount).HasColumnName("current_occupants_count");
+            entity.Property(e => e.CurrentRentalId).HasColumnName("current_rental_id");
+            entity.Property(e => e.Deposit)
+                .HasColumnType("decimal(12, 2)")
+                .HasColumnName("deposit");
+            entity.Property(e => e.FloorId).HasColumnName("floor_id");
+            entity.Property(e => e.FloorName)
+                .HasMaxLength(50)
+                .HasColumnName("floor_name");
+            entity.Property(e => e.FloorNumber).HasColumnName("floor_number");
+            entity.Property(e => e.MaxOccupants).HasColumnName("max_occupants");
+            entity.Property(e => e.Price)
+                .HasColumnType("decimal(12, 2)")
+                .HasColumnName("price");
+            entity.Property(e => e.PropertyId).HasColumnName("property_id");
+            entity.Property(e => e.RentalEndDate).HasColumnName("rental_end_date");
+            entity.Property(e => e.RentalStartDate).HasColumnName("rental_start_date");
+            entity.Property(e => e.RenterId).HasColumnName("renter_id");
+            entity.Property(e => e.RenterName)
+                .HasMaxLength(255)
+                .HasColumnName("renter_name");
+            entity.Property(e => e.RenterPhone)
+                .HasMaxLength(20)
+                .HasColumnName("renter_phone");
+            entity.Property(e => e.RoomNumber)
+                .HasMaxLength(20)
+                .HasColumnName("room_number");
+            entity.Property(e => e.Status)
+                .HasMaxLength(20)
+                .HasColumnName("status");
+            entity.Property(e => e.StatusDisplay)
+                .HasMaxLength(20)
+                .HasColumnName("status_display");
+            entity.Property(e => e.Title)
+                .HasMaxLength(255)
+                .HasColumnName("title");
+        });
+
         modelBuilder.Entity<Wallet>(entity =>
         {
-            entity.HasKey(e => e.WalletId).HasName("PK__Wallets__0EE6F041F22D1DFE");
+            entity.HasIndex(e => e.LandlordId, "UQ_Wallets_Landlord").IsUnique();
 
-            entity.HasIndex(e => e.LandlordId, "UQ__Wallets__0AA6026FDE85EA05").IsUnique();
+            entity.HasIndex(e => e.LandlordId, "ix_wallets_landlord");
 
             entity.Property(e => e.WalletId).HasColumnName("wallet_id");
             entity.Property(e => e.AvailableBalance)
@@ -901,11 +1042,13 @@ public partial class NestFlowSystemContext : DbContext
 
         modelBuilder.Entity<WalletTransaction>(entity =>
         {
-            entity.HasKey(e => e.WalletTxnId).HasName("PK__WalletTr__3C5FF6AC57126483");
+            entity.HasKey(e => e.WalletTxnId);
 
-            entity.HasIndex(e => new { e.RelatedType, e.RelatedId }, "ix_wallettx_related");
+            entity.HasIndex(e => new { e.RelatedType, e.RelatedId }, "ix_wallettxn_related");
 
-            entity.HasIndex(e => e.WalletId, "ix_wallettx_wallet");
+            entity.HasIndex(e => e.Status, "ix_wallettxn_status");
+
+            entity.HasIndex(e => e.WalletId, "ix_wallettxn_wallet");
 
             entity.Property(e => e.WalletTxnId).HasColumnName("wallet_txn_id");
             entity.Property(e => e.Amount)
@@ -923,23 +1066,22 @@ public partial class NestFlowSystemContext : DbContext
                 .HasColumnName("note");
             entity.Property(e => e.RelatedId).HasColumnName("related_id");
             entity.Property(e => e.RelatedType)
-                .HasMaxLength(20)
+                .HasMaxLength(50)
                 .HasColumnName("related_type");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
-                .HasDefaultValue("posted")
                 .HasColumnName("status");
             entity.Property(e => e.WalletId).HasColumnName("wallet_id");
 
             entity.HasOne(d => d.Wallet).WithMany(p => p.WalletTransactions)
                 .HasForeignKey(d => d.WalletId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_wallettx_wallet");
+                .HasConstraintName("fk_wallettxn_wallet");
         });
 
         modelBuilder.Entity<WithdrawRequest>(entity =>
         {
-            entity.HasKey(e => e.WithdrawId).HasName("PK__Withdraw__2F1C7929664B9018");
+            entity.HasKey(e => e.WithdrawId);
 
             entity.HasIndex(e => e.LandlordId, "ix_withdraw_landlord");
 
@@ -972,7 +1114,7 @@ public partial class NestFlowSystemContext : DbContext
                 .HasColumnName("requested_at");
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
-                .HasDefaultValue("pending")
+                .HasDefaultValue("Pending")
                 .HasColumnName("status");
             entity.Property(e => e.WalletId).HasColumnName("wallet_id");
 
