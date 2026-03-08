@@ -108,10 +108,125 @@
                     </form>
                 </div>
             </div>
+
+            <!-- Image Management Section -->
+            <div class="card shadow border-0 mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0"><i class="fas fa-images"></i> Quản lý Hình Ảnh</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Current Images -->
+                    <div class="row g-3 mb-4" id="imageGallery">
+                        @if (Model.EditingProperty.PropertyImages != null && Model.EditingProperty.PropertyImages.Any())
+                        {
+                            foreach (var img in Model.EditingProperty.PropertyImages.OrderBy(i => i.DisplayOrder))
+                            {
+                                <div class="col-md-4 col-sm-6" id="img-card-@img.ImageId">
+                                    <div class="card h-100 relative">
+                                        <img src="@img.ImageUrl" class="card-img-top" alt="Room Image" style="height: 150px; object-fit: cover;">
+                                        @if(img.ImageUrl != null && img.ImageUrl.Contains("360"))
+                                        {
+                                            <span class="badge bg-info position-absolute top-0 start-0 m-2"><i class="fas fa-street-view"></i> 360</span>
+                                        }
+                                        <div class="card-body p-2 text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteImage(@img.ImageId)">
+                                                <i class="fas fa-trash"></i> Xóa
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-12 text-center text-muted" id="noImgText">
+                                Chưa có hình ảnh nào.
+                            </div>
+                        }
+                    </div>
+
+                    <hr />
+                    
+                    <!-- Upload Form -->
+                    <form id="uploadImageForm">
+                        <div class="mb-3">
+                            <label class="form-label">Tải ảnh mới lên</label>
+                            <input class="form-control" type="file" id="imageFiles" multiple accept="image/*" required>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="is360Image">
+                            <label class="form-check-label" for="is360Image">Đánh dấu đây là ảnh 360 độ (Toàn cảnh)</label>
+                        </div>
+                        <button type="button" class="btn btn-success" onclick="uploadImages()">
+                            <i class="fas fa-upload"></i> Tải ảnh lên
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <!-- End Image Management Section -->
+
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        const propertyId = @Model.EditingProperty.PropertyId;
+
+        async function uploadImages() {
+            var fileInput = document.getElementById('imageFiles');
+            var is360 = document.getElementById('is360Image').checked;
+
+            if (fileInput.files.length === 0) {
+                alert("Vui lòng chọn ít nhất một ảnh để tải lên.");
+                return;
+            }
+
+            var formData = new FormData();
+            for (var i = 0; i < fileInput.files.length; i++) {
+                formData.append('files', fileInput.files[i]);
+            }
+            formData.append('is360', is360);
+
+            try {
+                const response = await fetch(`/api/properties/${propertyId}/images`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    alert('Đã tải ảnh lên thành công!');
+                    location.reload(); // Reload to see new images easily (or append DOM)
+                } else {
+                    const errorText = await response.text();
+                    alert(`Có lỗi xảy ra khi tải ảnh lên. Mã lỗi: ${response.status}. Thông báo: ${errorText}`);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Lỗi kết nối.');
+            }
+        }
+
+        async function deleteImage(imageId) {
+            if (!confirm('Bạn có chắc chắn muốn xóa ảnh này không?')) return;
+
+            try {
+                const response = await fetch(`/api/properties/images/${imageId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    document.getElementById(`img-card-${imageId}`).remove();
+                    // Optional: check if gallery is empty to show generic text
+                } else {
+                    alert('Không thể xóa ảnh.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Lỗi kết nối.');
+            }
+        }
+    </script>
 }

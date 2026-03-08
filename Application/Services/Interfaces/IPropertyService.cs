@@ -9,5 +9,9 @@ namespace NestFlow.Application.Services.Interfaces
         Task<Property> CreatePropertyAsync(Property property);
         Task<Property> UpdatePropertyAsync(Property property);
         Task<bool> DeletePropertyAsync(long propertyId);
+        
+        // Image Management
+        Task<PropertyImage> AddPropertyImageAsync(long propertyId, string imageUrl, bool isPrimary = false);
+        Task<bool> DeletePropertyImageAsync(long imageId);
     }
 }

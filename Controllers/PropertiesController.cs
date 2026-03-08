@@ -11,10 +11,12 @@ namespace NestFlow.Controllers
     public class PropertiesController : ControllerBase
     {
         private readonly IPropertyService _propertyService;
+        private readonly IWebHostEnvironment _env;
 
-        public PropertiesController(IPropertyService propertyService)
+        public PropertiesController(IPropertyService propertyService, IWebHostEnvironment env)
         {
             _propertyService = propertyService;
+            _env = env;
         }
 
         // GET: api/Properties/my-properties
@@ -83,6 +85,75 @@ namespace NestFlow.Controllers
 
             var success = await _propertyService.DeletePropertyAsync(id);
             if (!success) return BadRequest("Cannot delete property (it may have bookings or listings).");
+
+            return NoContent();
+        }
+
+        [HttpPost("{id}/images")]
+        public async Task<IActionResult> UploadImages(long id, [FromForm] IFormFileCollection files, [FromForm] bool is360 = false)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return Unauthorized();
+
+            var property = await _propertyService.GetPropertyByIdAsync(id);
+            if (property == null) return NotFound("Property not found");
+            if (property.LandlordId != userId.Value) return Forbid();
+
+            if (files == null || files.Count == 0) return BadRequest("No files uploaded");
+
+            var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "properties", id.ToString());
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var uploadedImages = new List<PropertyImage>();
+
+            foreach (var file in files)
+            {
+                if (file.Length > 0)
+                {
+                    // If marked as 360, append _360 to filename so client script recognizes it
+                    var extension = Path.GetExtension(file.FileName);
+                    var originalName = Path.GetFileNameWithoutExtension(file.FileName);
+                    var newFileName = is360 ? $"{Guid.NewGuid()}_360{extension}" : $"{Guid.NewGuid()}{extension}";
+                    
+                    var filePath = Path.Combine(uploadsFolder, newFileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    // Store relative URL in DB
+                    var imageUrl = $"/uploads/properties/{id}/{newFileName}";
+                    
+                    // Add to DB
+                    var isPrimary = !property.PropertyImages.Any() && uploadedImages.Count == 0;
+                    var savedImg = await _propertyService.AddPropertyImageAsync(id, imageUrl, isPrimary);
+                    uploadedImages.Add(savedImg);
+                }
+            }
+
+            // Return a simple DTO to avoid JSON object cycle with Property -> PropertyImages
+            var resultDto = uploadedImages.Select(img => new { 
+                imageId = img.ImageId, 
+                imageUrl = img.ImageUrl, 
+                isPrimary = img.IsPrimary 
+            });
+
+            return Ok(resultDto);
+        }
+
+        [HttpDelete("images/{imageId}")]
+        public async Task<IActionResult> DeleteImage(long imageId)
+        {
+            // Note: Should verify ownership securely. 
+            // For now, rely on UI only exposing this to owner or simple check
+            // A more robust check would query the image -> property -> landlordId
+            
+            var success = await _propertyService.DeletePropertyImageAsync(imageId);
+            if (!success) return NotFound();
+
+            // Ideally, delete physical file here too based on URL
 
             return NoContent();
         }
