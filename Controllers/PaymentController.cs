@@ -725,6 +725,401 @@ namespace NestFlow.Controllers
                 return BadRequest(new { success = false, message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Tạo link thanh toán PayOS cho mua gói đăng tin
+        /// </summary>
+        [HttpPost("create-plan-payment")]
+        public async Task<IActionResult> CreatePlanPayment([FromBody] CreatePlanPaymentRequest request)
+        {
+            try
+            {
+                Console.WriteLine("=== START CreatePlanPayment ===");
+                Console.WriteLine($"Request: PlanType={request.PlanType}, Duration={request.Duration}, Days={request.Days}, UseWallet={request.UseWallet}");
+                
+                // Kiểm tra user đã login
+                var userId = HttpContext.Session.GetInt32("UserId");
+                Console.WriteLine($"UserId from session: {userId}");
+                
+                if (userId == null)
+                {
+                    Console.WriteLine("User not logged in");
+                    return Unauthorized(new { success = false, message = "Vui lòng đăng nhập để mua gói" });
+                }
+
+                // Lấy thông tin user
+                var user = await _context.Users.FindAsync((long)userId.Value);
+                if (user == null)
+                {
+                    Console.WriteLine($"User not found: {userId.Value}");
+                    return NotFound(new { success = false, message = "Không tìm thấy thông tin người dùng" });
+                }
+
+                Console.WriteLine($"User found: {user.FullName}, Email={user.Email}");
+
+                // Tính toán số tiền dựa trên gói và thời hạn
+                decimal amount = 0;
+                string planName = "";
+                int durationDays = 0;
+
+                switch (request.PlanType.ToLower())
+                {
+                    case "basic":
+                        planName = "Gói Thường";
+                        if (request.Duration == "month")
+                        {
+                            amount = 54000;
+                            durationDays = 30;
+                        }
+                        else
+                        {
+                            amount = 2000 * request.Days;
+                            durationDays = request.Days;
+                        }
+                        break;
+                    case "vip1":
+                        planName = "Gói VIP1";
+                        if (request.Duration == "month")
+                        {
+                            amount = 510000;
+                            durationDays = 30;
+                        }
+                        else
+                        {
+                            amount = 20000 * request.Days;
+                            durationDays = request.Days;
+                        }
+                        break;
+                    case "vip2":
+                        planName = "Gói VIP2";
+                        if (request.Duration == "month")
+                        {
+                            amount = 840000;
+                            durationDays = 30;
+                        }
+                        else
+                        {
+                            amount = 35000 * request.Days;
+                            durationDays = request.Days;
+                        }
+                        break;
+                    case "management":
+                        planName = "Sử dụng quản lý";
+                        amount = 1400000;
+                        durationDays = 30;
+                        break;
+                    case "management_only":
+                        planName = "Chỉ sử dụng quản lý";
+                        amount = 560000;
+                        durationDays = 30;
+                        break;
+                    default:
+                        return BadRequest(new { success = false, message = "Gói không hợp lệ" });
+                }
+
+                if (amount <= 0)
+                {
+                    return BadRequest(new { success = false, message = "Số tiền không hợp lệ" });
+                }
+
+                Console.WriteLine($"Creating plan payment: User={user.FullName}, Plan={planName}, Amount={amount}, Days={durationDays}");
+
+                // Kiểm tra ví nếu user muốn dùng ví
+                var userWallet = await _context.Wallets
+                    .FirstOrDefaultAsync(w => w.LandlordId == userId.Value);
+
+                bool useWallet = request.UseWallet && userWallet != null && userWallet.AvailableBalance >= amount;
+
+                if (useWallet)
+                {
+                    // Thanh toán bằng ví
+                    Console.WriteLine($"Using wallet balance: {userWallet!.AvailableBalance}");
+
+                    // Trừ tiền từ ví
+                    userWallet.AvailableBalance -= amount;
+                    userWallet.UpdatedAt = DateTime.Now;
+
+                    // Tạo transaction log
+                    var walletTxn = new WalletTransaction
+                    {
+                        WalletId = userWallet.WalletId,
+                        Direction = "out",
+                        Amount = amount,
+                        RelatedType = "plan_purchase",
+                        RelatedId = 0,
+                        Status = "completed",
+                        Note = $"Mua {planName} - {durationDays} ngày",
+                        CreatedAt = DateTime.Now
+                    };
+                    _context.WalletTransactions.Add(walletTxn);
+
+                    // Tạo payment record
+                    var payment = new Models.Payment
+                    {
+                        PayerUserId = userId.Value,
+                        LandlordId = userId.Value,
+                        PaymentType = "Subscription",
+                        Amount = amount,
+                        Provider = "PayOS",
+                        ProviderOrderCode = $"WALLET_PLAN_{DateTimeOffset.Now.ToString("ffffff")}",
+                        Status = "Completed",
+                        CreatedAt = DateTime.Now,
+                        PaidAt = DateTime.Now
+                    };
+                    _context.Payments.Add(payment);
+
+                    // Tạo subscription
+                    var subscription = new LandlordSubscription
+                    {
+                        LandlordId = userId.Value,
+                        PlanId = GetPlanIdByType(request.PlanType),
+                        StartAt = DateTime.Now,
+                        EndAt = DateTime.Now.AddDays(durationDays),
+                        Status = "Active",
+                        QuotaRemaining = 0, // Sẽ được set dựa vào plan
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now
+                    };
+                    _context.LandlordSubscriptions.Add(subscription);
+
+                    await _context.SaveChangesAsync();
+
+                    // Gửi email xác nhận
+                    if (!string.IsNullOrEmpty(user.Email))
+                    {
+                        try
+                        {
+                            await _emailService.SendEmailAsync(
+                                user.Email,
+                                "Xác nhận mua gói thành công",
+                                $"Chào {user.FullName},<br><br>" +
+                                $"Bạn đã mua thành công {planName}<br>" +
+                                $"Thời hạn: {durationDays} ngày<br>" +
+                                $"Số tiền: {amount:N0} VNĐ<br>" +
+                                $"Hiệu lực từ: {subscription.StartAt:dd/MM/yyyy} đến {subscription.EndAt:dd/MM/yyyy}<br><br>" +
+                                $"Trân trọng,<br>NestFlow Team"
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error sending email: {ex.Message}");
+                        }
+                    }
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Mua gói thành công bằng ví",
+                        paymentMethod = "wallet",
+                        subscriptionId = subscription.SubscriptionId,
+                        redirectUrl = "/Landlord/Packages?success=true"
+                    });
+                }
+
+                // Thanh toán bằng PayOS
+                long orderCode = long.Parse(DateTimeOffset.Now.ToString("ffffff"));
+
+                ItemData item = new ItemData(
+                    $"{planName} - {durationDays} ngay",
+                    1,
+                    (int)amount
+                );
+                List<ItemData> items = new List<ItemData> { item };
+
+                var httpRequest = _httpContextAccessor.HttpContext?.Request ?? HttpContext.Request;
+                var baseUrl = $"{httpRequest.Scheme}://{httpRequest.Host}";
+
+                PaymentData paymentData = new PaymentData(
+                    orderCode,
+                    (int)amount,
+                    $"Mua {planName}",
+                    items,
+                    $"{baseUrl}/api/Payment/plan-payment-cancel?orderCode={orderCode}",
+                    $"{baseUrl}/api/Payment/plan-payment-success?orderCode={orderCode}&planType={request.PlanType}&duration={request.Duration}&days={request.Days}"
+                );
+
+                CreatePaymentResult createPayment = await _payOS.createPaymentLink(paymentData);
+
+                Console.WriteLine($"PayOS payment link created: {createPayment.checkoutUrl}");
+
+                // Lưu payment record
+                var payosPayment = new Models.Payment
+                {
+                    PayerUserId = userId.Value,
+                    LandlordId = userId.Value,
+                    PaymentType = "Subscription",
+                    Amount = amount,
+                    Provider = "PayOS",
+                    ProviderOrderCode = orderCode.ToString(),
+                    PayUrl = createPayment.checkoutUrl,
+                    Status = "Pending",
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Payments.Add(payosPayment);
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    success = true,
+                    checkoutUrl = createPayment.checkoutUrl,
+                    orderCode = orderCode,
+                    paymentId = payosPayment.PaymentId
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"=== ERROR CreatePlanPayment ===");
+                Console.WriteLine($"Error creating plan payment: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner exception: {ex.InnerException.Message}");
+                    Console.WriteLine($"Inner stack trace: {ex.InnerException.StackTrace}");
+                }
+                return StatusCode(500, new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Xử lý khi thanh toán gói thành công
+        /// </summary>
+        [HttpGet("plan-payment-success")]
+        public async Task<IActionResult> PlanPaymentSuccess(
+            [FromQuery] long orderCode,
+            [FromQuery] string planType,
+            [FromQuery] string duration,
+            [FromQuery] int days)
+        {
+            try
+            {
+                Console.WriteLine($"=== START PlanPaymentSuccess for order {orderCode} ===");
+
+                var userId = HttpContext.Session.GetInt32("UserId");
+                if (userId == null)
+                {
+                    return Redirect("/Landlord/Packages?error=unauthorized");
+                }
+
+                // Cập nhật payment status
+                var payment = await _context.Payments
+                    .FirstOrDefaultAsync(p => p.ProviderOrderCode == orderCode.ToString() && p.Status == "Pending");
+
+                if (payment == null)
+                {
+                    Console.WriteLine($"ERROR: Payment not found for order {orderCode}");
+                    return Redirect("/Landlord/Packages?error=payment_not_found");
+                }
+
+                payment.Status = "Completed";
+                payment.PaidAt = DateTime.Now;
+
+                // Tính duration
+                int durationDays = duration == "month" ? 30 : days;
+
+                // Tạo subscription
+                var subscription = new LandlordSubscription
+                {
+                    LandlordId = userId.Value,
+                    PlanId = GetPlanIdByType(planType),
+                    StartAt = DateTime.Now,
+                    EndAt = DateTime.Now.AddDays(durationDays),
+                    Status = "Active",
+                    QuotaRemaining = 0, // Sẽ được set dựa vào plan
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+                _context.LandlordSubscriptions.Add(subscription);
+
+                await _context.SaveChangesAsync();
+
+                // Gửi email xác nhận
+                var user = await _context.Users.FindAsync((long)userId.Value);
+                if (user != null && !string.IsNullOrEmpty(user.Email))
+                {
+                    try
+                    {
+                        string planName = GetPlanName(planType);
+                        await _emailService.SendEmailAsync(
+                            user.Email,
+                            "Xác nhận mua gói thành công",
+                            $"Chào {user.FullName},<br><br>" +
+                            $"Bạn đã mua thành công {planName}<br>" +
+                            $"Thời hạn: {durationDays} ngày<br>" +
+                            $"Số tiền: {payment.Amount:N0} VNĐ<br>" +
+                            $"Hiệu lực từ: {subscription.StartAt:dd/MM/yyyy} đến {subscription.EndAt:dd/MM/yyyy}<br><br>" +
+                            $"Trân trọng,<br>NestFlow Team"
+                        );
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error sending email: {ex.Message}");
+                    }
+                }
+
+                Console.WriteLine("=== END PlanPaymentSuccess SUCCESS ===");
+                return Redirect("/Landlord/Packages?success=true");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"=== ERROR PlanPaymentSuccess ===");
+                Console.WriteLine($"Message: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+                return Redirect("/Landlord/Packages?error=processing_failed");
+            }
+        }
+
+        /// <summary>
+        /// Xử lý khi thanh toán gói bị hủy
+        /// </summary>
+        [HttpGet("plan-payment-cancel")]
+        public async Task<IActionResult> PlanPaymentCancel([FromQuery] long orderCode)
+        {
+            try
+            {
+                var payment = await _context.Payments
+                    .FirstOrDefaultAsync(p => p.ProviderOrderCode == orderCode.ToString());
+
+                if (payment != null)
+                {
+                    payment.Status = "Cancelled";
+                    await _context.SaveChangesAsync();
+                }
+
+                return Redirect("/Landlord/Packages?cancelled=true");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in plan payment cancel: {ex.Message}");
+                return Redirect("/Landlord/Packages");
+            }
+        }
+
+        private long GetPlanIdByType(string planType)
+        {
+            return planType.ToLower() switch
+            {
+                "basic" => 1,
+                "vip1" => 2,
+                "vip2" => 3,
+                "management" => 4,
+                "management_only" => 5,
+                _ => 1
+            };
+        }
+
+        private string GetPlanName(string planType)
+        {
+            return planType.ToLower() switch
+            {
+                "basic" => "Gói Thường",
+                "vip1" => "Gói VIP1",
+                "vip2" => "Gói VIP2",
+                "management" => "Sử dụng quản lý",
+                "management_only" => "Chỉ sử dụng quản lý",
+                _ => "Gói Thường"
+            };
+        }
     }
 
     // Request models
@@ -740,6 +1135,14 @@ namespace NestFlow.Controllers
         public string? Phone { get; set; }
         
         // Sử dụng ví
+        public bool UseWallet { get; set; }
+    }
+
+    public class CreatePlanPaymentRequest
+    {
+        public string PlanType { get; set; } = null!; // basic, vip1, vip2, management, management_only
+        public string Duration { get; set; } = "month"; // day, month
+        public int Days { get; set; } = 3; // Số ngày nếu chọn day
         public bool UseWallet { get; set; }
     }
 }
