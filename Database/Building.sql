@@ -301,6 +301,7 @@ GROUP BY b.building_id;
 
 PRINT N'✓ Created default floor 1 for all buildings';
 
+<<<<<<< Updated upstream
 WITH CTE AS (
     SELECT p.property_id, 
            b.building_id,
@@ -311,13 +312,35 @@ WITH CTE AS (
     INNER JOIN [dbo].[Floors] f ON f.building_id = b.building_id AND f.floor_number = 1
     WHERE p.building_id IS NULL
 )
+=======
+-- Gán các properties hiện có vào building và floor tương ứng
+WITH RoomCTE AS
+(
+    SELECT 
+        p.property_id,
+        b.building_id,
+        f.floor_id,
+        ROW_NUMBER() OVER (PARTITION BY b.building_id ORDER BY p.property_id) AS rn
+    FROM dbo.Properties p
+    INNER JOIN dbo.Buildings b ON p.landlord_id = b.landlord_id
+    INNER JOIN dbo.Floors f ON f.building_id = b.building_id AND f.floor_number = 1
+    WHERE p.building_id IS NULL
+)
+
+>>>>>>> Stashed changes
 UPDATE p
 SET 
     p.building_id = c.building_id,
     p.floor_id = c.floor_id,
+<<<<<<< Updated upstream
     p.room_number = 'P1' + RIGHT('0' + CAST(c.rn AS NVARCHAR), 2)
 FROM [dbo].[Properties] p
 INNER JOIN CTE c ON p.property_id = c.property_id;
+=======
+    p.room_number = 'P1' + RIGHT('0' + CAST(c.rn AS NVARCHAR),2)
+FROM dbo.Properties p
+INNER JOIN RoomCTE c ON p.property_id = c.property_id;
+>>>>>>> Stashed changes
 
 PRINT N'✓ Assigned existing properties to buildings and floors';
 
