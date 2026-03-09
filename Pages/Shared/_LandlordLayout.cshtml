@@ -211,7 +211,7 @@
             }
         });
 
-        function logout() {
+        async function logout() {
             const result = await window.NestFlowAuth.logout();
             if (result.success) {
                 window.location.href = '/';
