@@ -1,0 +1,309 @@
+@page
+@model NestFlow.Pages.Room.SearchModel
+@{
+    ViewData["Title"] = "Tìm kiếm phòng trọ - NestFlow";
+}
+
+<div class="nf-search-container">
+    <!-- Floating Filter Bar (Sticky) -->
+    <div class="nf-floating-filter-bar shadow-sm">
+        <div class="container-fluid px-lg-5 d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <button type="button" class="nf-filter-trigger-btn" data-bs-toggle="modal" data-bs-target="#filterModal">
+                    <i class="fas fa-filter text-teal"></i>
+                    <span>Bộ lọc</span>
+                </button>
+                
+                <div class="d-none d-md-flex align-items-center gap-2">
+                    @if (!string.IsNullOrEmpty(Model.SearchRequest.Keyword))
+                    {
+                        <span class="badge bg-light text-dark border py-2 px-3 rounded-pill fw-normal">
+                            "@Model.SearchRequest.Keyword"
+                        </span>
+                    }
+                    @if (Model.SearchRequest.Ward != null)
+                    {
+                        <span class="badge bg-light text-dark border py-2 px-3 rounded-pill fw-normal">
+                            <i class="fas fa-map-marker-alt me-1 text-teal"></i>@Model.SearchRequest.Ward
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <!-- Sort Dropdown (Compact) -->
+            <div class="d-flex align-items-center dropdown">
+                <button class="btn btn-link text-decoration-none text-dark fw-bold dropdown-toggle p-0" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-sort-amount-down me-1"></i> SẮP XẾP
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3">
+                    <li><a class="dropdown-item @(Model.SearchRequest.SortBy == "new" ? "active" : "")" href="javascript:void(0)" onclick="updateSort('new')">Mới nhất</a></li>
+                    <li><a class="dropdown-item @(Model.SearchRequest.SortBy == "price_asc" ? "active" : "")" href="javascript:void(0)" onclick="updateSort('price_asc')">Giá thấp nhất</a></li>
+                    <li><a class="dropdown-item @(Model.SearchRequest.SortBy == "price_desc" ? "active" : "")" href="javascript:void(0)" onclick="updateSort('price_desc')">Giá cao nhất</a></li>
+                    <li><a class="dropdown-item @(Model.SearchRequest.SortBy == "area_desc" ? "active" : "")" href="javascript:void(0)" onclick="updateSort('area_desc')">Diện tích lớn nhất</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid px-lg-5 pb-5">
+        <div class="row">
+            <div class="col-12">
+                <div class="mb-4 d-flex justify-content-between align-items-end">
+                    <div>
+                        <h4 class="nf-results-count m-0">
+                            Tìm thấy <span class="fw-bold">@Model.SearchResponse.TotalItems</span> phòng trọ phù hợp
+                        </h4>
+                    </div>
+                </div>
+
+                @if (Model.SearchResponse.Properties.Count > 0)
+                {
+                    <div class="row g-4">
+                        @for (int i = 0; i < Model.SearchResponse.Properties.Count; i++)
+                        {
+                            var room = Model.SearchResponse.Properties[i];
+                            <div class="col-xl-3 col-lg-4 col-md-6 reveal-item" style="animation-delay: @(i * 0.05)s">
+                                <partial name="_RoomCard" model="room" />
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Pagination -->
+                    @if (Model.SearchResponse.TotalPages > 1)
+                    {
+                        <nav class="mt-5 d-flex justify-content-center">
+                            <ul class="pagination">
+                                <li class="page-item @(Model.SearchResponse.CurrentPage == 1 ? "disabled" : "")">
+                                    <a class="page-link shadow-sm border-0" href="javascript:void(0)" onclick="updatePage(@(Model.SearchResponse.CurrentPage - 1))">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                                @for (int i = 1; i <= Model.SearchResponse.TotalPages; i++)
+                                {
+                                    <li class="page-item @(i == Model.SearchResponse.CurrentPage ? "active" : "")">
+                                        <a class="page-link shadow-sm border-0" href="javascript:void(0)" onclick="updatePage(@i)">@i</a>
+                                    </li>
+                                }
+                                <li class="page-item @(Model.SearchResponse.CurrentPage == Model.SearchResponse.TotalPages ? "disabled" : "")">
+                                    <a class="page-link shadow-sm border-0" href="javascript:void(0)" onclick="updatePage(@(Model.SearchResponse.CurrentPage + 1))">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    }
+                }
+                else
+                {
+                    <div class="nf-empty-state-premium text-center">
+                        <div class="nf-empty-icon-wrap">
+                            <i class="fas fa-search-minus text-teal" style="font-size: 3rem; opacity: 0.5;"></i>
+                        </div>
+                        <h3 class="text-dark fw-bold mb-3">Rất tiếc, chưa tìm thấy kết quả nào!</h3>
+                        <p class="text-muted mx-auto mb-4" style="max-width: 500px;">
+                            Thử điều chỉnh bộ lọc để khám phá thêm nhiều phòng trọ tuyệt vời tại Hòa Lạc nhé.
+                        </p>
+                        <a href="/Room/Search" class="btn nf-btn-signup px-5 py-3 fw-bold shadow-sm">
+                            <i class="fas fa-undo me-2"></i>Xem tất cả phòng
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Modal (Phongtro123 Style) -->
+<div class="modal fade nf-filter-modal" id="filterModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Bộ lọc</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form method="get" id="searchFilterForm">
+                    <input type="hidden" name="SearchRequest.SortBy" value="@Model.SearchRequest.SortBy" />
+                    <input type="hidden" name="SearchRequest.Page" id="hiddenCurrentPage" value="@Model.SearchRequest.Page" />
+
+                    <!-- Keyword -->
+                    <div class="mb-4">
+                        <label class="nf-modal-section-title">Tìm kiếm từ khóa</label>
+                        <div class="position-relative">
+                            <i class="fas fa-search position-absolute text-muted" style="top: 50%; left: 18px; transform: translateY(-50%); opacity: 0.5; z-index: 5;"></i>
+                            <input type="text" name="SearchRequest.Keyword" value="@Model.SearchRequest.Keyword" 
+                                   class="form-control nf-input-luxury ps-5" placeholder="Tên đường, phường, dự án...">
+                        </div>
+                    </div>
+
+                    <!-- Categories (Chips) -->
+                    <div class="mb-4">
+                        <label class="nf-modal-section-title">Danh mục cho thuê</label>
+                        <div class="nf-chip-group">
+                            @{
+                                var pTypes = new[] { 
+                                    ("phong_tro", "Phòng trọ", "fa-bed"), 
+                                    ("chung_cu", "Chung cư", "fa-building"), 
+                                    ("studio", "Studio", "fa-couch"), 
+                                    ("nha_nguyen_can", "Nguyên căn", "fa-home"), 
+                                    ("o_ghep", "Ở ghép", "fa-users")
+                                };
+                            }
+                            @foreach (var pt in pTypes)
+                            {
+                                <label class="nf-filter-chip @(Model.SearchRequest.PropertyTypes?.Contains(pt.Item1) == true ? "active" : "")">
+                                    <input type="checkbox" name="SearchRequest.PropertyTypes" value="@pt.Item1" 
+                                           @(Model.SearchRequest.PropertyTypes?.Contains(pt.Item1) == true ? "checked" : "")>
+                                    <i class="fas @pt.Item3"></i> @pt.Item2
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Location Grid -->
+                    <div class="mb-4">
+                        <label class="nf-modal-section-title">Lọc theo khu vực</label>
+                        <div class="nf-location-grid">
+                            <div>
+                                <label class="small text-muted mb-1">Tỉnh thành</label>
+                                <select class="form-select nf-input-luxury">
+                                    <option>Hà Nội (Hòa Lạc)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="small text-muted mb-1">Quận huyện</label>
+                                <select class="form-select nf-input-luxury">
+                                    <option>Thạch Thất</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="small text-muted mb-1">Phường xã</label>
+                                <select name="SearchRequest.Ward" class="form-select nf-input-luxury">
+                                    <option value="">Tất cả</option>
+                                    <option value="Thạch Hòa" selected="@(Model.SearchRequest.Ward == "Thạch Hòa")">Thạch Hòa</option>
+                                    <option value="Bình Yên" selected="@(Model.SearchRequest.Ward == "Bình Yên")">Bình Yên</option>
+                                    <option value="Tân Xã" selected="@(Model.SearchRequest.Ward == "Tân Xã")">Tân Xã</option>
+                                    <option value="Hạ Bằng" selected="@(Model.SearchRequest.Ward == "Hạ Bằng")">Hạ Bằng</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Price Range (Chips) -->
+                    <div class="mb-4">
+                        <label class="nf-modal-section-title">Khoảng giá</label>
+                        <div class="nf-chip-group">
+                            <label class="nf-filter-chip @(!Model.SearchRequest.MaxPrice.HasValue ? "active" : "")">
+                                <input type="radio" name="price_range" value="any" checked="@(!Model.SearchRequest.MaxPrice.HasValue)"> Tất cả
+                            </label>
+                            <label class="nf-filter-chip @(Model.SearchRequest.MaxPrice == 1000000 ? "active" : "")">
+                                <input type="radio" name="price_range" value="0-1" data-min="0" data-max="1000000"> Dưới 1 triệu
+                            </label>
+                            <label class="nf-filter-chip @(Model.SearchRequest.MaxPrice == 2000000 ? "active" : "")">
+                                <input type="radio" name="price_range" value="1-2" data-min="1000000" data-max="2000000"> 1 - 2 triệu
+                            </label>
+                            <label class="nf-filter-chip @(Model.SearchRequest.MaxPrice == 3000000 ? "active" : "")">
+                                <input type="radio" name="price_range" value="2-3" data-min="2000000" data-max="3000000"> 2 - 3 triệu
+                            </label>
+                            <label class="nf-filter-chip @(Model.SearchRequest.MaxPrice == 5000000 ? "active" : "")">
+                                <input type="radio" name="price_range" value="3-5" data-min="3000000" data-max="5000000"> 3 - 5 triệu
+                            </label>
+                            <label class="nf-filter-chip @(Model.SearchRequest.MaxPrice == 10000000 ? "active" : "")">
+                                <input type="radio" name="price_range" value="5-10" data-min="5000000" data-max="10000000"> 5 - 10 triệu
+                            </label>
+                        </div>
+                        <input type="hidden" name="SearchRequest.MinPrice" value="@Model.SearchRequest.MinPrice" />
+                        <input type="hidden" name="SearchRequest.MaxPrice" value="@Model.SearchRequest.MaxPrice" />
+                    </div>
+
+                    <!-- Amenities (Chips) -->
+                    <div class="mb-4">
+                        <label class="nf-modal-section-title">Tiện ích</label>
+                        <div class="nf-chip-group">
+                            @foreach (var am in Model.AllAmenities)
+                            {
+                                <label class="nf-filter-chip @(Model.SearchRequest.Amenities?.Contains(am.AmenityId) == true ? "active" : "")">
+                                    <input type="checkbox" name="SearchRequest.Amenities" value="@am.AmenityId" 
+                                           @(Model.SearchRequest.Amenities?.Contains(am.AmenityId) == true ? "checked" : "")>
+                                    @am.Name
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn nf-btn-apply w-100 mt-2">ÁP DỤNG</button>
+                    <div class="text-center mt-3">
+                        <a href="/Room/Search" class="text-muted small text-decoration-none">
+                            <i class="fas fa-undo me-1"></i> Xóa tất cả bộ lọc
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Use standard updateSort and updatePage logic
+        function updateSort(sortBy) {
+            const form = document.getElementById('searchFilterForm');
+            form.querySelector('input[name="SearchRequest.SortBy"]').value = sortBy;
+            form.submit();
+        }
+
+        function updatePage(page) {
+            const form = document.getElementById('searchFilterForm');
+            form.querySelector('#hiddenCurrentPage').value = page;
+            form.submit();
+        }
+
+        // Chip selection logic
+        document.querySelectorAll('.nf-filter-chip').forEach(chip => {
+            chip.addEventListener('click', function(e) {
+                const input = this.querySelector('input');
+                
+                if (input.type === 'radio') {
+                    // Radio logic: clear others in same group
+                    const name = input.name;
+                    document.querySelectorAll(`.nf-filter-chip input[name="${name}"]`).forEach(i => {
+                        i.closest('.nf-filter-chip').classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    // Handle Price Range specific hidden fields
+                    if (name === 'price_range') {
+                        const min = input.dataset.min || "";
+                        const max = input.dataset.max || "";
+                        document.querySelector('input[name="SearchRequest.MinPrice"]').value = min;
+                        document.querySelector('input[name="SearchRequest.MaxPrice"]').value = max;
+                    }
+                } else {
+                    // Checkbox logic
+                    setTimeout(() => { // small delay for native checkbox toggle
+                        if (input.checked) {
+                            this.classList.add('active');
+                        } else {
+                            this.classList.remove('active');
+                        }
+                    }, 10);
+                }
+            });
+        });
+
+        // Initialize Price Range selection based on current Min/Max
+        document.addEventListener('DOMContentLoaded', () => {
+            const min = "@Model.SearchRequest.MinPrice";
+            const max = "@Model.SearchRequest.MaxPrice";
+            if (max) {
+                const radio = document.querySelector(`.nf-filter-chip input[data-max="${max}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    radio.closest('.nf-filter-chip').classList.add('active');
+                    // Deactivate "All"
+                    document.querySelector('.nf-filter-chip input[value="any"]').closest('.nf-filter-chip').classList.remove('active');
+                }
+            }
+        });
+    </script>
+}

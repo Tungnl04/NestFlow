@@ -7,9 +7,6 @@
     <UserSecretsId>78657cda-bb74-4b43-8fe3-9808d2796b20</UserSecretsId>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Application\Interfaces\" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />

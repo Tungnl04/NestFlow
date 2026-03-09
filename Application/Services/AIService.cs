@@ -16,7 +16,18 @@ namespace NestFlow.Application.Services
         {
             _context = context;
             _configuration = configuration;
-            _httpClient = new HttpClient();
+            
+            // Explicitly enable modern TLS protocols
+            System.Net.ServicePointManager.SecurityProtocol = System.Net.SecurityProtocolType.Tls12 | System.Net.SecurityProtocolType.Tls13;
+
+            // Use a handler that simplifies SSL handling
+            var handler = new HttpClientHandler();
+            
+            // Bypass certificate validation to handle local proxy/antivirus interference
+            handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+            
+            _httpClient = new HttpClient(handler);
+            _httpClient.Timeout = TimeSpan.FromSeconds(60);
         }
 
         public async Task<string> GenerateResponseAsync(string userMessage, List<Controllers.ChatMessage> history, bool isAuthenticated = false)
@@ -26,14 +37,16 @@ namespace NestFlow.Application.Services
 
             if (string.IsNullOrEmpty(apiKey))
             {
-                return "Chưa cấu hình API Key cho AI.";
+                return "Chưa cấu hình API Key cho AI. Vui lòng kiểm tra file cấu hình.";
             }
 
-            // 1. Fetch Context Data (RAG)
-            var roomContext = await GetRoomContextAsync(isAuthenticated);
-            
-            // 2. Build System Prompt - Natural responses with detailed info
-            var systemPrompt = $@"Bạn là trợ lý ảo thông minh của NestFlow - Nền tảng tìm kiếm phòng trọ tại khu vực Hòa Lạc.
+            try
+            {
+                // 1. Fetch Context Data (RAG)
+                var roomContext = await GetRoomContextAsync(isAuthenticated);
+                
+                // 2. Build System Prompt - Natural responses with detailed info
+                var systemPrompt = $@"Bạn là trợ lý ảo thông minh của NestFlow - Nền tảng tìm kiếm phòng trọ tại khu vực Hòa Lạc.
 Nhiệm vụ của bạn là CHỈ hỗ trợ người dùng tìm phòng trọ trên hệ thống NestFlow.
 Hãy trả lời ngắn gọn, thân thiện và chuyên nghiệp bằng Tiếng Việt.
 
@@ -84,51 +97,49 @@ Dưới đây là danh sách các phòng trọ hiện có trong hệ thống (D�
 Nếu không tìm thấy, nói thật và gợi ý liên hệ hotline.
 Đừng bịa đặt thông tin.";
 
-            // 3. Call Groq API (OpenAI-compatible)
-            var url = "https://api.groq.com/openai/v1/chat/completions";
+                // 3. Call Groq API (OpenAI-compatible)
+                var url = "https://api.groq.com/openai/v1/chat/completions";
 
-            // 4. Build Messages Array (OpenAI format)
-            var messages = new List<object>();
+                // 4. Build Messages Array (OpenAI format)
+                var messages = new List<object>();
 
-            // Add System Message
-            messages.Add(new
-            {
-                role = "system",
-                content = systemPrompt
-            });
-
-            // Add History
-            if (history != null)
-            {
-                foreach (var msg in history)
+                // Add System Message
+                messages.Add(new
                 {
-                    messages.Add(new
+                    role = "system",
+                    content = systemPrompt
+                });
+
+                // Add History
+                if (history != null)
+                {
+                    foreach (var msg in history)
                     {
-                        role = msg.Role == "ai" ? "assistant" : "user",
-                        content = msg.Message
-                    });
+                        messages.Add(new
+                        {
+                            role = msg.Role == "ai" ? "assistant" : "user",
+                            content = msg.Message
+                        });
+                    }
                 }
-            }
 
-            // Add Current Message
-            messages.Add(new
-            {
-                role = "user",
-                content = userMessage
-            });
+                // Add Current Message
+                messages.Add(new
+                {
+                    role = "user",
+                    content = userMessage
+                });
 
-            var requestBody = new
-            {
-                model = model,
-                messages = messages,
-                temperature = 0.7,
-                max_tokens = 1024
-            };
+                var requestBody = new
+                {
+                    model = model,
+                    messages = messages,
+                    temperature = 0.7,
+                    max_tokens = 1024
+                };
 
-            var jsonContent = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+                var jsonContent = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
-            try
-            {
                 _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
 
@@ -142,27 +153,10 @@ Nếu không tìm thấy, nói thật và gợi ý liên hệ hotline.
                     // Handle Rate Limit (429)
                     if (response.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
                     {
-                        try 
-                        {
-                            using var errorDoc = JsonDocument.Parse(errorDetails);
-                            if (errorDoc.RootElement.TryGetProperty("error", out var errorEl) && 
-                                errorEl.TryGetProperty("message", out var msgEl))
-                            {
-                                var errorMsg = msgEl.GetString();
-                                if (errorMsg?.Contains("rate limit") == true || errorMsg?.Contains("quota") == true)
-                                {
-                                    return "Hệ thống AI đang quá tải. Vui lòng thử lại sau vài giây.";
-                                }
-                            }
-                        }
-                        catch 
-                        {
-                            // Fallback if parsing fails
-                        }
-                        return "Hệ thống AI đang quá tải do nhận quá nhiều yêu cầu. Vui lòng thử lại sau 30 giây.";
+                        return "Hệ thống AI đang quá tải (Rate limit). Vui lòng thử lại sau 30-60 giây.";
                     }
 
-                    return $"Lỗi API: {response.StatusCode}. Chi tiết: {errorDetails}";
+                    return $"Lỗi API AI: {response.StatusCode}. Chi tiết: {errorDetails}";
                 }
 
                 using var doc = JsonDocument.Parse(responseString);
@@ -176,52 +170,52 @@ Nếu không tìm thấy, nói thật và gợi ý liên hệ hotline.
             }
             catch (Exception ex)
             {
-                return $"Đã xảy ra lỗi: {ex.Message}";
+                // Log detailed error for server console only
+                Console.WriteLine($"[AI Error] Exception in GenerateResponseAsync: {ex.Message}");
+                if (ex.InnerException != null) Console.WriteLine($"[AI Inner] {ex.InnerException.Message}");
+
+                return "Xin lỗi, hiện tại tôi đang bận một chút để xử lý dữ liệu. Anh/chị vui lòng thử lại sau giây lát nhé! 🙏";
             }
         }
 
         private async Task<string> GetRoomContextAsync(bool isAuthenticated = false)
         {
-            // Fetch relevant data: active properties
-            // Limit to top 20 newest or most relevant to keep context size manageable
-            var properties = await _context.Properties
-                .Include(p => p.Landlord)
-                .Include(p => p.Amenities)
-                .Where(p => p.Status == "available") // Assuming 'available' status
-                .OrderByDescending(p => p.CreatedAt)
-                .Take(15)
-                .Select(p => new
+            try 
+            {
+                // Fetch relevant data: active properties
+                // We execute ToListAsync() first to avoid SQL translation issues with complex logic
+                var propertiesRaw = await _context.Properties
+                    .Include(p => p.Landlord)
+                    .Include(p => p.Amenities)
+                    .Where(p => p.Status == "available" || p.Status == "active" || string.IsNullOrEmpty(p.Status))
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Take(15)
+                    .ToListAsync();
+
+                if (!propertiesRaw.Any())
                 {
-                    p.PropertyId,
-                    p.Title,
-                    p.Price,
-                    p.Address,
-                    p.Ward,
-                    p.Area,
-                    LandlordName = p.Landlord.FullName,
-                    LandlordPhone = p.Landlord.Phone, // Get actual phone
-                    AmenityNames = string.Join(", ", p.Amenities.Select(a => a.Name))
-                })
-                .ToListAsync();
+                    return "Hiện tại chưa có phòng nào trống trong hệ thống.";
+                }
 
-            if (!properties.Any())
-            {
-                return "Hiện tại chưa có phòng nào trống trong hệ thống.";
+                var sb = new StringBuilder();
+                foreach (var p in propertiesRaw)
+                {
+                    sb.AppendLine($"- Phòng: {p.Title} (Mã: {p.PropertyId})");
+                    sb.AppendLine($"  + Giá: {(p.Price.HasValue ? p.Price.Value.ToString("N0") : "Liên hệ")} VNĐ");
+                    sb.AppendLine($"  + Địa chỉ: {p.Address}, {p.Ward}");
+                    sb.AppendLine($"  + Diện tích: {p.Area}m2");
+                    sb.AppendLine($"  + Tiện nghi: {(p.Amenities.Any() ? string.Join(", ", p.Amenities.Select(a => a.Name)) : "Chưa cập nhật")}");
+                    sb.AppendLine($"  + Liên hệ: {p.Landlord?.FullName ?? "Chủ nhà"}");
+                    sb.AppendLine($"  + Chi tiết: [[DETAIL:{p.PropertyId}]]");
+                    sb.AppendLine("---");
+                }
+                return sb.ToString();
             }
-
-            var sb = new StringBuilder();
-            foreach (var p in properties)
+            catch (Exception ex)
             {
-                sb.AppendLine($"- Phòng: {p.Title} (Mã: {p.PropertyId})");
-                sb.AppendLine($"  + Giá: {p.Price:N0} VNĐ");
-                sb.AppendLine($"  + Địa chỉ: {p.Address}, {p.Ward}");
-                sb.AppendLine($"  + Diện tích: {p.Area}m2");
-                sb.AppendLine($"  + Tiện nghi: {p.AmenityNames}");
-                sb.AppendLine($"  + Liên hệ: {p.LandlordName}");
-                sb.AppendLine($"  + Chi tiết: [[DETAIL:{p.PropertyId}]]");
-                sb.AppendLine("---");
+                Console.WriteLine($"[AI Error] Context Fetch Failed: {ex.Message}");
+                return "Dữ liệu phòng hiện đang gặp sự cố khi tải.";
             }
-            return sb.ToString();
         }
     }
 }

@@ -6,7 +6,7 @@
 -- =====================================================================
 
 CREATE DATABASE NestFlowSystem
-
+GO
 USE [NestFlowSystem]
 GO
 

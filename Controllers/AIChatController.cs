@@ -58,21 +58,29 @@ namespace NestFlow.Controllers
         [HttpPost("send")]
         public async Task<IActionResult> SendMessage([FromBody] ChatRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Message))
+            try 
             {
-                return BadRequest("Tin nhắn không được để trống");
+                if (string.IsNullOrWhiteSpace(request.Message))
+                {
+                    return BadRequest("Tin nhắn không được để trống");
+                }
+
+                // Check if user is authenticated
+                bool isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+                
+                // Debug log
+                Console.WriteLine($"[AI Chat] User message received. Authenticated: {isAuthenticated}");
+
+                // Call Real AI Service with auth status
+                string reply = await _aiService.GenerateResponseAsync(request.Message, request.History, isAuthenticated);
+
+                return Ok(new { reply });
             }
-
-            // Check if user is authenticated
-            bool isAuthenticated = User.Identity?.IsAuthenticated ?? false;
-            
-            // Debug log
-            Console.WriteLine($"[AI Chat] User authenticated: {isAuthenticated}, Name: {User.Identity?.Name ?? "Anonymous"}");
-
-            // Call Real AI Service with auth status
-            string reply = await _aiService.GenerateResponseAsync(request.Message, request.History, isAuthenticated);
-
-            return Ok(new { reply });
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AI Chat Controller Error] {ex}");
+                return Ok(new { reply = "Xin lỗi, hiện tại tôi đang gặp khó khăn trong việc xử lý yêu cầu. Vui lòng thử lại sau giây lát." });
+            }
         }
     }
 

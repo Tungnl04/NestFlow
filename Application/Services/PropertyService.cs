@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using NestFlow.Application.Services.Interfaces;
 using NestFlow.Models;
+using NestFlow.Models.ViewModels;
 
 namespace NestFlow.Application.Services
 {
@@ -130,6 +131,109 @@ namespace NestFlow.Application.Services
             _context.PropertyImages.Remove(img);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<RoomSearchResponse> SearchRoomsAsync(RoomSearchRequest request)
+        {
+            var query = _context.Properties
+                .AsNoTracking()
+                .AsSplitQuery() // Prevent cartesian explosion with multiple includes
+                .Where(p => p.Status == "available");
+
+            // Filter by Keyword
+            if (!string.IsNullOrWhiteSpace(request.Keyword))
+            {
+                var keyword = request.Keyword.Trim().ToLower();
+                query = query.Where(p => 
+                    p.Title.ToLower().Contains(keyword) || 
+                    (p.Address != null && p.Address.ToLower().Contains(keyword)) ||
+                    (p.District != null && p.District.ToLower().Contains(keyword)) ||
+                    (p.Ward != null && p.Ward.ToLower().Contains(keyword)));
+            }
+
+            // Filter by Location
+            if (!string.IsNullOrWhiteSpace(request.City))
+            {
+                var city = request.City.Trim().ToLower();
+                query = query.Where(p => p.City.ToLower() == city);
+            }
+            if (!string.IsNullOrWhiteSpace(request.District))
+            {
+                var district = request.District.Trim().ToLower();
+                query = query.Where(p => p.District.ToLower() == district);
+            }
+            if (!string.IsNullOrWhiteSpace(request.Ward))
+            {
+                var ward = request.Ward.Trim().ToLower();
+                query = query.Where(p => p.Ward.ToLower() == ward);
+            }
+
+            // Filter by Price
+            if (request.MinPrice.HasValue)
+                query = query.Where(p => p.Price >= request.MinPrice.Value);
+            if (request.MaxPrice.HasValue && request.MaxPrice > 0)
+                query = query.Where(p => p.Price <= request.MaxPrice.Value);
+
+            // Filter by Area
+            if (request.MinArea.HasValue)
+                query = query.Where(p => p.Area >= request.MinArea.Value);
+            if (request.MaxArea.HasValue && request.MaxArea > 0)
+                query = query.Where(p => p.Area <= request.MaxArea.Value);
+
+            // Filter by PropertyType
+            if (request.PropertyTypes != null && request.PropertyTypes.Any(x => !string.IsNullOrEmpty(x)))
+            {
+                query = query.Where(p => request.PropertyTypes.Contains(p.PropertyType));
+            }
+
+            // Filter by Amenities (must have ALL selected amenities)
+            if (request.Amenities != null && request.Amenities.Any())
+            {
+                foreach (var amenityId in request.Amenities)
+                {
+                    query = query.Where(p => p.PropertyAmenities.Any(pa => pa.AmenityId == amenityId));
+                }
+            }
+
+            var totalItems = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalItems / (double)request.PageSize);
+            if (totalPages == 0) totalPages = 1;
+
+            // Sorting & Dynamic Projection for Performance
+            var propertiesQuery = request.SortBy switch
+            {
+                "price_asc" => query.OrderBy(p => p.Price),
+                "price_desc" => query.OrderByDescending(p => p.Price),
+                "area_desc" => query.OrderByDescending(p => p.Area),
+                _ => query.OrderByDescending(p => p.CreatedAt)
+            };
+
+            var properties = await propertiesQuery
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .Select(p => new PropertyViewModel
+                {
+                    Id = p.PropertyId,
+                    Name = p.Title,
+                    Price = p.Price ?? 0,
+                    Location = $"{p.Ward}, {p.District}",
+                    Rating = p.Reviews.Any() ? p.Reviews.Average(r => r.Rating ?? 0) : 0,
+                    ReviewCount = p.Reviews.Count,
+                    PostedDate = p.CreatedAt ?? DateTime.Now,
+                    IsFeatured = p.ViewCount > 100,
+                    Image = p.PropertyImages.OrderBy(img => img.DisplayOrder).Select(img => img.ImageUrl).FirstOrDefault() 
+                            ?? "https://via.placeholder.com/300x200?text=No+Image"
+                })
+                .ToListAsync();
+
+            return new RoomSearchResponse
+            {
+                Properties = properties,
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                CurrentPage = request.Page,
+                PageSize = request.PageSize
+            };
         }
     }
 }

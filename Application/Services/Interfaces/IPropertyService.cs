@@ -13,5 +13,8 @@ namespace NestFlow.Application.Services.Interfaces
         // Image Management
         Task<PropertyImage> AddPropertyImageAsync(long propertyId, string imageUrl, bool isPrimary = false);
         Task<bool> DeletePropertyImageAsync(long imageId);
+
+        // Search
+        Task<NestFlow.Models.ViewModels.RoomSearchResponse> SearchRoomsAsync(NestFlow.Models.ViewModels.RoomSearchRequest request);
     }
 }

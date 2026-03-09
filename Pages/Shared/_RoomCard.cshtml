@@ -11,36 +11,48 @@
     else timeAgo = $"{days / 30} tháng trước";
 }
 
-<div class="nf-room-card" onclick="window.location.href='@Url.Page("/Room/Detail", new { id = Model.Id })'">
-    <div class="nf-room-image">
+<div class="nf-room-card nf-room-card-premium border-0 shadow-sm rounded-4 overflow-hidden h-100" onclick="window.location.href='/Room/Detail?id=@Model.Id'">
+    <div class="nf-room-image position-relative">
         @if (Model.IsFeatured)
         {
-            <span class="nf-featured-badge">Nổi bật</span>
+            <span class="nf-card-badge badge-featured bg-gold text-dark">Phổ biến</span>
         }
-        <a href="/Room/Detail?id=@Model.Id">
-            <img src="@Model.Image" alt="@Model.Name" />
-        </a>
+        <span class="nf-card-badge bg-white text-teal shadow-sm" style="top: 15px; left: 15px;">
+            <i class="fas fa-tag me-1"></i> @Model.Location.Split(',')[0]
+        </span>
+
+        <img src="@(string.IsNullOrEmpty(Model.Image) ? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=60" : Model.Image)" 
+             class="card-img-top" alt="@Model.Name" />
+        
+        <div class="nf-card-badge badge-price nf-glass py-2 px-3 fw-bold">
+            @Model.Price.ToString("N0")<small>đ</small>
+        </div>
+
         @if (Context.Session.GetString("UserType") != "landlord")
         {
-            <button class="nf-save-btn" data-room-id="@Model.Id" onclick="event.stopPropagation();">
+            <button class="nf-save-btn nf-glass position-absolute" data-room-id="@Model.Id" 
+                    style="top: 15px; right: 15px; width: 40px; height: 40px; border-radius: 50%; border:none; color:white; display:flex; align-items:center; justify-content:center; transition: all 0.3s;"
+                    onclick="event.stopPropagation();">
                 <i class="far fa-heart"></i>
             </button>
         }
     </div>
-    <div class="nf-room-info">
-        <h5 class="nf-room-name">
-            <a href="/Room/Detail?id=@Model.Id" class="text-decoration-none text-dark">
-                @Model.Name
-            </a>
-        </h5>
-        <p class="nf-room-location">@Model.Location</p>
-        <div class="nf-room-price">@Model.Price.ToString("N0")đ/tháng</div>
-        <div class="nf-room-meta">
-            <span class="nf-rating">
+    <div class="nf-room-info p-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="text-teal small fw-bold text-uppercase">Phòng cho thuê</span>
+            <div class="text-warning small">
                 <i class="fas fa-star"></i> @(Math.Round(Model.Rating, 1))
-                <span class="nf-review-count">(@Model.ReviewCount đánh giá)</span>
-            </span>
-            <span class="nf-post-time">@timeAgo</span>
+            </div>
+        </div>
+        <h5 class="nf-room-name fw-bold mb-2">
+            @Model.Name
+        </h5>
+        <p class="text-muted small mb-3">
+            <i class="fas fa-map-marker-alt me-1 text-teal"></i> @Model.Location
+        </p>
+        <div class="d-flex justify-content-between align-items-center border-top pt-3 mt-auto">
+            <span class="text-muted small"><i class="far fa-clock me-1"></i> @timeAgo</span>
+            <span class="text-dark fw-bold small">Chi tiết <i class="fas fa-arrow-right ms-1" style="font-size: 0.7rem;"></i></span>
         </div>
     </div>
 </div>

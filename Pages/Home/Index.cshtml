@@ -52,44 +52,48 @@
     </div>
 </div>
 
-<!-- Thanh tìm kiếm -->
-<div class="nf-search-bar-section">
-    <div class="container-fluid px-4">
-        <div class="nf-search-bar">
-            <div class="nf-search-filter">
-                <label>Khu vực</label>
-                <select class="form-select">
-                    <option>Chọn khu vực</option>
-                    <option>Thạch Thất</option>
-                    <option>Thạch Hòa</option>
-                    <option>Tất cả khu vực</option>
+<!-- Thanh tìm kiếm kiểu chuyên nghiệp (Hero Search) -->
+<div class="nf-search-hero-container">
+    <div class="container">
+        <form method="get" action="/Room/Search" class="nf-search-hero nf-glass">
+            <div class="nf-hero-filter" style="flex: 1.5;">
+                <label><i class="fas fa-search me-1"></i>Từ khóa</label>
+                <input type="text" name="SearchRequest.Keyword" class="form-control" placeholder="Tên đường, phường, tòa nhà...">
+            </div>
+            
+            <div class="nf-hero-filter">
+                <label><i class="fas fa-map-marker-alt me-1"></i>Khu vực</label>
+                <select name="SearchRequest.Ward" class="form-select">
+                    <option value="">Tất cả</option>
+                    <option value="Thạch Hòa">Thạch Hòa</option>
+                    <option value="Bình Yên">Bình Yên</option>
+                    <option value="Tân Xã">Tân Xã</option>
+                    <option value="Hạ Bằng">Hạ Bằng</option>
+                    <option value="Tiến Xuân">Tiến Xuân</option>
                 </select>
             </div>
-            <div class="nf-search-filter">
-                <label>Mức giá</label>
-                <select class="form-select">
-                    <option>Chọn mức giá</option>
-                    <option>Dưới 2 triệu</option>
-                    <option>2 - 3 triệu</option>
-                    <option>3 - 5 triệu</option>
-                    <option>Trên 5 triệu</option>
+
+            <div class="nf-hero-filter">
+                <label><i class="fas fa-home me-1"></i>Loại phòng</label>
+                <select name="SearchRequest.PropertyTypes" class="form-select">
+                    <option value="">Tất cả</option>
+                    <option value="phong_tro">Phòng trọ</option>
+                    <option value="chung_cu">Chung cư</option>
+                    <option value="studio">Studio</option>
+                    <option value="nha_nguyen_can">Nguyên căn</option>
+                    <option value="o_ghep">Ở ghép</option>
                 </select>
             </div>
-            <div class="nf-search-filter">
-                <label>Loại phòng</label>
-                <select class="form-select">
-                    <option>Chọn loại phòng</option>
-                    <option>Phòng đơn</option>
-                    <option>Phòng đôi</option>
-                    <option>Căn hộ mini</option>
-                    <option>Nhà nguyên căn</option>
-                    <option>Phòng ở ghép</option>
-                </select>
+
+            <div class="nf-hero-filter" style="flex: 1.2;">
+                <label><i class="fas fa-tag me-1"></i>Giá tối đa</label>
+                <input type="number" name="SearchRequest.MaxPrice" class="form-control" placeholder="VD: 5000000">
             </div>
-            <button class="nf-search-btn-main">
-                <i class="fas fa-search"></i> Tìm kiếm
+
+            <button type="submit" class="nf-hero-btn" title="Tìm kiếm ngay">
+                <i class="fas fa-search"></i>
             </button>
-        </div>
+        </form>
     </div>
 </div>
 
