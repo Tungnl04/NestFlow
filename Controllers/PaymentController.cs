@@ -868,15 +868,19 @@ namespace NestFlow.Controllers
                     };
                     _context.Payments.Add(payment);
 
+                    // Lấy thông tin plan để set quota
+                    var planId = GetPlanIdByType(request.PlanType);
+                    var planInfo = await _context.Plans.FindAsync(planId);
+
                     // Tạo subscription
                     var subscription = new LandlordSubscription
                     {
                         LandlordId = userId.Value,
-                        PlanId = GetPlanIdByType(request.PlanType),
+                        PlanId = planId,
                         StartAt = DateTime.Now,
                         EndAt = DateTime.Now.AddDays(durationDays),
                         Status = "Active",
-                        QuotaRemaining = 0, // Sẽ được set dựa vào plan
+                        QuotaRemaining = planInfo?.QuotaActiveListings ?? 0,
                         CreatedAt = DateTime.Now,
                         UpdatedAt = DateTime.Now
                     };
@@ -1017,15 +1021,19 @@ namespace NestFlow.Controllers
                 // Tính duration
                 int durationDays = duration == "month" ? 30 : days;
 
+                // Lấy thông tin plan để set quota
+                var planIdSuccess = GetPlanIdByType(planType);
+                var planInfoSuccess = await _context.Plans.FindAsync(planIdSuccess);
+
                 // Tạo subscription
                 var subscription = new LandlordSubscription
                 {
                     LandlordId = userId.Value,
-                    PlanId = GetPlanIdByType(planType),
+                    PlanId = planIdSuccess,
                     StartAt = DateTime.Now,
                     EndAt = DateTime.Now.AddDays(durationDays),
                     Status = "Active",
-                    QuotaRemaining = 0, // Sẽ được set dựa vào plan
+                    QuotaRemaining = planInfoSuccess?.QuotaActiveListings ?? 0,
                     CreatedAt = DateTime.Now,
                     UpdatedAt = DateTime.Now
                 };

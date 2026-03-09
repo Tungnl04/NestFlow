@@ -32,11 +32,19 @@ namespace NestFlow.Pages.Landlord.Posts
              var userId = HttpContext.Session.GetInt32("UserId");
              if (userId == null) return RedirectToPage("/Home/Index");
 
-             // Verify ownership via service or fetch
              var list = await _listingService.GetListingByIdAsync(id);
-             if(list == null || list.Property.LandlordId != userId.Value) return NotFound();
+             if(list == null || list.LandlordId != userId.Value) return NotFound();
 
-             await _listingService.ToggleListingStatusAsync(id, status);
+             bool success = await _listingService.ToggleListingStatusAsync(id, status);
+             if (!success && status == "active")
+             {
+                 TempData["Error"] = "Không thể kích hoạt tin đăng. Vui lòng kiểm tra lại thời hạn gói hoặc hạn mức (quota) của quý khách.";
+             }
+             else if (success)
+             {
+                 TempData["Success"] = status == "active" ? "Đã kích hoạt tin đăng thành công!" : "Đã chuyển tin đăng về trạng thái bản nháp.";
+             }
+
              return RedirectToPage();
         }
 

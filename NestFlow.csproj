@@ -25,4 +25,10 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
   </ItemGroup>
 
+
+  <ItemGroup>
+    <Folder Include="wwwroot\uploads\properties\a620a6d1-4763-4133-a263-96dc825cac05\" />
+    <Folder Include="wwwroot\uploads\properties\f8a5ae43-56ad-4ad1-b8f9-e2e706c4fbd6\" />
+  </ItemGroup>
+
 </Project>

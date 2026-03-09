@@ -7,15 +7,18 @@
     Func<decimal?, string> FormatPrice = (price) => (price ?? 0).ToString("N0") + "đ";
     
     // Process Images
-    var images = Model.Property.PropertyImages.Select(i => i.ImageUrl).ToList();
-    // Fallback if no images
-    if (!images.Any())
+    var allImages = Model.Property.PropertyImages.OrderBy(i => i.DisplayOrder).ToList();
+    var normalImages = allImages.Where(i => !i.ImageUrl.ToLower().Contains("_360")).Select(i => i.ImageUrl).ToList();
+    var images360 = allImages.Where(i => i.ImageUrl.ToLower().Contains("_360")).Select(i => i.ImageUrl).ToList();
+
+    // Fallback if no normal images
+    if (!normalImages.Any())
     {
-        images.Add("https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&fit=crop&q=80");
-        images.Add("https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&fit=crop&q=80");
+        normalImages.Add("https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&fit=crop&q=80");
+        normalImages.Add("https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&fit=crop&q=80");
     }
 
-    var mainImage = images.First();
+    var mainImage = normalImages.First();
 }
 
 <div class="container py-4">
@@ -25,13 +28,13 @@
             <h1 class="nf-room-detail-title mb-2">@Model.Property.Title</h1>
             <div class="d-flex align-items-center gap-3">
                 <div class="nf-rating">
-                    <i class="fas fa-star"></i> @(Model.Property.Reviews.Any() ? Math.Round(Model.Property.Reviews.Average(r => r.Rating ?? 0), 1) : 0)
+                    <i class="fas fa-star text-warning"></i> @(Model.Property.Reviews.Any() ? Math.Round(Model.Property.Reviews.Average(r => r.Rating ?? 0), 1) : 0)
                     <span class="text-muted">(@Model.Property.Reviews.Count đánh giá)</span>
                 </div>
                 <span class="text-muted">@Model.Property.Address, @Model.Property.Ward, @Model.Property.City</span>
             </div>
         </div>
-        <button class="btn btn-link p-0" onclick="window.history.back()">
+        <button class="btn btn-link p-0 text-dark" onclick="window.history.back()">
             <i class="fas fa-times fa-lg"></i>
         </button>
     </div>
@@ -39,7 +42,7 @@
     <!-- Tabs for 360 Toggle -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3 class="mb-0">Hình ảnh trọ</h3>
-        <div class="btn-group rounded-pill border p-1" role="group">
+        <div class="btn-group rounded-pill border p-1 bg-light" role="group">
             <input type="radio" class="btn-check" name="viewType" id="view2d" autocomplete="off" checked onchange="toggleView('2d')">
             <label class="btn btn-sm btn-outline-primary border-0 rounded-pill px-3 m-0" for="view2d"><i class="fas fa-image"></i> Ảnh thường</label>
 
@@ -50,38 +53,56 @@
 
     <!-- Hình ảnh trọ Container -->
     <div class="nf-room-gallery mb-4">
-        <!-- Ảnh thường (2D) -->
-        <div id="view-2d-container" class="row g-2">
-            <div class="col-md-8">
-                <img src="@mainImage" class="img-fluid rounded w-100" alt="@Model.Property.Title" id="mainImage" style="height: 500px; object-fit: cover;" />
-            </div>
-            <div class="col-md-4">
-                <div class="row g-2">
-                    @for (int i = 1; i < images.Count && i < 3; i++)
-                    {
-                        <div class="col-12">
-                            <img src="@images[i]" class="img-fluid rounded w-100" alt="Ảnh @(i+1)" onclick="document.getElementById('mainImage').src = this.src" style="cursor: pointer; height: 245px; object-fit: cover;" />
+        <!-- Ảnh thường (2D) - Slideshow with Swiper -->
+        <div id="view-2d-container">
+            <div class="row g-2">
+                <div class="col-12">
+                    <!-- Swiper Main -->
+                    <div class="swiper mainSwiper rounded shadow-sm mb-2" style="height: 500px;">
+                        <div class="swiper-wrapper">
+                            @foreach (var imgUrl in normalImages)
+                            {
+                                <div class="swiper-slide">
+                                    <img src="@imgUrl" class="w-100 h-100 object-fit-cover" />
+                                </div>
+                            }
                         </div>
-                    }
-                    @if (images.Count <= 1)
-                    {
-                         // Show placeholders if not enough images
-                        <div class="col-12">
-                            <img src="https://via.placeholder.com/400x240?text=No+Image" class="img-fluid rounded w-100" style="height: 245px; object-fit: cover;" />
+                        <div class="swiper-button-next text-white"></div>
+                        <div class="swiper-button-prev text-white"></div>
+                        <div class="swiper-pagination"></div>
+                    </div>
+                    
+                    <!-- Swiper Thumbs -->
+                    <div class="swiper thumbsSwiper rounded" style="height: 100px;">
+                        <div class="swiper-wrapper">
+                            @foreach (var imgUrl in normalImages)
+                            {
+                                <div class="swiper-slide cursor-pointer">
+                                    <img src="@imgUrl" class="w-100 h-100 object-fit-cover rounded border" />
+                                </div>
+                            }
                         </div>
-                        <div class="col-12">
-                            <img src="https://via.placeholder.com/400x240?text=NestFlow" class="img-fluid rounded w-100" style="height: 245px; object-fit: cover;" />
-                        </div>
-                    }
+                    </div>
                 </div>
             </div>
         </div>
         
         <!-- Ảnh toàn cảnh (360) -->
         <div id="view-360-container" class="row g-2 d-none">
-            <div class="col-12">
-                <div id="panorama" style="width: 100%; height: 500px; border-radius: 8px;"></div>
-                <div class="text-center mt-2 text-muted small"><i class="fas fa-info-circle"></i> Dùng chuột để xoay và kéo để xem góc 360 độ</div>
+            <div class="col-12 text-center">
+                @if (images360.Any())
+                {
+                    <div id="panorama" style="width: 100%; height: 500px; border-radius: 8px;"></div>
+                    <div class="mt-2 text-muted small"><i class="fas fa-info-circle"></i> Dùng chuột để xoay và kéo để xem góc 360 độ</div>
+                }
+                else
+                {
+                    <div class="py-5 bg-light rounded" style="height: 500px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                        <i class="fas fa-street-view fa-4x text-muted mb-3"></i>
+                        <h4 class="text-muted">Chưa có ảnh 360 độ cho phòng này</h4>
+                        <p class="text-muted px-4">Chủ trọ chưa tải lên ảnh toàn cảnh panorama. Bạn có thể xem ảnh thường ở tab bên cạnh.</p>
+                    </div>
+                }
             </div>
         </div>
 
@@ -122,23 +143,36 @@
 
             <!-- Tiện nghi -->
             <div class="nf-room-features mb-4">
-                <h3 class="mb-3">Tiện nghi</h3>
+                <h3 class="mb-3">Tiện nghi có sẵn</h3>
                 <div class="row g-3">
                     @if (Model.Property.Amenities.Any())
                     {
                         foreach (var amenity in Model.Property.Amenities)
                         {
-                            <div class="col-md-6">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="nf-amenity-dot"></div>
-                                    <span>@amenity.Name</span>
+                            <div class="col-6 col-md-4">
+                                <div class="d-flex align-items-center gap-2 p-2 rounded bg-light border-0 shadow-sm-hover transition">
+                                    <div class="nf-amenity-icon bg-white text-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        @if (!string.IsNullOrEmpty(amenity.IconUrl))
+                                        {
+                                            <i class="@amenity.IconUrl"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-check"></i>
+                                        }
+                                    </div>
+                                    <span class="fw-medium text-dark">@amenity.Name</span>
                                 </div>
                             </div>
                         }
                     } 
                     else 
                     {
-                        <p class="text-muted">Chưa cập nhật tiện nghi.</p>
+                        <div class="col-12">
+                            <div class="alert alert-light border-dashed text-center">
+                                <i class="fas fa-info-circle me-2"></i> Chưa cập nhật danh sách tiện nghi.
+                            </div>
+                        </div>
                     }
                 </div>
             </div>
@@ -243,8 +277,17 @@
     <!-- Thư viện Pannellum -->
     <link rel="stylesheet" href="~/lib/pannellum/pannellum.css" />
     <script src="~/lib/pannellum/pannellum.js"></script>
+    
+    <!-- Thư viện Swiper.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
     <style>
         .pnlm-container { border-radius: 8px; }
+        .thumbsSwiper .swiper-slide { opacity: 0.4; }
+        .thumbsSwiper .swiper-slide-thumb-active { opacity: 1; }
+        .cursor-pointer { cursor: pointer; }
+        .object-fit-cover { object-fit: cover; }
     </style>
 
     <script>
@@ -328,6 +371,39 @@
         // Initialize
         checkFavoriteStatus();
 
+        // --- Logic Swiper Slideshow ---
+        var swiperThumbs = new Swiper(".thumbsSwiper", {
+            spaceBetween: 10,
+            slidesPerView: 6,
+            freeMode: true,
+            watchSlidesProgress: true,
+            breakpoints: {
+                320: { slidesPerView: 3 },
+                768: { slidesPerView: 4 },
+                1024: { slidesPerView: 6 }
+            }
+        });
+
+        var swiperMain = new Swiper(".mainSwiper", {
+            spaceBetween: 10,
+            loop: true,
+            autoplay: {
+                delay: 4000,
+                disableOnInteraction: false,
+            },
+            navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev",
+            },
+            pagination: {
+                el: ".swiper-pagination",
+                clickable: true,
+            },
+            thumbs: {
+                swiper: swiperThumbs,
+            },
+        });
+
         // --- Logic Pannellum 360 ---
         function toggleView(type) {
             const view2d = document.getElementById('view-2d-container');
@@ -347,9 +423,11 @@
         function initPannellum() {
             if (viewer) return; // Chỉ khởi tạo 1 lần
             
-            // Xử lý lấy ảnh 360: Tìm ảnh nào có _360 trong tên, nếu không có thì dùng ảnh demo của Pannellum
-            const allImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(images));
-            let panoramaUrl = allImages.find(url => url.toLowerCase().includes("360")) || "https://pannellum.org/images/alma.jpg";
+            // Xử lý lấy ảnh 360: Sử dụng danh sách đã được lọc từ Server
+            const imgs360 = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(images360));
+            if (imgs360.length === 0) return;
+
+            let panoramaUrl = imgs360[0];
 
             viewer = pannellum.viewer('panorama', {
                 "type": "equirectangular",
