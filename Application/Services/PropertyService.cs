@@ -8,10 +8,12 @@ namespace NestFlow.Application.Services
     public class PropertyService : IPropertyService
     {
         private readonly NestFlowSystemContext _context;
+        private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
 
-        public PropertyService(NestFlowSystemContext context)
+        public PropertyService(NestFlowSystemContext context, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         public async Task<List<Property>> GetPropertiesByLandlordIdAsync(long landlordId)
@@ -130,6 +132,20 @@ namespace NestFlow.Application.Services
         {
             var img = await _context.PropertyImages.FindAsync(imageId);
             if (img == null) return false;
+
+            // Xóa file vật lý trên ổ đĩa
+            try
+            {
+                var filePath = Path.Combine(_env.WebRootPath, img.ImageUrl.TrimStart('/'));
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+            }
+            catch (Exception)
+            {
+                // Log error if needed, but don't block DB deletion
+            }
 
             _context.PropertyImages.Remove(img);
             await _context.SaveChangesAsync();

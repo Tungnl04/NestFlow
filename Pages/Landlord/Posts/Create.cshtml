@@ -76,7 +76,7 @@
                             <div class="col-md-6">
                                 <label asp-for="NewProperty.Area" class="form-label fw-semibold">Diện tích (m²)</label>
                                 <div class="input-group">
-                                    <input asp-for="NewProperty.Area" type="number" class="form-control border-2" step="0.1" />
+                                    <input asp-for="NewProperty.Area" type="number" class="form-control border-2" step="any" />
                                     <span class="input-group-text">m²</span>
                                 </div>
                             </div>
@@ -170,7 +170,7 @@
                                 <label class="btn btn-outline-info w-100 py-4 border-dashed mb-2" style="border: 2px dashed #0dcaf0;">
                                     <i class="fas fa-vr-cardboard d-block mb-2 text-info"></i>
                                     <span>Chọn ảnh 360°</span>
-                                    <input type="file" asp-for="Uploaded360Images" multiple accept="image/*" class="d-none" id="img360Input" />
+                                    <input type="file" asp-for="Uploaded360Images" accept="image/*" class="d-none" id="img360Input" />
                                 </label>
                                 <div id="image360Preview" class="row g-2 mt-2" style="max-height: 150px; overflow-y: auto;"></div>
                                 <small class="text-info d-block mt-1">Ảnh sẽ được lưu với hậu tố <code>_360</code> để kích hoạt trình xem thực tế ảo.</small>
@@ -208,26 +208,62 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        function setupPreview(inputId, previewId, is360 = false) {
-            document.getElementById(inputId).addEventListener('change', function(e) {
-                const preview = document.getElementById(previewId);
-                preview.innerHTML = '';
-                Array.from(e.target.files).forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function(re) {
-                        const col = document.createElement('div');
-                        col.className = 'col-3 position-relative';
-                        let badge = is360 ? '<span class="badge bg-info position-absolute top-0 start-0 m-1" style="z-index:10">360°</span>' : '';
-                        col.innerHTML = `${badge}<img src="${re.target.result}" class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover;">`;
-                        preview.appendChild(col);
-                    }
-                    reader.readAsDataURL(file);
-                });
+        // Sử dụng DataTransfer để có thể xóa file trong input[type=file]
+        let normalFiles = new DataTransfer();
+        let files360 = new DataTransfer();
+
+        const imgInput = document.getElementById('imgInput');
+        const img360Input = document.getElementById('img360Input');
+
+        function updatePreview(inputId, previewId, dt, is360) {
+            const preview = document.getElementById(previewId);
+            const input = document.getElementById(inputId);
+            preview.innerHTML = '';
+            
+            Array.from(dt.files).forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = function(re) {
+                    const col = document.createElement('div');
+                    col.className = 'col-3 position-relative preview-item animate__animated animate__fadeIn';
+                    let badge = is360 ? '<span class="badge bg-info position-absolute top-0 start-0 m-1" style="z-index:10">360°</span>' : '';
+                    col.innerHTML = `
+                        ${badge}
+                        <img src="${re.target.result}" class="img-thumbnail" style="height: 100px; width: 100%; object-fit: cover;">
+                        <button type="button" class="btn btn-danger btn-sm rounded-circle position-absolute top-0 end-0 m-1 shadow-sm" 
+                                style="width:24px; height:24px; padding:0; display:flex; align-items:center; justify-content:center; z-index:11"
+                                onclick="removeSelectedFile('${inputId}', '${previewId}', ${index}, ${is360})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                    preview.appendChild(col);
+                }
+                reader.readAsDataURL(file);
             });
+            // Đồng bộ lại file vào input thực tế
+            input.files = dt.files;
         }
 
-        setupPreview('imgInput', 'imagePreview', false);
-        setupPreview('img360Input', 'image360Preview', true);
+        function removeSelectedFile(inputId, previewId, index, is360) {
+            let dt = is360 ? files360 : normalFiles;
+            const newDt = new DataTransfer();
+            Array.from(dt.files).forEach((file, i) => {
+                if (i !== index) newDt.items.add(file);
+            });
+            
+            if (is360) files360 = newDt; else normalFiles = newDt;
+            updatePreview(inputId, previewId, is360 ? files360 : normalFiles, is360);
+        }
+
+        imgInput.addEventListener('change', function(e) {
+            Array.from(e.target.files).forEach(file => normalFiles.items.add(file));
+            updatePreview('imgInput', 'imagePreview', normalFiles, false);
+        });
+
+        img360Input.addEventListener('change', function(e) {
+            files360 = new DataTransfer(); // Reset để chỉ lấy 1 ảnh mới nhất
+            Array.from(e.target.files).forEach(file => files360.items.add(file));
+            updatePreview('img360Input', 'image360Preview', files360, true);
+        });
     </script>
 }
 

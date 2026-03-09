@@ -160,14 +160,17 @@ namespace NestFlow.Pages.Landlord.Posts
             }
         }
 
-        public async Task<IActionResult> OnPostDeleteImageAsync(long imageId, long listingId)
+        public async Task<IActionResult> OnPostDeleteImageAsync(long imageId)
         {
             var userId = HttpContext.Session.GetInt32("UserId");
-            if (userId == null) return Unauthorized();
+            if (userId == null) return new JsonResult(new { success = false, message = "Unauthorized" }) { StatusCode = 401 };
 
-            // Simple delete check
-            await _propertyService.DeletePropertyImageAsync(imageId);
-            return RedirectToPage(new { id = listingId });
+            var result = await _propertyService.DeletePropertyImageAsync(imageId);
+            if (result)
+            {
+                return new JsonResult(new { success = true });
+            }
+            return new JsonResult(new { success = false, message = "Lỗi khi xóa ảnh." });
         }
     }
 }

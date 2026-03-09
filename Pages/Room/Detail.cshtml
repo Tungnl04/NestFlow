@@ -53,35 +53,36 @@
 
     <!-- Hình ảnh trọ Container -->
     <div class="nf-room-gallery mb-4">
-        <!-- Ảnh thường (2D) -->
-        <div id="view-2d-container" class="row g-2">
-            <div class="col-md-8">
-                <img src="@mainImage" class="img-fluid rounded w-100" alt="@Model.Property.Title" id="mainImage" style="height: 500px; object-fit: cover;" />
-            </div>
-            <div class="col-md-4">
-                <div class="row g-2">
-                    @for (int i = 1; i < normalImages.Count && i < 3; i++)
-                    {
-                        <div class="col-12">
-                            <img src="@normalImages[i]" class="img-fluid rounded w-100" alt="Ảnh @(i+1)" onclick="document.getElementById('mainImage').src = this.src" style="cursor: pointer; height: 245px; object-fit: cover;" />
+        <!-- Ảnh thường (2D) - Slideshow with Swiper -->
+        <div id="view-2d-container">
+            <div class="row g-2">
+                <div class="col-12">
+                    <!-- Swiper Main -->
+                    <div class="swiper mainSwiper rounded shadow-sm mb-2" style="height: 500px;">
+                        <div class="swiper-wrapper">
+                            @foreach (var imgUrl in normalImages)
+                            {
+                                <div class="swiper-slide">
+                                    <img src="@imgUrl" class="w-100 h-100 object-fit-cover" />
+                                </div>
+                            }
                         </div>
-                    }
-                    @if (normalImages.Count <= 1)
-                    {
-                         // Show placeholders if not enough images
-                        <div class="col-12">
-                            <img src="https://via.placeholder.com/400x240?text=NestFlow+Living" class="img-fluid rounded w-100" style="height: 245px; object-fit: cover;" />
+                        <div class="swiper-button-next text-white"></div>
+                        <div class="swiper-button-prev text-white"></div>
+                        <div class="swiper-pagination"></div>
+                    </div>
+                    
+                    <!-- Swiper Thumbs -->
+                    <div class="swiper thumbsSwiper rounded" style="height: 100px;">
+                        <div class="swiper-wrapper">
+                            @foreach (var imgUrl in normalImages)
+                            {
+                                <div class="swiper-slide cursor-pointer">
+                                    <img src="@imgUrl" class="w-100 h-100 object-fit-cover rounded border" />
+                                </div>
+                            }
                         </div>
-                        <div class="col-12">
-                            <img src="https://via.placeholder.com/400x240?text=Premium+Services" class="img-fluid rounded w-100" style="height: 245px; object-fit: cover;" />
-                        </div>
-                    }
-                    @if (normalImages.Count == 2)
-                    {
-                        <div class="col-12">
-                            <img src="https://via.placeholder.com/400x240?text=NestFlow+Gallery" class="img-fluid rounded w-100" style="height: 245px; object-fit: cover;" />
-                        </div>
-                    }
+                    </div>
                 </div>
             </div>
         </div>
@@ -276,8 +277,17 @@
     <!-- Thư viện Pannellum -->
     <link rel="stylesheet" href="~/lib/pannellum/pannellum.css" />
     <script src="~/lib/pannellum/pannellum.js"></script>
+    
+    <!-- Thư viện Swiper.js -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
     <style>
         .pnlm-container { border-radius: 8px; }
+        .thumbsSwiper .swiper-slide { opacity: 0.4; }
+        .thumbsSwiper .swiper-slide-thumb-active { opacity: 1; }
+        .cursor-pointer { cursor: pointer; }
+        .object-fit-cover { object-fit: cover; }
     </style>
 
     <script>
@@ -360,6 +370,39 @@
 
         // Initialize
         checkFavoriteStatus();
+
+        // --- Logic Swiper Slideshow ---
+        var swiperThumbs = new Swiper(".thumbsSwiper", {
+            spaceBetween: 10,
+            slidesPerView: 6,
+            freeMode: true,
+            watchSlidesProgress: true,
+            breakpoints: {
+                320: { slidesPerView: 3 },
+                768: { slidesPerView: 4 },
+                1024: { slidesPerView: 6 }
+            }
+        });
+
+        var swiperMain = new Swiper(".mainSwiper", {
+            spaceBetween: 10,
+            loop: true,
+            autoplay: {
+                delay: 4000,
+                disableOnInteraction: false,
+            },
+            navigation: {
+                nextEl: ".swiper-button-next",
+                prevEl: ".swiper-button-prev",
+            },
+            pagination: {
+                el: ".swiper-pagination",
+                clickable: true,
+            },
+            thumbs: {
+                swiper: swiperThumbs,
+            },
+        });
 
         // --- Logic Pannellum 360 ---
         function toggleView(type) {
