@@ -16,20 +16,32 @@
                 <a class="navbar-brand" asp-area="" asp-page="/Home/Index">
                     <span class="nf-brand-blue">Nest</span>flow
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" zdata-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
+                        <!-- Visible to all -->
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Home/Index">Trang chủ</a>
                         </li>
-                        <li class="nav-item">
+
+                        <!-- Visible to renter & landlord -->
+                        <li class="nav-item d-none" id="navFindRoom">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Room/List">Tìm phòng</a>
                         </li>
-                        <li class="nav-item d-none" id="landlordBtn">
+
+                        <!-- Landlord only -->
+                        <li class="nav-item d-none" id="navLandlordManage">
                             <a class="nav-link text-dark" asp-area="" asp-page="/Landlord/Dashboard">Quản lý trọ</a>
+                        </li>
+
+                        <!-- Admin only -->
+                        <li class="nav-item d-none" id="navAdminPanel">
+                            <a class="nav-link text-dark fw-semibold text-danger" asp-area="" asp-page="/Admin/Dashboard">
+                                <i class="fas fa-shield-alt me-1"></i>Quản trị
+                            </a>
                         </li>
                     </ul>
 
@@ -69,25 +81,57 @@
                             <span id="userName">User</span>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-                            <li><a class="dropdown-item" href="#" onclick="goToDashboard(); return false;">
-                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
-                            </a></li>
-                            <li><a class="dropdown-item" asp-page="/Home/Profile">
-                                <i class="fas fa-user me-2"></i>Tài khoản
-                            </a></li>
-                            <li><a class="dropdown-item" href="#" onclick="goToBookings(); return false;">
-                                <i class="fas fa-history me-2"></i>Lịch sử đặt phòng
-                            </a></li>
-                            <li><a class="dropdown-item" href="#" onclick="goToWallet(); return false;">
-                                <i class="fas fa-wallet me-2"></i>Ví của tôi
-                            </a></li>
-                            <li><a class="dropdown-item" asp-page="/Home/Saved">
-                                <i class="fas fa-heart me-2"></i>Tin đã lưu
-                            </a></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="goToDashboard(); return false;">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" asp-page="/Home/Profile">
+                                    <i class="fas fa-user me-2"></i>Tài khoản
+                                </a>
+                            </li>
+
+                            <!-- Renter & Landlord only -->
+                            <li class="d-none role-not-admin">
+                                <a class="dropdown-item" href="#" onclick="goToBookings(); return false;">
+                                    <i class="fas fa-history me-2"></i>Lịch sử đặt phòng
+                                </a>
+                            </li>
+                            <li class="d-none role-not-admin">
+                                <a class="dropdown-item" href="#" onclick="goToWallet(); return false;">
+                                    <i class="fas fa-wallet me-2"></i>Ví của tôi
+                                </a>
+                            </li>
+                            <li class="d-none role-not-admin">
+                                <a class="dropdown-item" asp-page="/Home/Saved">
+                                    <i class="fas fa-heart me-2"></i>Tin đã lưu
+                                </a>
+                            </li>
+
+                            <!-- Admin only -->
+                            <li class="d-none role-admin">
+                                <a class="dropdown-item" asp-page="/Admin/Users">
+                                    <i class="fas fa-users-cog me-2"></i>Quản lý người dùng
+                                </a>
+                            </li>
+                            <li class="d-none role-admin">
+                                <a class="dropdown-item" asp-page="/Admin/Posts">
+                                    <i class="fas fa-newspaper me-2"></i>Quản lý tin đăng
+                                </a>
+                            </li>
+                            <li class="d-none role-admin">
+                                <a class="dropdown-item" asp-page="/Admin/Requests">
+                                    <i class="fas fa-bell me-2"></i>Quản lý yêu cầu
+                                </a>
+                            </li>
+
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#" onclick="handleLogout()">
-                                <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
-                            </a></li>
+                            <li>
+                                <a class="dropdown-item" href="#" onclick="handleLogout()">
+                                    <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                                </a>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -187,7 +231,56 @@
     <script src="~/js/notification-ui.js" asp-append-version="true"></script>
 
     <script>
-        // Global logout handler
+        // ─── Role-based nav ───────────────────────────────────────────────────────
+        async function applyRoleUI(role) {
+            // role: 'admin' | 'landlord' | 'renter' | null
+
+            // Navbar links
+            const navFindRoom      = document.getElementById('navFindRoom');
+            const navLandlordManage = document.getElementById('navLandlordManage');
+            const navAdminPanel    = document.getElementById('navAdminPanel');
+
+            if (role === 'admin') {
+                navAdminPanel.classList.remove('d-none');
+                // Hide renter/landlord-specific dropdown items
+                document.querySelectorAll('.role-not-admin').forEach(el => el.classList.add('d-none'));
+                document.querySelectorAll('.role-admin').forEach(el => el.classList.remove('d-none'));
+
+            } else if (role === 'landlord') {
+                navFindRoom.classList.remove('d-none');
+                navLandlordManage.classList.remove('d-none');
+                document.querySelectorAll('.role-not-admin').forEach(el => el.classList.remove('d-none'));
+
+            } else if (role === 'renter') {
+                navFindRoom.classList.remove('d-none');
+                document.querySelectorAll('.role-not-admin').forEach(el => el.classList.remove('d-none'));
+
+            } else {
+                // Guest: show find room in navbar (public)
+                navFindRoom.classList.remove('d-none');
+            }
+        }
+
+        async function loadCurrentUserRole() {
+            try {
+                const response = await fetch('/api/auth/current-user');
+                const data = await response.json();
+                if (data.success && data.user) {
+                    const role = (data.user.userType || '').toLowerCase(); // 'admin' | 'landlord' | 'renter'
+                    await applyRoleUI(role);
+                } else {
+                    await applyRoleUI(null); // guest
+                }
+            } catch (e) {
+                console.error('Role check failed:', e);
+                await applyRoleUI(null);
+            }
+        }
+
+        // Run on every page load
+        document.addEventListener('DOMContentLoaded', loadCurrentUserRole);
+
+        // ─── Logout ───────────────────────────────────────────────────────────────
         async function handleLogout() {
             const result = await window.NestFlowAuth.logout();
             if (result.success) {
@@ -197,120 +290,62 @@
             }
         }
 
-        // Navigate to wallet based on user role
+        // ─── Navigation helpers ───────────────────────────────────────────────────
+        async function getUserRole() {
+            try {
+                const res = await fetch('/api/auth/current-user');
+                const data = await res.json();
+                return data.success && data.user ? (data.user.userType || '').toLowerCase() : null;
+            } catch { return null; }
+        }
+
         async function goToWallet() {
-            try {
-                const response = await fetch('/api/auth/current-user');
-                const data = await response.json();
-                
-                if (data.success && data.user) {
-                    if (data.user.userType && data.user.userType.toLowerCase() === 'landlord') {
-                        window.location.href = '/Landlord/Wallet';
-                    } else {
-                        window.location.href = '/Home/MyWallet';
-                    }
-                } else {
-                    window.location.href = '/Home/MyWallet';
-                }
-            } catch (error) {
-                console.error('Error checking user role:', error);
-                window.location.href = '/Home/MyWallet';
-            }
+            const role = await getUserRole();
+            window.location.href = role === 'landlord' ? '/Landlord/Wallet' : '/Home/MyWallet';
         }
 
-        // Navigate to bookings based on user role
         async function goToBookings() {
-            try {
-                const response = await fetch('/api/auth/current-user');
-                const data = await response.json();
-                
-                if (data.success && data.user) {
-                    if (data.user.userType && data.user.userType.toLowerCase() === 'landlord') {
-                        window.location.href = '/Landlord/Bookings';
-                    } else {
-                        window.location.href = '/Home/MyBookings';
-                    }
-                } else {
-                    window.location.href = '/Home/MyBookings';
-                }
-            } catch (error) {
-                console.error('Error checking user role:', error);
-                window.location.href = '/Home/MyBookings';
-            }
+            const role = await getUserRole();
+            window.location.href = role === 'landlord' ? '/Landlord/Bookings' : '/Home/MyBookings';
         }
 
-        // Navigate to dashboard based on user role
         async function goToDashboard() {
-            try {
-                const response = await fetch('/api/auth/current-user');
-                const data = await response.json();
-                
-                if (data.success && data.user) {
-                    if (data.user.userType && data.user.userType.toLowerCase() === 'landlord') {
-                        window.location.href = '/Landlord/Dashboard';
-                    } else {
-                        window.location.href = '/Home/Dashboard';
-                    }
-                } else {
-                    window.location.href = '/Home/Dashboard';
-                }
-            } catch (error) {
-                console.error('Error checking user role:', error);
-                window.location.href = '/Home/Dashboard';
-            }
+            const role = await getUserRole();
+            if (role === 'admin')    window.location.href = '/Admin/Dashboard';
+            else if (role === 'landlord') window.location.href = '/Landlord/Dashboard';
+            else                     window.location.href = '/Home/Dashboard';
         }
 
-        // Toast notification function
+        // ─── Toast ────────────────────────────────────────────────────────────────
         function showToast(message, type = 'success', title = '') {
-            const toast = document.getElementById('notificationToast');
+            const toast      = document.getElementById('notificationToast');
             const toastHeader = document.getElementById('toastHeader');
-            const toastIcon = document.getElementById('toastIcon');
+            const toastIcon  = document.getElementById('toastIcon');
             const toastTitle = document.getElementById('toastTitle');
             const toastMessage = document.getElementById('toastMessage');
 
-            // Set message
             toastMessage.textContent = message;
-
-            // Set style based on type
             toastHeader.className = 'toast-header';
-            toastIcon.className = 'bi me-2';
+            toastIcon.className   = 'bi me-2';
 
-            switch(type) {
-                case 'success':
-                    toastHeader.classList.add('bg-success', 'text-white');
-                    toastIcon.classList.add('bi-check-circle-fill');
-                    toastTitle.textContent = title || 'Thành công';
-                    break;
-                case 'error':
-                    toastHeader.classList.add('bg-danger', 'text-white');
-                    toastIcon.classList.add('bi-x-circle-fill');
-                    toastTitle.textContent = title || 'Lỗi';
-                    break;
-                case 'warning':
-                    toastHeader.classList.add('bg-warning', 'text-dark');
-                    toastIcon.classList.add('bi-exclamation-triangle-fill');
-                    toastTitle.textContent = title || 'Cảnh báo';
-                    break;
-                case 'info':
-                    toastHeader.classList.add('bg-info', 'text-white');
-                    toastIcon.classList.add('bi-info-circle-fill');
-                    toastTitle.textContent = title || 'Thông tin';
-                    break;
-            }
+            const styles = {
+                success: { bg: 'bg-success text-white', icon: 'bi-check-circle-fill',         label: 'Thành công' },
+                error:   { bg: 'bg-danger text-white',  icon: 'bi-x-circle-fill',              label: 'Lỗi'       },
+                warning: { bg: 'bg-warning text-dark',  icon: 'bi-exclamation-triangle-fill',  label: 'Cảnh báo'  },
+                info:    { bg: 'bg-info text-white',    icon: 'bi-info-circle-fill',           label: 'Thông tin' },
+            };
+            const s = styles[type] || styles.info;
+            s.bg.split(' ').forEach(c => toastHeader.classList.add(c));
+            toastIcon.classList.add(s.icon);
+            toastTitle.textContent = title || s.label;
 
-            // Show toast
-            const bsToast = new bootstrap.Toast(toast, {
-                autohide: true,
-                delay: 3000
-            });
-            bsToast.show();
+            new bootstrap.Toast(toast, { autohide: true, delay: 3000 }).show();
         }
     </script>
-    <!-- AI Chat Widget -->
+
     <partial name="_AIChatWidget" />
     <script src="~/js/ai-chat.js" asp-append-version="true"></script>
 
     @await RenderSectionAsync("Scripts", required: false)
-
 </body>
 </html>
