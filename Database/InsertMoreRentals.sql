@@ -49,11 +49,11 @@ BEGIN
     ([landlord_id], [title], [description], [property_type], [address], [ward], [district], [city], 
      [price], [area], [max_occupants], [deposit], [available_from], [status], [created_at], [updated_at])
     VALUES
-    (@LandlordId, N'Phòng trọ cao cấp quận 1', N'Phòng đẹp, đầy đủ tiện nghi', 'Room', N'123 Nguyễn Huệ', N'Bến Nghé', N'Quận 1', N'TP.HCM', 3500000, 25, 2, 7000000, GETDATE(), 'Available', GETDATE(), GETDATE()),
-    (@LandlordId, N'Căn hộ mini Bình Thạnh', N'Căn hộ mini tiện nghi', 'Apartment', N'456 Xô Viết Nghệ Tĩnh', N'Phường 25', N'Bình Thạnh', N'TP.HCM', 4500000, 30, 2, 9000000, GETDATE(), 'Available', GETDATE(), GETDATE()),
-    (@LandlordId, N'Phòng trọ sinh viên Thủ Đức', N'Phòng giá rẻ cho sinh viên', 'Room', N'789 Võ Văn Ngân', N'Linh Chiểu', N'Thủ Đức', N'TP.HCM', 2000000, 20, 2, 4000000, GETDATE(), 'Available', GETDATE(), GETDATE()),
-    (@LandlordId, N'Nhà nguyên căn Gò Vấp', N'Nhà 1 trệt 1 lầu', 'House', N'321 Quang Trung', N'Phường 10', N'Gò Vấp', N'TP.HCM', 8000000, 80, 4, 16000000, GETDATE(), 'Available', GETDATE(), GETDATE()),
-    (@LandlordId, N'Studio Quận 7', N'Studio hiện đại, view đẹp', 'Studio', N'654 Nguyễn Thị Thập', N'Tân Phú', N'Quận 7', N'TP.HCM', 5500000, 35, 2, 11000000, GETDATE(), 'Available', GETDATE(), GETDATE());
+    (@LandlordId, N'Phòng trọ cao cấp quận 1', N'Phòng đẹp, đầy đủ tiện nghi', 'phong_tro', N'123 Nguyễn Huệ', N'Bến Nghé', N'Quận 1', N'TP.HCM', 3500000, 25, 2, 7000000, GETDATE(), 'available', GETDATE(), GETDATE()),
+    (@LandlordId, N'Căn hộ mini Bình Thạnh', N'Căn hộ mini tiện nghi', 'chung_cu', N'456 Xô Viết Nghệ Tĩnh', N'Phường 25', N'Bình Thạnh', N'TP.HCM', 4500000, 30, 2, 9000000, GETDATE(), 'available', GETDATE(), GETDATE()),
+    (@LandlordId, N'Phòng trọ sinh viên Thủ Đức', N'Phòng giá rẻ cho sinh viên', 'phong_tro', N'789 Võ Văn Ngân', N'Linh Chiểu', N'Thủ Đức', N'TP.HCM', 2000000, 20, 2, 4000000, GETDATE(), 'available', GETDATE(), GETDATE()),
+    (@LandlordId, N'Nhà nguyên căn Gò Vấp', N'Nhà 1 trệt 1 lầu', 'nha_nguyen_can', N'321 Quang Trung', N'Phường 10', N'Gò Vấp', N'TP.HCM', 8000000, 80, 4, 16000000, GETDATE(), 'available', GETDATE(), GETDATE()),
+    (@LandlordId, N'Studio Quận 7', N'Studio hiện đại, view đẹp', 'phong_tro', N'654 Nguyễn Thị Thập', N'Tân Phú', N'Quận 7', N'TP.HCM', 5500000, 35, 2, 11000000, GETDATE(), 'available', GETDATE(), GETDATE());
     
     PRINT N'✓ Đã tạo thêm 5 Properties';
     PRINT N'';

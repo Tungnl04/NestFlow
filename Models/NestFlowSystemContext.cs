@@ -75,18 +75,22 @@ public partial class NestFlowSystemContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<PropertyAmenity>(entity =>
-        {
-            entity.HasKey(e => new { e.PropertyId, e.AmenityId });
-
-            entity.HasOne(d => d.Property)
-                .WithMany(p => p.PropertyAmenities)
-                .HasForeignKey(d => d.PropertyId);
-
-            entity.HasOne(d => d.Amenity)
-                .WithMany()
-                .HasForeignKey(d => d.AmenityId);
-        });
+        modelBuilder.Entity<Property>()
+            .HasMany(p => p.Amenities)
+            .WithMany(a => a.Properties)
+            .UsingEntity<PropertyAmenity>(
+                j => j
+                    .HasOne(pt => pt.Amenity)
+                    .WithMany()
+                    .HasForeignKey(pt => pt.AmenityId),
+                j => j
+                    .HasOne(pt => pt.Property)
+                    .WithMany(p => p.PropertyAmenities)
+                    .HasForeignKey(pt => pt.PropertyId),
+                j =>
+                {
+                    j.HasKey(t => new { t.PropertyId, t.AmenityId });
+                });
 
         modelBuilder.Entity<Amenity>(entity =>
         {
