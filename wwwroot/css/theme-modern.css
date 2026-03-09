@@ -751,9 +751,7 @@ body {
     background: #fff;
     padding: 15px 0;
     border-bottom: 1px solid #eee;
-    position: sticky;
-    top: 70px;
-    /* Offset for main header */
-    z-index: 1000;
+    position: relative;
+    z-index: 100;
     margin-bottom: 30px;
 }
