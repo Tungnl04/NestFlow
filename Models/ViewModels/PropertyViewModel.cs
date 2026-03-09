@@ -14,5 +14,7 @@ namespace NestFlow.Models.ViewModels
         public bool IsFeatured { get; set; }
         public string Image { get; set; }
         public DateTime? CreatedAt { get; set; } // Added for Saved page (Date Saved)
+        public int PriorityLevel { get; set; }
+        public string? VipType { get; set; }
     }
 }
