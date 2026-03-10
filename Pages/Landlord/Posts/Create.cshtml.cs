@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using NestFlow.Application.Services.Interfaces;
 using NestFlow.Models;
+using System.Security.Claims;
 
 namespace NestFlow.Pages.Landlord.Posts
 {
@@ -10,17 +11,31 @@ namespace NestFlow.Pages.Landlord.Posts
     {
         private readonly IListingService _listingService;
         private readonly IPropertyService _propertyService;
+        private readonly IWebHostEnvironment _env;
 
-        public CreateModel(IListingService listingService, IPropertyService propertyService)
+        public CreateModel(IListingService listingService, IPropertyService propertyService, IWebHostEnvironment env)
         {
             _listingService = listingService;
             _propertyService = propertyService;
+            _env = env;
         }
 
         [BindProperty]
         public Listing NewListing { get; set; } = new Listing();
 
-        public SelectList PropertyOptions { get; set; }
+        [BindProperty]
+        public Property NewProperty { get; set; } = new Property();
+
+        [BindProperty]
+        public List<IFormFile> UploadedImages { get; set; } = new List<IFormFile>();
+
+        [BindProperty]
+        public List<IFormFile> Uploaded360Images { get; set; } = new List<IFormFile>();
+
+        [BindProperty]
+        public List<long> SelectedAmenityIds { get; set; } = new List<long>();
+
+        public List<Amenity> AvailableAmenities { get; set; } = new List<Amenity>();
 
         public async Task<IActionResult> OnGetAsync()
         {
@@ -28,44 +43,120 @@ namespace NestFlow.Pages.Landlord.Posts
             var userType = HttpContext.Session.GetString("UserType");
             if (userId == null || userType != "landlord") return RedirectToPage("/Home/Index");
 
-            var properties = await _propertyService.GetPropertiesByLandlordIdAsync(userId.Value);
-            // Filter: Should ideally filter out properties that already have an active listing.
-            // For now, list all.
-            PropertyOptions = new SelectList(properties, "PropertyId", "Title");
+            AvailableAmenities = await _propertyService.GetAllAmenitiesAsync();
+
+            // Khởi tạo các giá trị mặc định nếu cần
+            NewProperty.City = "TP. Hồ Chí Minh";
+            NewProperty.Status = "available";
+            NewProperty.PropertyType = "phong_tro";
 
             return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()
         {
-             var userId = HttpContext.Session.GetInt32("UserId");
-             if (userId == null) return RedirectToPage("/Home/Index");
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return RedirectToPage("/Home/Index");
 
-             if (!ModelState.IsValid)
-             {
-                 // Ignore navigation properties
-                 ModelState.Remove("NewListing.Property");
-                 ModelState.Remove("NewListing.Landlord");
-                 
-                 // Re-check
-                 if (!ModelState.IsValid)
-                 {
-                     var properties = await _propertyService.GetPropertiesByLandlordIdAsync(userId.Value);
-                     PropertyOptions = new SelectList(properties, "PropertyId", "Title");
-                     return Page();
-                 }
-             }
+            // Re-load amenities for form in case of error
+            AvailableAmenities = await _propertyService.GetAllAmenitiesAsync();
 
-             if (NewListing.Status == "active")
-             {
-                 NewListing.PublishedAt = DateTime.UtcNow;
-                 NewListing.ExpiresAt = DateTime.UtcNow.AddDays(30); // Default 30 days
-             }
+            // Bỏ qua xác thực cho các thuộc tính điều hướng và ID sẽ được gán tự động
+            ModelState.Remove("NewListing.Property");
+            ModelState.Remove("NewListing.Landlord");
+            ModelState.Remove("NewListing.Status");
+            ModelState.Remove("NewListing.PropertyId");
+            ModelState.Remove("NewListing.LandlordId");
+            
+            ModelState.Remove("NewProperty.Landlord");
+            ModelState.Remove("NewProperty.PropertyId");
+            ModelState.Remove("NewProperty.LandlordId");
+            ModelState.Remove("NewProperty.Status");
+            ModelState.Remove("NewProperty.Title"); 
+            ModelState.Remove("NewProperty.PropertyType");
 
-             await _listingService.CreateListingAsync(NewListing);
-             
-             TempData["Success"] = "Đăng tin thành công!";
-             return RedirectToPage("./Index");
+            if (!ModelState.IsValid)
+            {
+                return Page();
+            }
+
+            try
+            {
+                // 1. Chuẩn bị dữ liệu Property & Listing
+                NewProperty.LandlordId = userId.Value;
+                NewListing.LandlordId = userId.Value; // Gán ID chủ trọ cho cả bài đăng
+                NewProperty.Title = NewListing.Title;
+                
+                var imageEntities = new List<PropertyImage>();
+                var propertyFolderGuid = Guid.NewGuid().ToString(); // Dùng GUID để folder là duy nhất trước khi có ID
+                var uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "properties", propertyFolderGuid);
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                int displayOrder = 0;
+
+                // 2. Xử lý Ảnh thường
+                if (UploadedImages != null && UploadedImages.Count > 0)
+                {
+                    foreach (var file in UploadedImages)
+                    {
+                        var extension = Path.GetExtension(file.FileName);
+                        var newFileName = $"{Guid.NewGuid()}{extension}";
+                        var filePath = Path.Combine(uploadsFolder, newFileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        imageEntities.Add(new PropertyImage
+                        {
+                            ImageUrl = $"/uploads/properties/{propertyFolderGuid}/{newFileName}",
+                            IsPrimary = (displayOrder == 0),
+                            DisplayOrder = displayOrder++
+                        });
+                    }
+                }
+
+                // 3. Xử lý Ảnh 360 độ
+                if (Uploaded360Images != null && Uploaded360Images.Count > 0)
+                {
+                    foreach (var file in Uploaded360Images)
+                    {
+                        var extension = Path.GetExtension(file.FileName);
+                        // Hậu tố _360 rất quan trọng để hệ thống hiển thị đúng chế độ Panorama
+                        var newFileName = $"{Guid.NewGuid()}_360{extension}";
+                        var filePath = Path.Combine(uploadsFolder, newFileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await file.CopyToAsync(stream);
+                        }
+
+                        imageEntities.Add(new PropertyImage
+                        {
+                            ImageUrl = $"/uploads/properties/{propertyFolderGuid}/{newFileName}",
+                            IsPrimary = (displayOrder == 0),
+                            DisplayOrder = displayOrder++
+                        });
+                    }
+                }
+
+                // 4. Gọi Service thực hiện lưu DB trong 1 Transaction
+                await _listingService.PublishNewListingWithPropertyAsync(NewListing, NewProperty, imageEntities, SelectedAmenityIds);
+
+                TempData["Success"] = "Đăng tin thành công!";
+                return RedirectToPage("./Index");
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError(string.Empty, ex.Message);
+                return Page();
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError(string.Empty, "Lỗi hệ thống: " + ex.Message);
+                return Page();
+            }
         }
     }
 }

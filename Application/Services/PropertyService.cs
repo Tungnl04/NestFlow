@@ -8,10 +8,12 @@ namespace NestFlow.Application.Services
     public class PropertyService : IPropertyService
     {
         private readonly NestFlowSystemContext _context;
+        private readonly Microsoft.AspNetCore.Hosting.IWebHostEnvironment _env;
 
-        public PropertyService(NestFlowSystemContext context)
+        public PropertyService(NestFlowSystemContext context, Microsoft.AspNetCore.Hosting.IWebHostEnvironment env)
         {
             _context = context;
+            _env = env;
         }
 
         public async Task<List<Property>> GetPropertiesByLandlordIdAsync(long landlordId)
@@ -22,6 +24,9 @@ namespace NestFlow.Application.Services
                 // We will use 'unavailable' for hidden/deleted logically if not implementing soft delete column.
                 // Or just standard query. 
                 // Let's stick to standard status logic.
+                // Lọc bỏ những phòng trọ đã có bài đăng tin đang hoạt động hoặc bản nháp
+                // Để chủ trọ không bị bối rối khi chọn phòng để đăng tin mới
+                .Where(p => !p.Listings.Any(l => l.Status == "active" || l.Status == "draft"))
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
         }
@@ -128,6 +133,20 @@ namespace NestFlow.Application.Services
             var img = await _context.PropertyImages.FindAsync(imageId);
             if (img == null) return false;
 
+            // Xóa file vật lý trên ổ đĩa
+            try
+            {
+                var filePath = Path.Combine(_env.WebRootPath, img.ImageUrl.TrimStart('/'));
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+            }
+            catch (Exception)
+            {
+                // Log error if needed, but don't block DB deletion
+            }
+
             _context.PropertyImages.Remove(img);
             await _context.SaveChangesAsync();
             return true;
@@ -199,14 +218,45 @@ namespace NestFlow.Application.Services
             var totalPages = (int)Math.Ceiling(totalItems / (double)request.PageSize);
             if (totalPages == 0) totalPages = 1;
 
-            // Sorting & Dynamic Projection for Performance
-            var propertiesQuery = request.SortBy switch
+            // 1. Get current active subscription for each property's landlord to determine Priority
+            // Note: In EF Core, we can use a subquery in OrderBy or Join.
+            
+            IOrderedQueryable<Property> propertiesQuery;
+            
+            // Define a helper to get priority
+            // We use (int?) Max... ?? 0 to handle landlords without active subscriptions
+            
+            switch (request.SortBy)
             {
-                "price_asc" => query.OrderBy(p => p.Price),
-                "price_desc" => query.OrderByDescending(p => p.Price),
-                "area_desc" => query.OrderByDescending(p => p.Area),
-                _ => query.OrderByDescending(p => p.CreatedAt)
-            };
+                case "price_asc":
+                    propertiesQuery = query
+                        .OrderByDescending(p => p.Landlord.LandlordSubscriptions
+                            .Where(s => s.Status == "active" && s.EndAt > DateTime.UtcNow)
+                            .Max(s => (int?)s.Plan.PriorityLevel) ?? 0)
+                        .ThenBy(p => p.Price);
+                    break;
+                case "price_desc":
+                    propertiesQuery = query
+                        .OrderByDescending(p => p.Landlord.LandlordSubscriptions
+                            .Where(s => s.Status == "active" && s.EndAt > DateTime.UtcNow)
+                            .Max(s => (int?)s.Plan.PriorityLevel) ?? 0)
+                        .ThenByDescending(p => p.Price);
+                    break;
+                case "area_desc":
+                    propertiesQuery = query
+                        .OrderByDescending(p => p.Landlord.LandlordSubscriptions
+                            .Where(s => s.Status == "active" && s.EndAt > DateTime.UtcNow)
+                            .Max(s => (int?)s.Plan.PriorityLevel) ?? 0)
+                        .ThenByDescending(p => p.Area);
+                    break;
+                default:
+                    propertiesQuery = query
+                        .OrderByDescending(p => p.Landlord.LandlordSubscriptions
+                            .Where(s => s.Status == "active" && s.EndAt > DateTime.UtcNow)
+                            .Max(s => (int?)s.Plan.PriorityLevel) ?? 0)
+                        .ThenByDescending(p => p.CreatedAt);
+                    break;
+            }
 
             var properties = await propertiesQuery
                 .Skip((request.Page - 1) * request.PageSize)
@@ -222,7 +272,18 @@ namespace NestFlow.Application.Services
                     PostedDate = p.CreatedAt ?? DateTime.Now,
                     IsFeatured = p.ViewCount > 100,
                     Image = p.PropertyImages.OrderBy(img => img.DisplayOrder).Select(img => img.ImageUrl).FirstOrDefault() 
-                            ?? "https://via.placeholder.com/300x200?text=No+Image"
+                            ?? "https://via.placeholder.com/300x200?text=No+Image",
+                    
+                    // Determine VIP Type for badge display
+                    PriorityLevel = p.Landlord.LandlordSubscriptions
+                        .Where(s => s.Status == "active" && s.EndAt > DateTime.UtcNow)
+                        .Select(s => (int?)s.Plan.PriorityLevel)
+                        .Max() ?? 0,
+                    VipType = p.Landlord.LandlordSubscriptions
+                        .Where(s => s.Status == "active" && s.EndAt > DateTime.UtcNow)
+                        .OrderByDescending(s => s.Plan.PriorityLevel)
+                        .Select(s => s.Plan.PlanName)
+                        .FirstOrDefault()
                 })
                 .ToListAsync();
 
@@ -234,6 +295,10 @@ namespace NestFlow.Application.Services
                 CurrentPage = request.Page,
                 PageSize = request.PageSize
             };
+        }
+        public async Task<List<Amenity>> GetAllAmenitiesAsync()
+        {
+            return await _context.Amenities.OrderBy(a => a.Category).ThenBy(a => a.Name).ToListAsync();
         }
     }
 }

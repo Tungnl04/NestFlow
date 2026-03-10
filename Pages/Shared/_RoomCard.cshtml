@@ -13,12 +13,25 @@
 
 <div class="nf-room-card nf-room-card-premium border-0 shadow-sm rounded-4 overflow-hidden h-100" onclick="window.location.href='/Room/Detail?id=@Model.Id'">
     <div class="nf-room-image position-relative">
-        @if (Model.IsFeatured)
+        @if (Model.VipType != null && Model.VipType.Contains("VIP2"))
+        {
+            <span class="nf-card-badge nf-badge-vip2 pulse-animation">
+                <i class="fas fa-crown me-1"></i> VIP ĐẶC BIỆT
+            </span>
+        }
+        else if (Model.VipType != null && Model.VipType.Contains("VIP1"))
+        {
+            <span class="nf-card-badge nf-badge-vip1">
+                <i class="fas fa-star me-1"></i> VIP NỔI BẬT
+            </span>
+        }
+        else if (Model.IsFeatured)
         {
             <span class="nf-card-badge badge-featured bg-gold text-dark">Phổ biến</span>
         }
+        
         <span class="nf-card-badge bg-white text-teal shadow-sm" style="top: 15px; left: 15px;">
-            <i class="fas fa-tag me-1"></i> @Model.Location.Split(',')[0]
+            <i class="fas fa-map-marker-alt me-1"></i> @Model.Location.Split(',')[0]
         </span>
 
         <img src="@(string.IsNullOrEmpty(Model.Image) ? "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=60" : Model.Image)" 

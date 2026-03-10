@@ -3,6 +3,10 @@
 @{
     ViewData["Title"] = "Quản lý hóa đơn";
     Layout = "~/Pages/Shared/_LandlordLayout.cshtml";
+    
+    // Get today's date for min attribute
+    var today = DateTime.Now.ToString("yyyy-MM-dd");
+    var defaultDueDate = DateTime.Now.AddDays(7).ToString("yyyy-MM-dd");
 }
 
 <div class="container-fluid px-4 py-4">
@@ -182,7 +186,7 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Hạn thanh toán <span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" id="dueDate" required>
+                        <input type="date" class="form-control" id="dueDate" required min="@today" value="@defaultDueDate">
                     </div>
                 </div>
 
@@ -197,41 +201,88 @@
                     </div>
                 </div>
 
-                <div class="row g-3 mb-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Điện cũ (kWh)</label>
-                        <input type="number" class="form-control" id="electricOldReading" value="0" min="0">
+                <!-- ĐIỆN -->
+                <div class="card mb-3 border-primary">
+                    <div class="card-header bg-primary bg-opacity-10">
+                        <h6 class="mb-0"><i class="fas fa-bolt text-warning"></i> Tiền điện</h6>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Điện mới (kWh)</label>
-                        <input type="number" class="form-control" id="electricNewReading" value="0" min="0" onchange="calculateElectric()">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Số điện (kWh)</label>
-                        <input type="number" class="form-control bg-light" id="electricUsage" value="0" min="0" readonly>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Tiền điện (VNĐ)</label>
-                        <input type="text" class="form-control money-input" id="electricAmount" value="0" onkeyup="formatMoney(this)" onchange="calculateTotal()">
+                    <div class="card-body">
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-3">
+                                <label class="form-label">Chỉ số cũ (kWh)</label>
+                                <input type="number" class="form-control" id="electricOldReading" value="0" min="0" onchange="calculateElectric()" oninput="calculateElectric()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Chỉ số mới (kWh)</label>
+                                <input type="number" class="form-control" id="electricNewReading" value="0" min="0" onchange="calculateElectric()" oninput="calculateElectric()">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Số điện (kWh)</label>
+                                <input type="number" class="form-control bg-light" id="electricUsage" value="0" min="0" readonly>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Đơn giá (VNĐ/kWh)</label>
+                                <input type="text" class="form-control money-input" id="electricPrice" value="3,500" oninput="formatMoney(this); calculateElectric();" onchange="calculateElectric()">
+                            </div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Tổng tiền điện (VNĐ)</label>
+                                <input type="text" class="form-control money-input bg-light" id="electricAmount" value="0" readonly>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="row g-3 mb-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Nước cũ (m³)</label>
-                        <input type="number" class="form-control" id="waterOldReading" value="0" min="0">
+                <!-- NƯỚC -->
+                <div class="card mb-3 border-info">
+                    <div class="card-header bg-info bg-opacity-10">
+                        <h6 class="mb-0"><i class="fas fa-tint text-info"></i> Tiền nước</h6>
                     </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Nước mới (m³)</label>
-                        <input type="number" class="form-control" id="waterNewReading" value="0" min="0" onchange="calculateWater()">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Số nước (m³)</label>
-                        <input type="number" class="form-control bg-light" id="waterUsage" value="0" min="0" readonly>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Tiền nước (VNĐ)</label>
-                        <input type="text" class="form-control money-input" id="waterAmount" value="0" onkeyup="formatMoney(this)" onchange="calculateTotal()">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Cách tính tiền nước</label>
+                            <select class="form-select" id="waterCalculationType" onchange="toggleWaterCalculation()">
+                                <option value="usage">Theo số khối (m³)</option>
+                                <option value="fixed">Giá cố định hàng tháng</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Tính theo số khối -->
+                        <div id="waterUsageSection">
+                            <div class="row g-3 mb-2">
+                                <div class="col-md-3">
+                                    <label class="form-label">Chỉ số cũ (m³)</label>
+                                    <input type="number" class="form-control" id="waterOldReading" value="0" min="0" onchange="calculateWater()" oninput="calculateWater()">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Chỉ số mới (m³)</label>
+                                    <input type="number" class="form-control" id="waterNewReading" value="0" min="0" onchange="calculateWater()" oninput="calculateWater()">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Số nước (m³)</label>
+                                    <input type="number" class="form-control bg-light" id="waterUsage" value="0" min="0" readonly>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Đơn giá (VNĐ/m³)</label>
+                                    <input type="text" class="form-control money-input" id="waterPrice" value="20,000" oninput="formatMoney(this); calculateWater();" onchange="calculateWater()">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Giá cố định -->
+                        <div id="waterFixedSection" style="display: none;">
+                            <div class="alert alert-info mb-2">
+                                <i class="fas fa-info-circle"></i> Nhập giá cố định hàng tháng (không phụ thuộc vào số khối)
+                            </div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-12">
+                                <label class="form-label">Tổng tiền nước (VNĐ)</label>
+                                <input type="text" class="form-control money-input" id="waterAmount" value="0" onkeyup="formatMoney(this)" onchange="calculateTotal()">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -457,5 +508,114 @@
 </div>
 
 @section Scripts {
-<script src="~/js/invoices.js"></script>
+<script src="~/js/invoices.js" asp-append-version="true"></script>
+<script>
+    // Override inline để đảm bảo tính toán luôn chạy đúng (bypass cache)
+    function calculateElectric() {
+        var oldR = parseFloat(document.getElementById('electricOldReading').value) || 0;
+        var newR = parseFloat(document.getElementById('electricNewReading').value) || 0;
+        var usage = Math.max(0, newR - oldR);
+        document.getElementById('electricUsage').value = usage;
+
+        var priceRaw = document.getElementById('electricPrice').value.replace(/[^\d]/g, '');
+        var price = parseInt(priceRaw) || 0;
+        var amount = usage * price;
+
+        // Format với dấu phẩy
+        document.getElementById('electricAmount').value = amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        calculateTotal();
+    }
+
+    function calculateWater() {
+        var type = document.getElementById('waterCalculationType').value;
+        if (type === 'usage') {
+            var oldR = parseFloat(document.getElementById('waterOldReading').value) || 0;
+            var newR = parseFloat(document.getElementById('waterNewReading').value) || 0;
+            var usage = Math.max(0, newR - oldR);
+            document.getElementById('waterUsage').value = usage;
+
+            var priceRaw = document.getElementById('waterPrice').value.replace(/[^\d]/g, '');
+            var price = parseInt(priceRaw) || 0;
+            var amount = usage * price;
+
+            var waterAmountEl = document.getElementById('waterAmount');
+            waterAmountEl.value = amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            waterAmountEl.readOnly = true;
+            waterAmountEl.classList.add('bg-light');
+        }
+        calculateTotal();
+    }
+
+    function calculateTotal() {
+        function getVal(id) {
+            return parseFloat(document.getElementById(id).value.replace(/[^\d]/g, '')) || 0;
+        }
+        var total = getVal('roomRent') + getVal('electricAmount') + getVal('waterAmount') + getVal('internetFee');
+        var display = document.getElementById('totalAmountDisplay');
+        if (display) display.textContent = total.toLocaleString('vi-VN') + ' đ';
+    }
+
+    async function editInvoice(invoiceId) {
+        try {
+            const response = await fetch('/api/Invoice/detail/' + invoiceId);
+            const result = await response.json();
+            if (!result.success) { showMessage('Không thể tải dữ liệu hóa đơn', 'error'); return; }
+            const inv = result.data;
+
+            document.getElementById('invoiceModalTitle').textContent = 'Cập nhật hóa đơn #' + inv.invoiceId;
+            document.getElementById('invoiceId').value = inv.invoiceId;
+            document.getElementById('rentalId').value = inv.rentalId;
+            document.getElementById('invoiceMonth').value = inv.invoiceMonth || '';
+
+            if (inv.dueDate) {
+                const d = new Date(inv.dueDate);
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                document.getElementById('dueDate').value = yyyy + '-' + mm + '-' + dd;
+            }
+
+            // Tiền thuê & internet
+            function fmt(n) { return n ? Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '0'; }
+            document.getElementById('roomRent').value = fmt(inv.roomRent);
+            document.getElementById('internetFee').value = fmt(inv.internetFee);
+
+            // Điện
+            document.getElementById('electricOldReading').value = inv.electricOldReading || 0;
+            document.getElementById('electricNewReading').value = inv.electricNewReading || 0;
+            document.getElementById('electricUsage').value = inv.electricUsage || 0;
+            if (inv.electricUsage > 0 && inv.electricAmount) {
+                document.getElementById('electricPrice').value = fmt(Math.round(inv.electricAmount / inv.electricUsage));
+            } else {
+                document.getElementById('electricPrice').value = '3,500';
+            }
+            document.getElementById('electricAmount').value = fmt(inv.electricAmount);
+
+            // Nước
+            const hasWaterR = inv.waterOldReading > 0 || inv.waterNewReading > 0;
+            document.getElementById('waterCalculationType').value = hasWaterR ? 'usage' : 'fixed';
+            document.getElementById('waterOldReading').value = inv.waterOldReading || 0;
+            document.getElementById('waterNewReading').value = inv.waterNewReading || 0;
+            document.getElementById('waterUsage').value = inv.waterUsage || 0;
+            if (inv.waterUsage > 0 && inv.waterAmount) {
+                document.getElementById('waterPrice').value = fmt(Math.round(inv.waterAmount / inv.waterUsage));
+            } else {
+                document.getElementById('waterPrice').value = '20,000';
+            }
+            toggleWaterCalculation();
+            // Set waterAmount SAU toggleWaterCalculation vì toggle sẽ reset về 0 nếu là fixed
+            var waterAmountEl = document.getElementById('waterAmount');
+            waterAmountEl.value = fmt(inv.waterAmount);
+
+            document.getElementById('otherFees').value = inv.otherFees || '';
+            document.getElementById('notes').value = inv.notes || '';
+            calculateTotal();
+
+            new bootstrap.Modal(document.getElementById('invoiceModal')).show();
+        } catch (e) {
+            console.error(e);
+            showMessage('Có lỗi xảy ra khi tải dữ liệu hóa đơn', 'error');
+        }
+    }
+</script>
 }

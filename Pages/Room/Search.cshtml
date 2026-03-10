@@ -249,6 +249,7 @@
         function updateSort(sortBy) {
             const form = document.getElementById('searchFilterForm');
             form.querySelector('input[name="SearchRequest.SortBy"]').value = sortBy;
+            form.querySelector('#hiddenCurrentPage').value = 1; // Reset to page 1 when sorting changes
             form.submit();
         }
 
@@ -257,6 +258,11 @@
             form.querySelector('#hiddenCurrentPage').value = page;
             form.submit();
         }
+
+        // Reset page to 1 when the filter form is submitted via the "ÁP DỤNG" button
+        document.getElementById('searchFilterForm').addEventListener('submit', function() {
+            document.getElementById('hiddenCurrentPage').value = 1;
+        });
 
         // Chip selection logic
         document.querySelectorAll('.nf-filter-chip').forEach(chip => {

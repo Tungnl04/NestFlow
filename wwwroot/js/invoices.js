@@ -1,18 +1,23 @@
 let currentUserId = null;
 
+// Format số thành chuỗi có dấu phẩy ngăn cách hàng nghìn (luôn dùng dấu phẩy)
+function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
 // Format số tiền khi nhập
 function formatMoney(input) {
     // Lấy giá trị và loại bỏ tất cả ký tự không phải số
     let value = input.value.replace(/[^\d]/g, '');
-    
+
     // Nếu rỗng, set về 0
     if (value === '') {
         value = '0';
     }
-    
+
     // Format với dấu phẩy ngăn cách hàng nghìn
-    let formatted = parseInt(value).toLocaleString('vi-VN');
-    
+    let formatted = formatNumber(parseInt(value));
+
     // Set lại giá trị đã format
     input.value = formatted;
 }
@@ -29,7 +34,7 @@ function showMessage(message, type = 'info') {
     const header = document.getElementById('messageModalHeader');
     const title = document.getElementById('messageModalTitle');
     const body = document.getElementById('messageModalBody');
-    
+
     // Set màu header theo loại thông báo
     header.className = 'modal-header';
     if (type === 'success') {
@@ -45,9 +50,9 @@ function showMessage(message, type = 'info') {
         header.classList.add('bg-info', 'text-white');
         title.innerHTML = '<i class="fas fa-info-circle"></i> Thông báo';
     }
-    
+
     body.innerHTML = `<p class="mb-0">${message}</p>`;
-    
+
     const bsModal = new bootstrap.Modal(modal);
     bsModal.show();
 }
@@ -77,12 +82,9 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error getting current user:', error);
         });
 
-    // Set default dates
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 7);
-    document.getElementById('dueDate').valueAsDate = dueDate;
+    // Set default date for paidDate
     document.getElementById('paidDate').valueAsDate = new Date();
-    
+
     // Set default invoice month
     const now = new Date();
     document.getElementById('invoiceMonth').value = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
@@ -134,6 +136,9 @@ function displayInvoices(invoices) {
                         <i class="fas fa-eye"></i>
                     </button>
                     ${invoice.status !== 'paid' ? `
+                        <button class="btn btn-outline-warning" onclick="editInvoice(${invoice.invoiceId})" title="Sửa">
+                            <i class="fas fa-edit"></i>
+                        </button>
                         <button class="btn btn-outline-success" onclick="openMarkPaidModal(${invoice.invoiceId})" title="Đánh dấu đã thanh toán">
                             <i class="fas fa-check"></i>
                         </button>
@@ -210,41 +215,136 @@ function openCreateInvoiceModal() {
     document.getElementById('invoiceModalTitle').textContent = 'Tạo hóa đơn mới';
     document.getElementById('invoiceId').value = '';
     document.getElementById('rentalId').value = '';
-    
+
     const now = new Date();
     document.getElementById('invoiceMonth').value = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
-    
+
     document.getElementById('roomRent').value = '0';
-    document.getElementById('electricAmount').value = '0';
-    document.getElementById('waterAmount').value = '0';
     document.getElementById('internetFee').value = '0';
-    document.getElementById('electricUsage').value = '0';
-    document.getElementById('waterUsage').value = '0';
+
+    // Điện - Set giá trị mặc định
     document.getElementById('electricOldReading').value = '0';
     document.getElementById('electricNewReading').value = '0';
+    document.getElementById('electricUsage').value = '0';
+    document.getElementById('electricPrice').value = '3,500';
+    document.getElementById('electricAmount').value = '0';
+
+    // Nước - Set giá trị mặc định
+    document.getElementById('waterCalculationType').value = 'usage';
     document.getElementById('waterOldReading').value = '0';
     document.getElementById('waterNewReading').value = '0';
+    document.getElementById('waterUsage').value = '0';
+    document.getElementById('waterPrice').value = '20,000';
+    document.getElementById('waterAmount').value = '0';
+    toggleWaterCalculation();
+
     document.getElementById('otherFees').value = '';
     document.getElementById('notes').value = '';
-    
+
+    // Gọi tính toán sau khi set giá trị mặc định
+    calculateElectric();
+    calculateWater();
     calculateTotal();
-    
+
     const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
     modal.show();
 }
 
 function calculateElectric() {
-    const oldReading = parseFloat(document.getElementById('electricOldReading').value) || 0;
-    const newReading = parseFloat(document.getElementById('electricNewReading').value) || 0;
-    const usage = Math.max(0, newReading - oldReading);
-    document.getElementById('electricUsage').value = usage;
+    console.log('=== calculateElectric called ===');
+    try {
+        const oldReading = parseFloat(document.getElementById('electricOldReading').value) || 0;
+        const newReading = parseFloat(document.getElementById('electricNewReading').value) || 0;
+        const usage = Math.max(0, newReading - oldReading);
+
+        console.log('Electric oldReading:', oldReading, 'newReading:', newReading, 'usage:', usage);
+
+        document.getElementById('electricUsage').value = usage;
+
+        // Lấy đơn giá - đọc trực tiếp và strip non-digits
+        const rawPrice = document.getElementById('electricPrice').value;
+        const strippedPrice = rawPrice.replace(/[^\d]/g, '');
+        const price = parseInt(strippedPrice) || 0;
+
+        console.log('Electric rawPrice:', rawPrice, 'strippedPrice:', strippedPrice, 'price:', price);
+
+        // Tính tổng
+        const amount = usage * price;
+
+        console.log('Electric amount:', amount);
+
+        // Format và hiển thị
+        const formattedAmount = formatNumber(amount);
+        console.log('Electric formattedAmount:', formattedAmount);
+
+        document.getElementById('electricAmount').value = formattedAmount;
+
+        // Verify
+        console.log('Electric electricAmount.value after set:', document.getElementById('electricAmount').value);
+
+        calculateTotal();
+    } catch (error) {
+        console.error('Error in calculateElectric:', error);
+        alert('Error in calculateElectric: ' + error.message);
+    }
 }
 
 function calculateWater() {
-    const oldReading = parseFloat(document.getElementById('waterOldReading').value) || 0;
-    const newReading = parseFloat(document.getElementById('waterNewReading').value) || 0;
-    const usage = Math.max(0, newReading - oldReading);
-    document.getElementById('waterUsage').value = usage;
+    console.log('calculateWater called');
+    const calculationType = document.getElementById('waterCalculationType').value;
+
+    if (calculationType === 'usage') {
+        // Tính theo số khối
+        const oldReading = parseFloat(document.getElementById('waterOldReading').value) || 0;
+        const newReading = parseFloat(document.getElementById('waterNewReading').value) || 0;
+        const usage = Math.max(0, newReading - oldReading);
+        document.getElementById('waterUsage').value = usage;
+
+        console.log('Water calculation:', { oldReading, newReading, usage });
+
+        // Tính tiền nước = Số nước × Đơn giá
+        const price = getMoneyValue('waterPrice');
+        const amount = usage * price;
+
+        console.log('Water price:', price, 'amount:', amount);
+
+        // Set giá trị đã format - dùng formatNumber thay vì toLocaleString
+        const waterAmountInput = document.getElementById('waterAmount');
+        waterAmountInput.value = formatNumber(amount);
+        waterAmountInput.readOnly = true;
+        waterAmountInput.classList.add('bg-light');
+    }
+    // Nếu là fixed thì user tự nhập, không cần tính
+
+    calculateTotal();
+}
+
+function toggleWaterCalculation() {
+    const calculationType = document.getElementById('waterCalculationType').value;
+    const usageSection = document.getElementById('waterUsageSection');
+    const fixedSection = document.getElementById('waterFixedSection');
+    const waterAmountInput = document.getElementById('waterAmount');
+
+    if (calculationType === 'usage') {
+        // Hiển thị phần tính theo số khối
+        usageSection.style.display = 'block';
+        fixedSection.style.display = 'none';
+        waterAmountInput.readOnly = true;
+        waterAmountInput.classList.add('bg-light');
+        calculateWater();
+    } else {
+        // Hiển thị phần giá cố định
+        usageSection.style.display = 'none';
+        fixedSection.style.display = 'block';
+        waterAmountInput.readOnly = false;
+        waterAmountInput.classList.remove('bg-light');
+        waterAmountInput.value = '0';
+
+        // Reset các giá trị
+        document.getElementById('waterOldReading').value = '0';
+        document.getElementById('waterNewReading').value = '0';
+        document.getElementById('waterUsage').value = '0';
+    }
 }
 
 function calculateTotal() {
@@ -252,7 +352,7 @@ function calculateTotal() {
     const electricity = getMoneyValue('electricAmount');
     const water = getMoneyValue('waterAmount');
     const internet = getMoneyValue('internetFee');
-    
+
     const total = rent + electricity + water + internet;
     document.getElementById('totalAmountDisplay').textContent = formatCurrency(total);
 }
@@ -265,6 +365,16 @@ async function saveInvoice() {
 
     if (!rentalId || !dueDate) {
         showMessage('Vui lòng điền đầy đủ thông tin bắt buộc', 'warning');
+        return;
+    }
+
+    // Validate dueDate không được là ngày quá khứ
+    const selectedDate = new Date(dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time để so sánh chỉ ngày
+
+    if (selectedDate < today) {
+        showMessage('Hạn thanh toán không được là ngày trong quá khứ', 'warning');
         return;
     }
 
@@ -315,7 +425,7 @@ async function saveInvoice() {
 function openMarkPaidModal(invoiceId) {
     document.getElementById('paidInvoiceId').value = invoiceId;
     document.getElementById('paidDate').valueAsDate = new Date();
-    
+
     const modal = new bootstrap.Modal(document.getElementById('markPaidModal'));
     modal.show();
 }
@@ -359,7 +469,7 @@ async function deleteInvoice(invoiceId) {
 
 async function confirmDelete() {
     const invoiceId = document.getElementById('deleteInvoiceId').value;
-    
+
     try {
         const response = await fetch(`/api/Invoice/delete/${invoiceId}`, {
             method: 'DELETE'
@@ -431,32 +541,32 @@ function displayInvoiceDetail(invoice) {
     document.getElementById('viewCreatedAt').textContent = invoice.createdAt ? formatDateTime(invoice.createdAt) : 'N/A';
     document.getElementById('viewDueDate').textContent = invoice.dueDate ? formatDate(invoice.dueDate) : 'N/A';
     document.getElementById('viewStatus').innerHTML = getStatusBadge(invoice.status, invoice.isOverdue);
-    
+
     // Thông tin thuê
     document.getElementById('viewPropertyTitle').textContent = invoice.propertyTitle;
     document.getElementById('viewRenterName').textContent = invoice.renterName;
     document.getElementById('viewPaymentDate').textContent = invoice.paymentDate ? formatDate(invoice.paymentDate) : 'Chưa thanh toán';
     document.getElementById('viewPaymentMethod').textContent = getPaymentMethodText(invoice.paymentMethod);
-    
+
     // Chi tiết chi phí
     document.getElementById('viewRoomRent').textContent = formatCurrency(invoice.roomRent || 0);
-    
+
     // Điện
     document.getElementById('viewElectricUsage').textContent = (invoice.electricUsage || 0) + ' kWh';
     document.getElementById('viewElectricReading').textContent = `${invoice.electricOldReading || 0} → ${invoice.electricNewReading || 0}`;
     document.getElementById('viewElectricAmount').textContent = formatCurrency(invoice.electricAmount || 0);
-    
+
     // Nước
     document.getElementById('viewWaterUsage').textContent = (invoice.waterUsage || 0) + ' m³';
     document.getElementById('viewWaterReading').textContent = `${invoice.waterOldReading || 0} → ${invoice.waterNewReading || 0}`;
     document.getElementById('viewWaterAmount').textContent = formatCurrency(invoice.waterAmount || 0);
-    
+
     // Internet
     document.getElementById('viewInternetFee').textContent = formatCurrency(invoice.internetFee || 0);
-    
+
     // Tổng
     document.getElementById('viewTotalAmount').textContent = formatCurrency(invoice.totalAmount || 0);
-    
+
     // Phí khác
     const otherFeesSection = document.getElementById('viewOtherFeesSection');
     if (invoice.otherFees) {
@@ -465,7 +575,7 @@ function displayInvoiceDetail(invoice) {
     } else {
         otherFeesSection.style.display = 'none';
     }
-    
+
     // Ghi chú
     const notesSection = document.getElementById('viewNotesSection');
     if (invoice.notes) {
@@ -474,7 +584,7 @@ function displayInvoiceDetail(invoice) {
     } else {
         notesSection.style.display = 'none';
     }
-    
+
     // Hiển thị modal
     const modal = new bootstrap.Modal(document.getElementById('viewInvoiceModal'));
     modal.show();
@@ -482,14 +592,14 @@ function displayInvoiceDetail(invoice) {
 
 function getPaymentMethodText(method) {
     if (!method) return 'N/A';
-    
+
     const methods = {
         'cash': 'Tiền mặt',
         'bank_transfer': 'Chuyển khoản',
         'momo': 'MoMo',
         'zalopay': 'ZaloPay'
     };
-    
+
     return methods[method] || method;
 }
 
@@ -507,10 +617,10 @@ function formatDateTime(dateString) {
 function printInvoice() {
     const modal = document.getElementById('viewInvoiceModal');
     const modalContent = modal.querySelector('.modal-content');
-    
+
     // Tạo cửa sổ in mới
     const printWindow = window.open('', '_blank');
-    
+
     // Lấy dữ liệu từ modal
     const invoiceId = document.getElementById('viewInvoiceId').textContent;
     const invoiceMonth = document.getElementById('viewInvoiceMonth').textContent;
@@ -521,7 +631,7 @@ function printInvoice() {
     const renterName = document.getElementById('viewRenterName').textContent;
     const paymentDate = document.getElementById('viewPaymentDate').textContent;
     const paymentMethod = document.getElementById('viewPaymentMethod').textContent;
-    
+
     const roomRent = document.getElementById('viewRoomRent').textContent;
     const electricUsage = document.getElementById('viewElectricUsage').textContent;
     const electricReading = document.getElementById('viewElectricReading').textContent;
@@ -531,12 +641,12 @@ function printInvoice() {
     const waterAmount = document.getElementById('viewWaterAmount').textContent;
     const internetFee = document.getElementById('viewInternetFee').textContent;
     const totalAmount = document.getElementById('viewTotalAmount').textContent;
-    
+
     const otherFees = document.getElementById('viewOtherFees').textContent;
     const notes = document.getElementById('viewNotes').textContent;
     const hasOtherFees = document.getElementById('viewOtherFeesSection').style.display !== 'none';
     const hasNotes = document.getElementById('viewNotesSection').style.display !== 'none';
-    
+
     // HTML cho trang in
     const printHTML = `
         <!DOCTYPE html>
@@ -843,12 +953,98 @@ function printInvoice() {
         </body>
         </html>
     `;
-    
+
     printWindow.document.write(printHTML);
     printWindow.document.close();
 }
 
-function editInvoice(invoiceId) {
-    // TODO: Implement edit invoice
-    showMessage('Chức năng sửa hóa đơn đang phát triển', 'info');
+async function editInvoice(invoiceId) {
+    try {
+        // Fetch dữ liệu hóa đơn
+        const response = await fetch(`/api/Invoice/detail/${invoiceId}`);
+        const result = await response.json();
+
+        if (!result.success) {
+            showMessage('Không thể tải dữ liệu hóa đơn', 'error');
+            return;
+        }
+
+        const inv = result.data;
+
+        // Set tiêu đề modal
+        document.getElementById('invoiceModalTitle').textContent = 'Cập nhật hóa đơn #' + inv.invoiceId;
+        document.getElementById('invoiceId').value = inv.invoiceId;
+
+        // Rental (chỉ hiển thị, không đổi được)
+        document.getElementById('rentalId').value = inv.rentalId;
+
+        // Tháng và hạn thanh toán
+        document.getElementById('invoiceMonth').value = inv.invoiceMonth || '';
+        if (inv.dueDate) {
+            // Chuyển về yyyy-MM-dd cho input date
+            const d = new Date(inv.dueDate);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            document.getElementById('dueDate').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Tiền thuê và internet
+        document.getElementById('roomRent').value = inv.roomRent ? inv.roomRent.toLocaleString('vi-VN') : '0';
+        document.getElementById('internetFee').value = inv.internetFee ? inv.internetFee.toLocaleString('vi-VN') : '0';
+
+        // ---- ĐIỆN ----
+        document.getElementById('electricOldReading').value = inv.electricOldReading || 0;
+        document.getElementById('electricNewReading').value = inv.electricNewReading || 0;
+        document.getElementById('electricUsage').value = inv.electricUsage || 0;
+        // Tính lại đơn giá điện từ amount và usage
+        if (inv.electricUsage && inv.electricUsage > 0 && inv.electricAmount) {
+            const unitPrice = Math.round(inv.electricAmount / inv.electricUsage);
+            document.getElementById('electricPrice').value = unitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        } else {
+            document.getElementById('electricPrice').value = '3,500';
+        }
+        document.getElementById('electricAmount').value = inv.electricAmount
+            ? inv.electricAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+            : '0';
+
+        // ---- NƯỚC ----
+        // Xác định loại tính nước
+        const hasWaterReadings = (inv.waterOldReading !== null && inv.waterNewReading !== null
+            && (inv.waterOldReading > 0 || inv.waterNewReading > 0));
+        const waterCalcType = hasWaterReadings ? 'usage' : 'fixed';
+        document.getElementById('waterCalculationType').value = waterCalcType;
+
+        document.getElementById('waterOldReading').value = inv.waterOldReading || 0;
+        document.getElementById('waterNewReading').value = inv.waterNewReading || 0;
+        document.getElementById('waterUsage').value = inv.waterUsage || 0;
+        // Tính lại đơn giá nước
+        if (inv.waterUsage && inv.waterUsage > 0 && inv.waterAmount) {
+            const unitPrice = Math.round(inv.waterAmount / inv.waterUsage);
+            document.getElementById('waterPrice').value = unitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        } else {
+            document.getElementById('waterPrice').value = '20,000';
+        }
+        document.getElementById('waterAmount').value = inv.waterAmount
+            ? inv.waterAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+            : '0';
+
+        // Toggle water section
+        toggleWaterCalculation();
+
+        // Phí khác và ghi chú
+        document.getElementById('otherFees').value = inv.otherFees || '';
+        document.getElementById('notes').value = inv.notes || '';
+
+        // Tính tổng
+        calculateTotal();
+
+        // Mở modal
+        const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+        modal.show();
+
+    } catch (error) {
+        console.error('Error loading invoice for edit:', error);
+        showMessage('Có lỗi xảy ra khi tải dữ liệu hóa đơn', 'error');
+    }
 }
