@@ -103,6 +103,8 @@ namespace NestFlow.Controllers
                         .ThenInclude(r => r.Property)
                     .Include(i => i.Rental)
                         .ThenInclude(r => r.Renter)
+                    .Include(i => i.Rental)                  // ← thêm
+                        .ThenInclude(r => r.RentalOccupants) // ← thêm
                     .Where(i => i.Rental.LandlordId == landlordId);
 
                 if (!string.IsNullOrEmpty(status))
@@ -112,12 +114,21 @@ namespace NestFlow.Controllers
 
                 var invoices = await query
                     .OrderByDescending(i => i.CreatedAt)
-                    .Select(i => new
+                    .ToListAsync();
+
+                var result = invoices.Select(i =>
+                {
+                    var occupantName = i.Rental?.RentalOccupants?
+                        .FirstOrDefault(o => o.Status == "active")?.FullName;
+
+                    return new
                     {
                         i.InvoiceId,
                         i.RentalId,
-                        PropertyTitle = i.Rental.Property.Title,
-                        RenterName = i.Rental.Renter.FullName,
+                        PropertyTitle = i.Rental?.Property?.Title,
+                        RenterName = i.Rental?.Renter?.FullName
+                                  ?? occupantName
+                                  ?? "Chưa có người thuê", // ← fallback
                         i.InvoiceMonth,
                         i.DueDate,
                         i.PaymentDate,
@@ -131,11 +142,13 @@ namespace NestFlow.Controllers
                         i.Notes,
                         i.ElectricUsage,
                         i.WaterUsage,
-                        IsOverdue = i.Status != "paid" && i.DueDate.HasValue && i.DueDate < DateOnly.FromDateTime(DateTime.Now)
-                    })
-                    .ToListAsync();
+                        IsOverdue = i.Status != "paid"
+                            && i.DueDate.HasValue
+                            && i.DueDate < DateOnly.FromDateTime(DateTime.Now)
+                    };
+                });
 
-                return Ok(new { success = true, data = invoices });
+                return Ok(new { success = true, data = result });
             }
             catch (Exception ex)
             {
@@ -507,14 +520,17 @@ namespace NestFlow.Controllers
             {
                 var rooms = await _context.Rentals
                     .Include(r => r.Property)
-                    .Include(r => r.Renter)
+                    .Include(r => r.RentalOccupants)
                     .Where(r => r.Property.BuildingId == buildingId && r.Status == "active")
                     .Select(r => new
                     {
                         r.RentalId,
                         PropertyTitle = r.Property.Title,
                         RoomNumber = r.Property.RoomNumber,
-                        RenterName = r.Renter.FullName,
+                        RenterName = r.RentalOccupants
+                            .Where(o => o.Status == "active")
+                            .Select(o => o.FullName)
+                            .FirstOrDefault(),
                         r.MonthlyRent
                     })
                     .OrderBy(r => r.RoomNumber)
