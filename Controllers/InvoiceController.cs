@@ -29,6 +29,8 @@ namespace NestFlow.Controllers
                         .ThenInclude(r => r.Property)
                     .Include(i => i.Rental)
                         .ThenInclude(r => r.Renter)
+                    .Include(i => i.Rental)
+                        .ThenInclude(r => r.RentalOccupants)
                     .FirstOrDefaultAsync(i => i.InvoiceId == invoiceId);
 
                 if (invoice == null)
@@ -36,15 +38,23 @@ namespace NestFlow.Controllers
                     return NotFound(new { success = false, message = "Không tìm thấy hóa đơn" });
                 }
 
+                // Lấy người thuê đang ở
+                var occupant = invoice.Rental?.RentalOccupants?
+                    .FirstOrDefault(o => o.Status == "active");
+
                 var detail = new
                 {
                     invoice.InvoiceId,
                     invoice.RentalId,
-                    PropertyTitle = invoice.Rental.Property.Title,
-                    PropertyAddress = invoice.Rental.Property.Address,
-                    RenterName = invoice.Rental.Renter.FullName,
-                    RenterPhone = invoice.Rental.Renter.Phone,
-                    RenterEmail = invoice.Rental.Renter.Email,
+
+                    PropertyTitle = invoice.Rental?.Property?.Title,
+                    PropertyAddress = invoice.Rental?.Property?.Address,
+
+                    // Ưu tiên Users, nếu không có thì lấy RentalOccupants
+                    RenterName = invoice.Rental?.Renter?.FullName ?? occupant?.FullName ?? "Chưa có người thuê",
+                    RenterPhone = invoice.Rental?.Renter?.Phone ?? occupant?.Phone,
+                    RenterEmail = invoice.Rental?.Renter?.Email,
+
                     invoice.InvoiceMonth,
                     invoice.DueDate,
                     invoice.PaymentDate,
@@ -65,7 +75,10 @@ namespace NestFlow.Controllers
                     invoice.Notes,
                     invoice.CreatedAt,
                     invoice.UpdatedAt,
-                    IsOverdue = invoice.Status != "paid" && invoice.DueDate.HasValue && invoice.DueDate < DateOnly.FromDateTime(DateTime.Now)
+
+                    IsOverdue = invoice.Status != "paid"
+                        && invoice.DueDate.HasValue
+                        && invoice.DueDate < DateOnly.FromDateTime(DateTime.Now)
                 };
 
                 return Ok(new { success = true, data = detail });
@@ -454,6 +467,63 @@ namespace NestFlow.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"Error getting revenue stats: {ex.Message}");
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+        /// <summary>
+        /// Lấy danh sách nhà trọ của landlord (dùng cho dropdown tạo hóa đơn)
+        /// </summary>
+        [HttpGet("buildings/{landlordId}")]
+        public async Task<IActionResult> GetBuildingsForInvoice(long landlordId)
+        {
+            try
+            {
+                var buildings = await _context.Buildings
+                    .Where(b => b.LandlordId == landlordId)
+                    .Select(b => new
+                    {
+                        b.BuildingId,
+                        b.BuildingName,
+                        FullAddress = (b.Address ?? "") + ", " + (b.District ?? "") + ", " + (b.City ?? "")
+                    })
+                    .OrderBy(b => b.BuildingName)
+                    .ToListAsync();
+
+                return Ok(new { success = true, data = buildings });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách phòng đang có hợp đồng active theo building (dùng cho dropdown tạo hóa đơn)
+        /// </summary>
+        [HttpGet("occupied-rooms/{buildingId}")]
+        public async Task<IActionResult> GetOccupiedRoomsByBuilding(long buildingId)
+        {
+            try
+            {
+                var rooms = await _context.Rentals
+                    .Include(r => r.Property)
+                    .Include(r => r.Renter)
+                    .Where(r => r.Property.BuildingId == buildingId && r.Status == "active")
+                    .Select(r => new
+                    {
+                        r.RentalId,
+                        PropertyTitle = r.Property.Title,
+                        RoomNumber = r.Property.RoomNumber,
+                        RenterName = r.Renter.FullName,
+                        r.MonthlyRent
+                    })
+                    .OrderBy(r => r.RoomNumber)
+                    .ToListAsync();
+
+                return Ok(new { success = true, data = rooms });
+            }
+            catch (Exception ex)
+            {
                 return StatusCode(500, new { success = false, message = ex.Message });
             }
         }

@@ -172,11 +172,37 @@
             <div class="modal-body">
                 <input type="hidden" id="invoiceId">
                 
+                <!-- Chọn nhà trọ (chỉ hiện khi tạo mới) -->
+                <div id="buildingRoomWrapper">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nhà trọ <span class="text-danger">*</span></label>
+                            <select class="form-select" id="buildingId" onchange="onBuildingChange()">
+                                <option value="">-- Chọn nhà trọ --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Phòng <span class="text-danger">*</span></label>
+                            <select class="form-select" id="roomSelect" onchange="onRoomChange()" disabled>
+                                <option value="">-- Chọn nhà trọ trước --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thông tin hợp đồng (hiện ở cả tạo mới lẫn edit) -->
                 <div class="mb-3">
-                    <label class="form-label">Hợp đồng thuê <span class="text-danger">*</span></label>
-                    <select class="form-select" id="rentalId" required>
-                        <option value="">Chọn hợp đồng...</option>
-                    </select>
+                    <label class="form-label">Hợp đồng thuê</label>
+                    <input type="text" class="form-control bg-light" id="rentalInfo" readonly
+                           placeholder="Sẽ tự động điền sau khi chọn phòng">
+                    <input type="hidden" id="rentalId">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Hợp đồng thuê</label>
+                    <input type="text" class="form-control bg-light" id="rentalInfo" readonly
+                           placeholder="Sẽ tự động điền sau khi chọn phòng">
+                    <input type="hidden" id="rentalId">
                 </div>
 
                 <div class="row g-3 mb-3">
@@ -566,7 +592,11 @@
             document.getElementById('invoiceId').value = inv.invoiceId;
             document.getElementById('rentalId').value = inv.rentalId;
             document.getElementById('invoiceMonth').value = inv.invoiceMonth || '';
-
+            // Ẩn dropdown chọn nhà trọ/phòng khi edit
+            document.getElementById('buildingRoomWrapper').style.display = 'none';
+            // Hiện thông tin rental hiện tại
+            document.getElementById('rentalInfo').value =
+            `${inv.propertyTitle} — Người thuê: ${inv.renterName}`;
             if (inv.dueDate) {
                 const d = new Date(inv.dueDate);
                 const yyyy = d.getFullYear();
