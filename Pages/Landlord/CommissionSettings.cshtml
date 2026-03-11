@@ -18,11 +18,11 @@
         <div class="col-md-12">
             <div class="alert alert-info">
                 <h5><i class="fas fa-info-circle"></i> Cách tính hoa hồng</h5>
-                <p class="mb-2"><strong>Ví dụ:</strong> Deposit = 2,000,000 VNĐ, Commission = 50%, Discount = 500,000 VNĐ</p>
+                <p class="mb-2"><strong>Ví dụ:</strong> Deposit = 2,000,000 VNĐ, Commission = 50%, Giảm giá (mặc định nền tảng @NestFlow.Application.Constants.PlatformSettings.UserDiscountRate%)</p>
                 <ul class="mb-0">
-                    <li>Khách trả: <strong>1,500,000 VNĐ</strong> (Deposit - Discount)</li>
+                    <li>Khách trả: <strong>1,800,000 VNĐ</strong> (Deposit - Giảm giá)</li>
                     <li>Bạn nhận: <strong>1,000,000 VNĐ</strong> (Deposit - Commission)</li>
-                    <li>Platform giữ: <strong>500,000 VNĐ</strong> (Commission - Discount)</li>
+                    <li>Platform giữ: <strong>800,000 VNĐ</strong> (Commission - Giảm giá)</li>
                 </ul>
             </div>
         </div>
@@ -47,9 +47,17 @@
                         @foreach (var property in Model.Properties)
                         {
                             var commissionRate = property.CommissionRate ?? 50;
-                            var userDiscount = property.UserDiscount ?? 500000;
                             var deposit = property.Deposit ?? 0;
+                            var discountRate = NestFlow.Application.Constants.PlatformSettings.UserDiscountRate;
+                            var userDiscount = deposit * (discountRate / 100);
+                            
                             var commission = deposit * (commissionRate / 100);
+                            
+                            // Đảm bảo không giảm giá lố tiền hoa hồng nền tảng (trường hợp landord set hoa hồng quá bé)
+                            if (userDiscount > commission)
+                            {
+                                userDiscount = commission;
+                            }
                             var landlordReceives = deposit - commission;
                             
                             <tr>
@@ -71,7 +79,7 @@
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-primary" 
-                                            onclick="editCommission(@property.PropertyId, @commissionRate, @userDiscount)">
+                                            onclick="editCommission(@property.PropertyId, @commissionRate)">
                                         <i class="fas fa-edit"></i> Sửa
                                     </button>
                                 </td>
@@ -104,10 +112,9 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">User Discount (VNĐ)</label>
-                        <input type="number" class="form-control" id="userDiscount" 
-                               min="0" step="1000" required />
-                        <small class="text-muted">Số tiền giảm giá cho khách (từ commission)</small>
+                        <label class="form-label">User Discount Rate (%)</label>
+                        <input type="text" class="form-control bg-light" value="@NestFlow.Application.Constants.PlatformSettings.UserDiscountRate" readonly />
+                        <small class="text-muted">Mức giảm giá này được quy định bởi nền tảng.</small>
                     </div>
 
                     <div class="alert alert-warning">
@@ -131,10 +138,9 @@
             editModal = new bootstrap.Modal(document.getElementById('editCommissionModal'));
         });
 
-        function editCommission(propertyId, commissionRate, userDiscount) {
+        function editCommission(propertyId, commissionRate) {
             document.getElementById('propertyId').value = propertyId;
             document.getElementById('commissionRate').value = commissionRate;
-            document.getElementById('userDiscount').value = userDiscount;
             editModal.show();
         }
 
@@ -149,8 +155,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         propertyId: parseInt(propertyId),
-                        commissionRate: parseFloat(commissionRate),
-                        userDiscount: parseFloat(userDiscount)
+                        commissionRate: parseFloat(commissionRate)
                     })
                 });
 

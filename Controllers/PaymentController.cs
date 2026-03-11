@@ -46,8 +46,9 @@ namespace NestFlow.Controllers
             var commissionRate = property.CommissionRate ?? 50.00m; // Default 50%
             var platformCommission = depositAmount * (commissionRate / 100);
             
-            // Tính user discount (từ commission)
-            var userDiscount = property.UserDiscount ?? 500000m; // Default 500K
+            // Tính user discount dựa trên Deposit và PlatformSettings.UserDiscountRate (%)
+            var discountRate = NestFlow.Application.Constants.PlatformSettings.UserDiscountRate;
+            var userDiscount = depositAmount * (discountRate / 100);
             
             // Đảm bảo discount không vượt quá commission
             if (userDiscount > platformCommission)

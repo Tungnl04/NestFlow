@@ -64,17 +64,15 @@
     </div>
 
     <!-- Withdraw Button -->
-    @if (Model.WalletInfo.AvailableBalance > 0)
-    {
-        <div class="row mb-4">
-            <div class="col-12">
-                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#withdrawModal">
-                    <i class="fas fa-money-bill-wave me-2"></i>
-                    Tạo yêu cầu rút tiền
-                </button>
-            </div>
+    <div class="row mb-4">
+        <div class="col-12">
+            <button class="btn btn-primary btn-lg" id="btnOpenWithdrawModal"
+                @(Model.WalletInfo.AvailableBalance > 0 ? "data-bs-toggle=\"modal\" data-bs-target=\"#withdrawModal\"" : "")>
+                <i class="fas fa-money-bill-wave me-2"></i>
+                Tạo yêu cầu rút tiền
+            </button>
         </div>
-    }
+    </div>
 
     <!-- Tabs -->
     <ul class="nav nav-tabs mb-4" id="walletTabs" role="tablist">
@@ -310,7 +308,21 @@
 
 @section Scripts {
     <script>
+        // Block opening modal when balance is 0
+        var availableBalance = @Model.WalletInfo.AvailableBalance;
+        var openBtn = document.getElementById('btnOpenWithdrawModal');
+        if (openBtn && availableBalance <= 0) {
+            openBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                alert('Số dư khả dụng bằng 0. Không thể tạo yêu cầu rút tiền.');
+            });
+        }
+
         document.getElementById('btnSubmitWithdraw').addEventListener('click', async function() {
+            if (availableBalance <= 0) {
+                alert('Số dư khả dụng bằng 0. Không thể tạo yêu cầu rút tiền.');
+                return;
+            }
             const amount = parseFloat(document.getElementById('amount').value);
             const bankName = document.getElementById('bankName').value;
             const bankAccount = document.getElementById('bankAccount').value.trim();
