@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NestFlow.Application.Services.Interfaces;
 using NestFlow.Application.Services;
 using NestFlow.Models;
@@ -29,6 +29,7 @@ builder.Services.AddSession(options =>
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddHostedService<RentalReminderJob>();
 builder.Services.AddScoped<IPropertyService, PropertyService>();
 builder.Services.AddScoped<IListingService, ListingService>();
 builder.Services.AddScoped<IEmailService, EmailService>();

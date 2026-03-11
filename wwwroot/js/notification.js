@@ -15,7 +15,7 @@ const NotificationSystem = (function () {
         bell: document.getElementById('notificationBell'),
         counter: document.getElementById('notif-counter'),
         list: document.querySelector('#notificationBell .dropdown-menu'),
-        toastContainer: document.getElementById('toast-container')
+        toastContainer: document.getElementById('toast-container') || document.querySelector('.toast-container')
     };
 
     /**
@@ -254,7 +254,7 @@ const NotificationSystem = (function () {
         updateCounter(0);
 
         try {
-            await fetch(`/api/Notifications/read-all?userId=${userId}`, { method: 'PUT' });
+            await fetch(`/api/Notifications/read-all`, { method: 'PUT' });
         } catch (e) { console.error("Error marking all as read:", e); }
     }
 

@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Nestflow</title>
+    <title>@ViewData["Title"] - Nestflow Admin</title>
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
@@ -11,25 +11,26 @@
 </head>
 <body>
 
-    <header class="nf-landlord-header">
+    <header class="nf-admin-header">
         <nav class="navbar navbar-light bg-white shadow-sm">
             <div class="container-fluid px-4">
 
                 <!-- Logo -->
-                <a class="navbar-brand" href="/Landlord/Dashboard">
-                    <div class="nf-logo">
+                <a class="navbar-brand" href="/Admin/Dashboard">
+                    <div class="nf-logo d-flex align-items-center gap-2">
                         <span class="nf-logo-icon">N</span>
                         <span class="nf-logo-text">Nestflow</span>
+                        <span class="badge bg-danger ms-1" style="font-size:0.65rem;letter-spacing:0.05em;">ADMIN</span>
                     </div>
                 </a>
 
-                <!-- User info + logout (right side only) -->
+                <!-- User info + logout -->
                 <div class="d-flex align-items-center gap-3">
                     <div class="nf-user-info d-flex align-items-center gap-2">
-                        <i class="fas fa-user-circle" style="color:#4FB3B3;font-size:1.5rem;"></i>
+                        <i class="fas fa-user-shield" style="color:#e74c3c;font-size:1.5rem;"></i>
                         <div class="d-flex flex-column">
-                            <span class="fw-bold" id="landlordUserName" style="font-size:0.9rem;"></span>
-                            <span class="nf-role-badge nf-role-landlord-badge" id="landlordRoleDisplay"></span>
+                            <span class="fw-bold" id="adminUserName" style="font-size:0.9rem;"></span>
+                            <span class="nf-role-badge nf-role-admin-badge" id="adminRoleDisplay">Quản trị viên</span>
                         </div>
                     </div>
 
@@ -49,16 +50,10 @@
         <aside class="nf-sidebar">
             <nav class="nf-sidebar-nav">
 
-                <div class="nf-sidebar-section-label">Chung</div>
+                <div class="nf-sidebar-section-label">Tổng quan</div>
                 <ul class="nf-sidebar-menu">
                     <li>
-                        <a href="/" class="nf-sidebar-link">
-                            <i class="fas fa-list"></i>
-                            <span>Các bài đăng</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/Landlord/Dashboard" class="nf-sidebar-link">
+                        <a href="/Admin/Dashboard" class="nf-sidebar-link">
                             <i class="fas fa-chart-pie"></i>
                             <span>Trang tổng quan</span>
                         </a>
@@ -68,72 +63,21 @@
                 <div class="nf-sidebar-section-label">Quản lý</div>
                 <ul class="nf-sidebar-menu">
                     <li>
-                        <a asp-page="/Landlord/Properties/Index" class="nf-sidebar-link">
-                            <i class="fas fa-door-open"></i>
-                            <span>Phòng trọ</span>
+                        <a asp-page="/Admin/Users" class="nf-sidebar-link">
+                            <i class="fas fa-users"></i>
+                            <span>Người dùng</span>
                         </a>
                     </li>
                     <li>
-                        <a asp-page="/Landlord/Posts/Index" class="nf-sidebar-link">
+                        <a asp-page="/Admin/Posts" class="nf-sidebar-link">
                             <i class="fas fa-newspaper"></i>
                             <span>Tin đăng</span>
                         </a>
                     </li>
-                    
                     <li>
-                        <a href="/Landlord/Bookings" class="nf-sidebar-link">
-                            <i class="fas fa-calendar-check"></i>
-                            <span>Booking</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-page="/Landlord/Invoices" class="nf-sidebar-link">
-                            <i class="fas fa-file-invoice"></i>
-                            <span>Hóa đơn & thanh toán</span>
-                        </a>
-                    </li>
-                </ul>
-
-                <div class="nf-sidebar-section-label">Tài chính</div>
-                <ul class="nf-sidebar-menu">
-                    <li>
-                        <a href="/Landlord/Wallet" class="nf-sidebar-link">
-                            <i class="fas fa-wallet"></i>
-                            <span>Ví của tôi</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/Landlord/CommissionSettings" class="nf-sidebar-link">
-                            <i class="fas fa-percent"></i>
-                            <span>Hoa hồng</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/Landlord/CommissionReport" class="nf-sidebar-link">
-                            <i class="fas fa-chart-line"></i>
-                            <span>Báo cáo</span>
-                        </a>
-                    </li>
-                </ul>
-
-                <div class="nf-sidebar-section-label">Khác</div>
-                <ul class="nf-sidebar-menu">
-                    <li>
-                        <a asp-page="/Landlord/Packages" class="nf-sidebar-link">
-                            <i class="fas fa-box"></i>
-                            <span>Gói đăng tin</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a asp-page="/Landlord/Notifications" class="nf-sidebar-link">
+                        <a asp-page="/Admin/Requests" class="nf-sidebar-link">
                             <i class="fas fa-bell"></i>
-                            <span>Thông báo</span>
-                        </a>
-                    </li>
-                    <li>
-                        <a href="/support" class="nf-sidebar-link">
-                            <i class="fas fa-question-circle"></i>
-                            <span>Hỗ trợ</span>
+                            <span>Yêu cầu</span>
                         </a>
                     </li>
                 </ul>
@@ -156,59 +100,15 @@
                 <strong class="me-auto" id="toastTitle">Thông báo</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
-            <div class="toast-body" id="toastMessage">
-                Nội dung thông báo
-            </div>
+            <div class="toast-body" id="toastMessage">Nội dung thông báo</div>
         </div>
     </div>
 
     <!-- Footer -->
     <footer class="nf-footer">
         <div class="container">
-            <div class="row g-4">
-                <div class="col-md-3">
-                    <h6>Về Nestflow</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="/help" class="nf-footer-link">Trung tâm trợ giúp</a></li>
-                        <li><a href="/feedback" class="nf-footer-link">Feedback khách hàng</a></li>
-                        <li><a href="/landlord-info" class="nf-footer-link">Giới thiệu chủ nhà</a></li>
-                        <li><a href="/about" class="nf-footer-link">Về chúng tôi</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-3">
-                    <h6>Khác</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="/invite" class="nf-footer-link">Giới thiệu bạn bè</a></li>
-                        <li><a href="/privacy-policy" class="nf-footer-link">Chính sách quyền riêng tư</a></li>
-                        <li><a href="/terms" class="nf-footer-link">Điều khoản và điều kiện</a></li>
-                        <li><a href="/copyright" class="nf-footer-link">Thông tin bản quyền</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-3">
-                    <h6>Pháp lý</h6>
-                    <ul class="list-unstyled">
-                        <li><a href="/privacy" class="nf-footer-link">Quyền riêng tư</a></li>
-                        <li><a href="/legal-terms" class="nf-footer-link">Điều khoản</a></li>
-                    </ul>
-                </div>
-                <div class="col-md-3">
-                    <div class="nf-footer-brand">
-                        <div class="nf-footer-logo">
-                            <span class="nf-logo-icon">N</span>
-                            <span>Nestflow</span>
-                        </div>
-                        <p class="nf-footer-tagline">Nền tảng cho thuê phòng trọ tại Hòa Lạc</p>
-                        <div class="nf-social-icons">
-                            <a href="#" class="nf-social-icon"><i class="fab fa-facebook-f"></i></a>
-                            <a href="#" class="nf-social-icon"><i class="fab fa-twitter"></i></a>
-                            <a href="#" class="nf-social-icon"><i class="fab fa-instagram"></i></a>
-                            <a href="#" class="nf-social-icon"><i class="fab fa-youtube"></i></a>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div class="nf-footer-copyright">
-                <p class="mb-0">&copy; 2024 Nestflow. Tất cả quyền được bảo lưu.</p>
+                <p class="mb-0">&copy; 2024 Nestflow Admin. Tất cả quyền được bảo lưu.</p>
             </div>
         </div>
     </footer>
@@ -224,26 +124,14 @@
             await window.NestFlowAuth.initAuth();
             const currentUser = window.NestFlowAuth.getCurrentUser();
 
-            if (!currentUser || (!window.NestFlowAuth.hasRole('landlord') && !window.NestFlowAuth.hasRole('admin'))) {
+            if (!currentUser || !window.NestFlowAuth.hasRole('admin')) {
                 window.location.href = '/';
                 return;
             }
 
-            const landlordUserName = document.getElementById('landlordUserName');
-            const landlordRoleDisplay = document.getElementById('landlordRoleDisplay');
-
-            if (landlordUserName && currentUser) {
-                landlordUserName.textContent = currentUser.fullName || currentUser.email;
-            }
-
-            if (landlordRoleDisplay && currentUser) {
-                if (currentUser.userType === 'admin') {
-                    landlordRoleDisplay.textContent = 'Quản trị viên';
-                    landlordRoleDisplay.className = 'nf-role-badge nf-role-admin-badge';
-                } else {
-                    landlordRoleDisplay.textContent = 'Chủ trọ';
-                    landlordRoleDisplay.className = 'nf-role-badge nf-role-landlord-badge';
-                }
+            const adminUserName = document.getElementById('adminUserName');
+            if (adminUserName && currentUser) {
+                adminUserName.textContent = currentUser.fullName || currentUser.email;
             }
 
             // Highlight active sidebar link
@@ -312,13 +200,13 @@
 
         /* ── Sidebar ── */
         .nf-sidebar {
-            width: 240px;
+            width: 220px;
             flex-shrink: 0;
             background: #fff;
             border-right: 1px solid #eee;
             padding: 1.25rem 0;
             position: sticky;
-            top: 60px; /* header height */
+            top: 60px;
             height: calc(100vh - 60px);
             overflow-y: auto;
         }
@@ -366,14 +254,14 @@
 
             .nf-sidebar-link:hover,
             .nf-sidebar-link.active {
-                background: #f0f7ff;
-                color: #4A90E2;
-                border-left-color: #4A90E2;
+                background: #fff0f0;
+                color: #e74c3c;
+                border-left-color: #e74c3c;
             }
 
                 .nf-sidebar-link:hover i,
                 .nf-sidebar-link.active i {
-                    color: #4A90E2;
+                    color: #e74c3c;
                 }
 
         /* ── Main content ── */
@@ -383,9 +271,15 @@
             padding: 2rem;
             background: #f8f9fa;
         }
+
+        /* Admin header accent */
+        .nf-admin-header .navbar {
+            border-bottom: 2px solid #e74c3c;
+        }
     </style>
 
     @await RenderSectionAsync("Scripts", required: false)
 
 </body>
 </html>
+

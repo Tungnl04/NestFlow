@@ -1,4 +1,4 @@
-﻿// Authentication API utilities
+// Authentication API utilities
 
 const AUTH_API = {
     LOGIN: '/api/auth/login',
@@ -7,12 +7,15 @@ const AUTH_API = {
     CURRENT_USER: '/api/auth/current-user',
     CHECK_SESSION: '/api/auth/check-session',
     FORGOT_PASSWORD: '/api/auth/forgot-password',
-    RESET_PASSWORD: '/api/auth/reset-password'
+    RESET_PASSWORD: '/api/auth/reset-password',
+    VERIFY_EMAIL: '/api/auth/verify-email',
+    RESEND_VERIFICATION: '/api/auth/resend-verification'
 };
 
 // Global user state
 let currentUser = null;
 let forgotPasswordEmail = '';
+let verificationEmail = ''; // Email đang chờ xác thực OTP
 
 // ==================== TOAST NOTIFICATION ====================
 function showToast(message, type = 'success', title = '') {
@@ -99,6 +102,8 @@ async function login(email, password) {
             currentUser = data.user;
             updateUIForLoggedInUser();
             return { success: true, message: data.message, user: data.user };
+        } else if (data.requireVerification) {
+            return { success: false, message: data.message, requireVerification: true, email: data.user?.email };
         } else {
             return { success: false, message: data.message };
         }
@@ -122,6 +127,9 @@ async function register(registerData) {
         const data = await response.json();
 
         if (data.success) {
+            if (data.requireVerification) {
+                return { success: true, message: data.message, requireVerification: true, email: data.user?.email };
+            }
             currentUser = data.user;
             updateUIForLoggedInUser();
             return { success: true, message: data.message, user: data.user };
@@ -201,6 +209,59 @@ async function resetPassword(email, verificationCode, newPassword, confirmPasswo
         console.error('Reset password error:', error);
         return { success: false, message: 'Đã xảy ra lỗi khi đặt lại mật khẩu' };
     }
+}
+
+// Verify email OTP
+async function verifyEmail(email, code) {
+    try {
+        const response = await fetch(AUTH_API.VERIFY_EMAIL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, code })
+        });
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Verify email error:', error);
+        return { success: false, message: 'Đã xảy ra lỗi khi xác thực' };
+    }
+}
+
+// Resend email verification code
+async function resendEmailVerification(email) {
+    try {
+        const response = await fetch(AUTH_API.RESEND_VERIFICATION, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Resend verification error:', error);
+        return { success: false, message: 'Đã xảy ra lỗi khi gửi lại mã' };
+    }
+}
+
+// Show OTP verification modal
+function showVerificationModal(email) {
+    verificationEmail = email;
+    const verifyEmailDisplay = document.getElementById('verifyEmailDisplay');
+    if (verifyEmailDisplay) verifyEmailDisplay.textContent = email;
+
+    // Đóng các modal khác trước
+    ['loginModal', 'registerModal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const inst = bootstrap.Modal.getInstance(el);
+            if (inst) inst.hide();
+        }
+    });
+
+    setTimeout(() => {
+        const otpModal = new bootstrap.Modal(document.getElementById('verifyEmailModal'));
+        otpModal.show();
+    }, 400);
 }
 
 // ==================== UTILITY FUNCTIONS ====================
@@ -387,6 +448,10 @@ function initModalHandlers() {
                 setTimeout(() => {
                     window.location.reload();
                 }, 1000);
+            } else if (result.requireVerification) {
+                // Cần xác thực email
+                showVerificationModal(result.email);
+                showToast('Vui lòng xác thực email để đăng nhập', 'warning');
             } else {
                 errorDiv.textContent = result.message;
                 errorDiv.classList.remove('d-none');
@@ -424,17 +489,17 @@ function initModalHandlers() {
             const result = await register(registerData);
 
             if (result.success) {
-                // Close modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
-                modal.hide();
-
-                // Show success toast
-                showToast('Đăng ký thành công! Chào mừng bạn đến với NestFlow', 'success');
-
-                // Reload page after a short delay
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
+                if (result.requireVerification) {
+                    // Hiện modal xác thực OTP
+                    showVerificationModal(result.email || registerData.email);
+                    showToast('Đăng ký thành công! Vui lòng nhập mã OTP được gửi đến email', 'info');
+                } else {
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('registerModal'));
+                    modal.hide();
+                    showToast('Đăng ký thành công! Chào mừng bạn đến với NestFlow', 'success');
+                    setTimeout(() => { window.location.reload(); }, 1000);
+                }
             } else {
                 errorDiv.textContent = result.message;
                 errorDiv.classList.remove('d-none');
@@ -543,6 +608,75 @@ function initModalHandlers() {
 
     // Initialize modal switching handlers
     initModalSwitching();
+
+    // Verify Email OTP Form Handler
+    const verifyEmailForm = document.getElementById('verifyEmailForm');
+    if (verifyEmailForm) {
+        verifyEmailForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const codeInputs = document.querySelectorAll('.otp-input');
+            const code = Array.from(codeInputs).map(i => i.value).join('');
+            const errorDiv = document.getElementById('verifyEmailError');
+            errorDiv.classList.add('d-none');
+
+            if (code.length !== 6) {
+                errorDiv.textContent = 'Vui lòng nhập đủ 6 số';
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            const data = await verifyEmail(verificationEmail, code);
+            if (data.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('verifyEmailModal'));
+                modal.hide();
+                showToast('Xác thực thành công! Đang chuyển hướng...', 'success');
+                setTimeout(() => { window.location.reload(); }, 1500);
+            } else {
+                errorDiv.textContent = data.message;
+                errorDiv.classList.remove('d-none');
+            }
+        });
+    }
+
+    // Resend OTP button
+    const resendOtpBtn = document.getElementById('resendOtpBtn');
+    if (resendOtpBtn) {
+        resendOtpBtn.addEventListener('click', async function() {
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang gửi...';
+            const data = await resendEmailVerification(verificationEmail);
+            if (data.success) {
+                showToast('Mã xác thực mới đã được gửi!', 'success');
+            } else {
+                showToast(data.message || 'Lỗi gửi mã', 'error');
+            }
+            // Cooldown 60s
+            let countdown = 60;
+            const interval = setInterval(() => {
+                countdown--;
+                this.innerHTML = `Gửi lại (${countdown}s)`;
+                if (countdown <= 0) {
+                    clearInterval(interval);
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-redo"></i> Gửi lại mã';
+                }
+            }, 1000);
+        });
+    }
+
+    // OTP auto-focus 
+    document.querySelectorAll('.otp-input').forEach((input, index, arr) => {
+        input.addEventListener('input', function() {
+            if (this.value && index < arr.length - 1) arr[index + 1].focus();
+        });
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Backspace' && !this.value && index > 0) arr[index - 1].focus();
+        });
+        // Chỉ cho phép số
+        input.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    });
 }
 
 // Initialize modal switching to prevent overlapping
@@ -660,6 +794,8 @@ window.NestFlowAuth = {
     initAuth,
     forgotPassword,
     resetPassword,
+    verifyEmail,
+    resendEmailVerification,
     showToast,
     resendVerificationCode,
     switchModal

@@ -215,21 +215,28 @@ function openCreateInvoiceModal() {
     document.getElementById('invoiceModalTitle').textContent = 'Tạo hóa đơn mới';
     document.getElementById('invoiceId').value = '';
     document.getElementById('rentalId').value = '';
+    document.getElementById('rentalInfo').value = '';
+
+    // Hiện wrapper building/room, reset về trạng thái ban đầu
+    document.getElementById('buildingRoomWrapper').style.display = '';
+    document.getElementById('buildingId').value = '';
+    const roomSelect = document.getElementById('roomSelect');
+    roomSelect.innerHTML = '<option value="">-- Chọn nhà trọ trước --</option>';
+    roomSelect.disabled = true;
+
+    loadBuildings();
 
     const now = new Date();
-    document.getElementById('invoiceMonth').value = `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
+    document.getElementById('invoiceMonth').value =
+        `${String(now.getMonth() + 1).padStart(2, '0')}/${now.getFullYear()}`;
 
     document.getElementById('roomRent').value = '0';
     document.getElementById('internetFee').value = '0';
-
-    // Điện - Set giá trị mặc định
     document.getElementById('electricOldReading').value = '0';
     document.getElementById('electricNewReading').value = '0';
     document.getElementById('electricUsage').value = '0';
     document.getElementById('electricPrice').value = '3,500';
     document.getElementById('electricAmount').value = '0';
-
-    // Nước - Set giá trị mặc định
     document.getElementById('waterCalculationType').value = 'usage';
     document.getElementById('waterOldReading').value = '0';
     document.getElementById('waterNewReading').value = '0';
@@ -237,17 +244,14 @@ function openCreateInvoiceModal() {
     document.getElementById('waterPrice').value = '20,000';
     document.getElementById('waterAmount').value = '0';
     toggleWaterCalculation();
-
     document.getElementById('otherFees').value = '';
     document.getElementById('notes').value = '';
 
-    // Gọi tính toán sau khi set giá trị mặc định
     calculateElectric();
     calculateWater();
     calculateTotal();
 
-    const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
-    modal.show();
+    new bootstrap.Modal(document.getElementById('invoiceModal')).show();
 }
 
 function calculateElectric() {
@@ -974,7 +978,11 @@ async function editInvoice(invoiceId) {
         // Set tiêu đề modal
         document.getElementById('invoiceModalTitle').textContent = 'Cập nhật hóa đơn #' + inv.invoiceId;
         document.getElementById('invoiceId').value = inv.invoiceId;
-
+        // Ẩn dropdown chọn nhà trọ/phòng khi edit
+        document.getElementById('buildingRoomWrapper').style.display = 'none';
+        // Hiện thông tin rental hiện tại
+        document.getElementById('rentalInfo').value =
+            `${inv.propertyTitle} — Người thuê: ${inv.renterName}`;
         // Rental (chỉ hiển thị, không đổi được)
         document.getElementById('rentalId').value = inv.rentalId;
 
@@ -1046,5 +1054,86 @@ async function editInvoice(invoiceId) {
     } catch (error) {
         console.error('Error loading invoice for edit:', error);
         showMessage('Có lỗi xảy ra khi tải dữ liệu hóa đơn', 'error');
+    }
+}
+async function loadBuildings() {
+    if (!currentUserId) return;
+    try {
+        const res = await fetch(`/api/Invoice/buildings/${currentUserId}`);
+        const result = await res.json();
+        const select = document.getElementById('buildingId');
+        select.innerHTML = '<option value="">-- Chọn nhà trọ --</option>';
+        if (result.success && result.data.length > 0) {
+            result.data.forEach(b => {
+                select.innerHTML += `<option value="${b.buildingId}">${b.buildingName}</option>`;
+            });
+        } else {
+            select.innerHTML += '<option value="" disabled>Không có nhà trọ nào</option>';
+        }
+    } catch (e) {
+        console.error('Error loading buildings:', e);
+    }
+}
+
+async function onBuildingChange() {
+    const buildingId = document.getElementById('buildingId').value;
+    const roomSelect = document.getElementById('roomSelect');
+    document.getElementById('rentalId').value = '';
+    document.getElementById('rentalInfo').value = '';
+
+    if (!buildingId) {
+        roomSelect.innerHTML = '<option value="">-- Chọn nhà trọ trước --</option>';
+        roomSelect.disabled = true;
+        return;
+    }
+
+    roomSelect.innerHTML = '<option value="">Đang tải...</option>';
+    roomSelect.disabled = true;
+
+    try {
+        const res = await fetch(`/api/Invoice/occupied-rooms/${buildingId}`);
+        const result = await res.json();
+        roomSelect.innerHTML = '<option value="">-- Chọn phòng --</option>';
+
+        if (result.success && result.data.length > 0) {
+            result.data.forEach(r => {
+                roomSelect.innerHTML += `<option value="${r.rentalId}"
+                    data-renter="${r.renterName}"
+                    data-room="${r.propertyTitle}"
+                    data-rent="${r.monthlyRent}">
+                    ${r.roomNumber} — ${r.propertyTitle}
+                </option>`;
+            });
+            roomSelect.disabled = false;
+        } else {
+            roomSelect.innerHTML = '<option value="" disabled>Không có phòng nào đang thuê</option>';
+        }
+    } catch (e) {
+        console.error('Error loading rooms:', e);
+        roomSelect.innerHTML = '<option value="" disabled>Lỗi tải danh sách phòng</option>';
+    }
+}
+
+function onRoomChange() {
+    const roomSelect = document.getElementById('roomSelect');
+    const selected = roomSelect.options[roomSelect.selectedIndex];
+
+    if (!roomSelect.value) {
+        document.getElementById('rentalId').value = '';
+        document.getElementById('rentalInfo').value = '';
+        return;
+    }
+
+    document.getElementById('rentalId').value = roomSelect.value;
+    document.getElementById('rentalInfo').value =
+        `${selected.getAttribute('data-room')} — Người thuê: ${selected.getAttribute('data-renter')}`;
+
+    // Auto-fill tiền thuê từ hợp đồng
+    const monthlyRent = selected.getAttribute('data-rent');
+    if (monthlyRent && parseFloat(monthlyRent) > 0) {
+        const formatted = Math.round(parseFloat(monthlyRent))
+            .toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        document.getElementById('roomRent').value = formatted;
+        calculateTotal();
     }
 }
