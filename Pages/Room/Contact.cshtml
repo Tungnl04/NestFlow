@@ -5,9 +5,17 @@
     var landlord = Model.Property?.Landlord;
     var property = Model.Property;
     
-    // GIẢM GIÁ 500K KHI ĐẶT QUA NỀN TẢNG
-    decimal platformDiscount = 500000;
+    // GIẢM GIÁ 10% KHI ĐẶT QUA NỀN TẢNG
     decimal originalDeposit = property?.Deposit ?? 0;
+    decimal platformDiscount = originalDeposit * (NestFlow.Application.Constants.PlatformSettings.UserDiscountRate / 100);
+    decimal commission = originalDeposit * (property?.CommissionRate ?? 50) / 100;
+    
+    // Đảm bảo không giảm lố commission
+    if (platformDiscount > commission)
+    {
+        platformDiscount = commission;
+    }
+    
     decimal discountedDeposit = originalDeposit - platformDiscount;
     if (discountedDeposit < 0) discountedDeposit = 0;
 }
@@ -73,8 +81,7 @@
                             </a>
                         </div>
                         <p class="text-muted small mt-2 mb-0">
-                            <i class="fas fa-info-circle me-1"></i>
-                            Liên hệ với chủ nhà để xem phòng và thỏa thuận. Nếu đồng ý, hãy đặt cọc qua nền tảng để được giảm giá!
+                            Liên hệ với chủ nhà để xem phòng và thỏa thuận. Nếu đồng ý, hãy đặt cọc qua nền tảng để được giảm @NestFlow.Application.Constants.PlatformSettings.UserDiscountRate.ToString("0")% nhé!
                         </p>
                     </div>
                 </div>
@@ -92,7 +99,7 @@
                             </div>
                             <div>
                                 <h5 class="mb-0 text-primary">Ưu đãi đặt qua NestFlow</h5>
-                                <p class="mb-0 text-muted small">Giảm ngay 500,000 VNĐ tiền đặt cọc</p>
+                                <p class="mb-0 text-muted small">Giảm ngay @platformDiscount.ToString("N0") VNĐ tiền đặt cọc</p>
                             </div>
                         </div>
 
@@ -127,7 +134,7 @@
                                 data-bs-toggle="modal" 
                                 data-bs-target="#bookingModal">
                             <i class="fas fa-calendar-check me-2"></i>
-                            Đặt cọc ngay - Tiết kiệm 500K
+                            Đặt cọc ngay - Tiết kiệm @platformDiscount.ToString("N0") VNĐ
                         </button>
                         <p class="text-muted small text-center mt-2 mb-0">
                             <i class="fas fa-shield-alt me-1"></i>
@@ -145,7 +152,7 @@
                         </div>
                         <h5 class="mb-3">Đăng nhập để đặt phòng</h5>
                         <p class="text-muted mb-3">
-                            Đăng nhập ngay để được giảm <strong class="text-success">500,000 VNĐ</strong> tiền đặt cọc!
+                            Đăng nhập ngay để được giảm <strong class="text-success">@platformDiscount.ToString("N0") VNĐ</strong> (@NestFlow.Application.Constants.PlatformSettings.UserDiscountRate.ToString("0")%) tiền đặt cọc!
                         </p>
                         <button class="btn btn-primary btn-lg w-100" onclick="showLoginModal()">
                             <i class="fas fa-sign-in-alt me-2"></i>
@@ -189,7 +196,7 @@
                                 <i class="fas fa-gift fa-2x me-3"></i>
                                 <div>
                                     <strong>Ưu đãi đặc biệt!</strong>
-                                    <p class="mb-0 small">Giảm ngay 500,000 VNĐ khi đặt cọc qua NestFlow</p>
+                                    <p class="mb-0 small">Giảm ngay @platformDiscount.ToString("N0") VNĐ khi đặt cọc qua NestFlow</p>
                                 </div>
                             </div>
                         </div>

@@ -45,26 +45,9 @@ namespace NestFlow.Controllers
                     return BadRequest(new { success = false, message = "Commission rate phải từ 0-100%" });
                 }
 
-                if (request.UserDiscount < 0)
-                {
-                    return BadRequest(new { success = false, message = "User discount không được âm" });
-                }
-
-                // Check discount không vượt quá commission
-                var deposit = property.Deposit ?? 0;
-                var commissionAmount = deposit * (request.CommissionRate / 100);
-                
-                if (request.UserDiscount > commissionAmount)
-                {
-                    return BadRequest(new { 
-                        success = false, 
-                        message = $"User discount ({request.UserDiscount:N0}) không được vượt quá commission amount ({commissionAmount:N0})" 
-                    });
-                }
-
                 // Update
                 property.CommissionRate = request.CommissionRate;
-                property.UserDiscount = request.UserDiscount;
+                // property.UserDiscount = request.UserDiscount; // Bỏ set cứng discount
                 property.UpdatedAt = DateTime.Now;
 
                 await _context.SaveChangesAsync();
@@ -79,8 +62,7 @@ namespace NestFlow.Controllers
                     {
                         propertyId = property.PropertyId,
                         commissionRate = property.CommissionRate,
-                        userDiscount = property.UserDiscount,
-                        landlordReceives = deposit - commissionAmount
+                        landlordReceives = property.Deposit - (property.Deposit * (property.CommissionRate / 100))
                     }
                 });
             }
