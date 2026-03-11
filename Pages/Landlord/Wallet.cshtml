@@ -64,24 +64,17 @@
     </div>
 
     <!-- Withdraw Button -->
-    <div class="row mb-4">
-        <div class="col-12">
-            @if (Model.WalletInfo.AvailableBalance > 0)
-            {
-                <button class="btn btn-primary btn-lg" id="btnOpenWithdrawModal" data-bs-toggle="modal" data-bs-target="#withdrawModal">
+    @if (Model.WalletInfo.AvailableBalance > 0)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#withdrawModal">
                     <i class="fas fa-money-bill-wave me-2"></i>
                     Tạo yêu cầu rút tiền
                 </button>
-            }
-            else
-            {
-                <button class="btn btn-primary btn-lg" id="btnOpenWithdrawModal">
-                    <i class="fas fa-money-bill-wave me-2"></i>
-                    Tạo yêu cầu rút tiền
-                </button>
-            }
+            </div>
         </div>
-    </div>
+    }
 
     <!-- Tabs -->
     <ul class="nav nav-tabs mb-4" id="walletTabs" role="tablist">
@@ -317,21 +310,7 @@
 
 @section Scripts {
     <script>
-        // Block opening modal when balance is 0
-        var availableBalance = @Model.WalletInfo.AvailableBalance;
-        var openBtn = document.getElementById('btnOpenWithdrawModal');
-        if (openBtn && availableBalance <= 0) {
-            openBtn.addEventListener('click', function (e) {
-                e.preventDefault();
-                alert('Số dư khả dụng bằng 0. Không thể tạo yêu cầu rút tiền.');
-            });
-        }
-
         document.getElementById('btnSubmitWithdraw').addEventListener('click', async function() {
-            if (availableBalance <= 0) {
-                alert('Số dư khả dụng bằng 0. Không thể tạo yêu cầu rút tiền.');
-                return;
-            }
             const amount = parseFloat(document.getElementById('amount').value);
             const bankName = document.getElementById('bankName').value;
             const bankAccount = document.getElementById('bankAccount').value.trim();
@@ -372,15 +351,15 @@
                 console.log('Response data:', data);
 
                 if (response.ok && data.success) {
-                    showToast('Yêu cầu rút tiền đã được gửi thành công!', 'success', 'Thành công');
+                    alert('Yêu cầu rút tiền đã được gửi thành công!');
                     // Đóng modal trước khi reload
                     const modal = bootstrap.Modal.getInstance(document.getElementById('withdrawModal'));
                     if (modal) modal.hide();
-                    // Reload sau 1.5s để xem toast
-                    setTimeout(() => location.reload(), 1500);
+                    // Reload sau 500ms
+                    setTimeout(() => location.reload(), 500);
                 } else {
                     const errorMsg = data.message || data.error || 'Có lỗi xảy ra';
-                    showToast(errorMsg, 'error', 'Lỗi rút tiền');
+                    alert('Lỗi: ' + errorMsg);
                     if (data.details) {
                         console.error('Error details:', data.details);
                     }
@@ -389,7 +368,7 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                showToast('Có lỗi xảy ra: ' + error.message, 'error', 'Lỗi hệ thống');
+                alert('Có lỗi xảy ra: ' + error.message);
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Gửi yêu cầu';
             }
