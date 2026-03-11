@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -72,6 +72,12 @@
                         <a asp-page="/Admin/Posts" class="nf-sidebar-link">
                             <i class="fas fa-newspaper"></i>
                             <span>Tin đăng</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Revenue" class="nf-sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Revenue" ? "active" : "")">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Doanh thu</span>
                         </a>
                     </li>
                     <li>
