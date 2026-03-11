@@ -264,6 +264,76 @@
             Array.from(e.target.files).forEach(file => files360.items.add(file));
             updatePreview('img360Input', 'image360Preview', files360, true);
         });
+
+        // === AJAX Submit: giữ ảnh khi lỗi ===
+        const createForm = document.querySelector('form[method="post"]');
+        createForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = createForm.querySelector('button[type="submit"]');
+            const originalBtnHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+
+            // Xóa lỗi cũ
+            const errorDiv = createForm.querySelector('[data-valmsg-summary]') || createForm.querySelector('.text-danger');
+            if (errorDiv) errorDiv.innerHTML = '';
+
+            try {
+                // Đồng bộ lại file trước khi submit
+                imgInput.files = normalFiles.files;
+                img360Input.files = files360.files;
+
+                const formData = new FormData(createForm);
+                
+                const response = await fetch(createForm.action || window.location.href, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.redirected) {
+                    // Thành công - server redirect
+                    window.location.href = response.url;
+                    return;
+                }
+
+                // Nếu không redirect, có lỗi - parse HTML response để lấy thông báo lỗi
+                const html = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                
+                // Tìm thông báo lỗi từ response
+                const serverErrors = doc.querySelector('[data-valmsg-summary]') || doc.querySelector('.text-danger');
+                if (serverErrors && serverErrors.innerHTML.trim()) {
+                    if (errorDiv) {
+                        errorDiv.innerHTML = serverErrors.innerHTML;
+                    }
+                    // Scroll lên đầu form để thấy lỗi
+                    errorDiv?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    // Fallback: hiện lỗi chung
+                    if (errorDiv) {
+                        errorDiv.innerHTML = '<ul><li>Có lỗi xảy ra. Vui lòng kiểm tra lại thông tin.</li></ul>';
+                    }
+                }
+
+                // Toast thông báo lỗi
+                if (window.showToast) {
+                    showToast('Lưu không thành công. Vui lòng kiểm tra lại.', 'error');
+                }
+            } catch (err) {
+                console.error('Submit error:', err);
+                if (errorDiv) {
+                    errorDiv.innerHTML = '<ul><li>Lỗi kết nối. Vui lòng thử lại.</li></ul>';
+                }
+                if (window.showToast) {
+                    showToast('Lỗi kết nối. Vui lòng thử lại.', 'error');
+                }
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHtml;
+            }
+        });
     </script>
 }
 

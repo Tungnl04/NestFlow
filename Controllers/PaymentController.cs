@@ -383,7 +383,7 @@ namespace NestFlow.Controllers
 
         private async Task SendBookingNotifications(Booking booking, Property property, User user)
         {
-            // Send notification to RENTER
+            // Gửi email cho RENTER (không gửi Notification cho RENTER theo yêu cầu)
             if (!string.IsNullOrEmpty(user.Email))
             {
                 try
@@ -397,17 +397,6 @@ namespace NestFlow.Controllers
                         $"Chủ nhà sẽ xem xét và phản hồi sớm nhất.<br><br>" +
                         $"Trân trọng,<br>NestFlow Team"
                     );
-
-                    if (_notificationService != null)
-                    {
-                        await _notificationService.CreateAndSendNotificationAsync(
-                            booking.RenterId,
-                            "Đặt phòng thành công",
-                            $"Bạn đã đặt cọc thành công cho phòng: {property.Title}. Chờ chủ nhà xác nhận.",
-                            "success",
-                            $"/Room/Detail?id={booking.PropertyId}"
-                        );
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -415,7 +404,7 @@ namespace NestFlow.Controllers
                 }
             }
 
-            // Send notification to LANDLORD
+            // Gửi email cho LANDLORD
             var landlord = await _context.Users.FindAsync(property.LandlordId);
             if (landlord != null && !string.IsNullOrEmpty(landlord.Email))
             {
@@ -433,22 +422,30 @@ namespace NestFlow.Controllers
                         $"Vui lòng vào trang quản lý để chấp nhận hoặc từ chối.<br><br>" +
                         $"Trân trọng,<br>NestFlow Team"
                     );
-
-                    if (_notificationService != null)
-                    {
-                        await _notificationService.CreateAndSendNotificationAsync(
-                            property.LandlordId,
-                            "Có đơn đặt cọc mới",
-                            $"Bạn có đơn đặt cọc mới cho phòng: {property.Title}. Số tiền: {property.Deposit:N0} VNĐ",
-                            "info",
-                            $"/Landlord/Bookings"
-                        );
-                    }
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Error sending email to landlord: {ex.Message}");
                 }
+            }
+
+            // Gửi Notification cho LANDLORD (luôn chạy kể cả khi không có email hoặc lỗi email)
+            try
+            {
+                if (_notificationService != null)
+                {
+                    await _notificationService.CreateAndSendNotificationAsync(
+                        property.LandlordId,
+                        "Có đơn đặt cọc mới",
+                        $"Bạn có đơn đặt cọc mới cho phòng: {property.Title}. Số tiền: {property.Deposit:N0} VNĐ",
+                        "info",
+                        $"/Landlord/Bookings"
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending notification to landlord: {ex.Message}");
             }
         }
 
@@ -549,17 +546,6 @@ namespace NestFlow.Controllers
                             $"Chủ nhà sẽ xem xét và phản hồi sớm nhất.<br><br>" +
                             $"Trân trọng,<br>NestFlow Team"
                         );
-
-                        if (_notificationService != null)
-                        {
-                            await _notificationService.CreateAndSendNotificationAsync(
-                                booking.RenterId,
-                                "Đặt phòng thành công",
-                                $"Bạn đã đặt cọc thành công cho phòng: {booking.Property.Title}. Chờ chủ nhà xác nhận.",
-                                "success",
-                                $"/Room/Detail?id={booking.PropertyId}"
-                            );
-                        }
                     }
                     catch (Exception ex)
                     {
@@ -578,29 +564,37 @@ namespace NestFlow.Controllers
                             "Có đơn đặt cọc mới",
                             $"Chào {landlord.FullName},<br><br>" +
                             $"Bạn có đơn đặt cọc mới cho phòng: {booking.Property.Title}<br>" +
-                            $"Người đặt: {booking.Renter.FullName}<br>" +
-                            $"Số điện thoại: {booking.Renter.Phone}<br>" +
+                            $"Người đặt: {booking.Renter?.FullName}<br>" +
+                            $"Số điện thoại: {booking.Renter?.Phone}<br>" +
                             $"Ngày xem phòng: {booking.BookingDate:dd/MM/yyyy} lúc {booking.BookingTime}<br>" +
                             $"Số tiền cọc: {booking.Property.Deposit:N0} VNĐ<br><br>" +
                             $"Vui lòng vào trang quản lý để chấp nhận hoặc từ chối.<br><br>" +
                             $"Trân trọng,<br>NestFlow Team"
                         );
-
-                        if (_notificationService != null)
-                        {
-                            await _notificationService.CreateAndSendNotificationAsync(
-                                booking.Property.LandlordId,
-                                "Có đơn đặt cọc mới",
-                                $"Bạn có đơn đặt cọc mới cho phòng: {booking.Property.Title}. Số tiền: {booking.Property.Deposit:N0} VNĐ",
-                                "info",
-                                $"/Landlord/Dashboard"
-                            );
-                        }
                     }
                     catch (Exception ex)
                     {
                         Console.WriteLine($"Error sending email to landlord: {ex.Message}");
                     }
+                }
+
+                // Gửi Notification cho Landlord (không phụ thuộc vào Email thành công hay thất bại)
+                try
+                {
+                    if (_notificationService != null)
+                    {
+                        await _notificationService.CreateAndSendNotificationAsync(
+                            booking.Property.LandlordId,
+                            "Có đơn đặt cọc mới",
+                            $"Bạn có đơn đặt cọc mới cho phòng: {booking.Property.Title}. Số tiền: {booking.Property.Deposit:N0} VNĐ",
+                            "info",
+                            $"/Landlord/Dashboard"
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sending notification to landlord: {ex.Message}");
                 }
 
                 // Redirect to success page
