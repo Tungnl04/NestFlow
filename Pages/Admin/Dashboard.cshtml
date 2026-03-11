@@ -1,5 +1,5 @@
-﻿@page
-@model NestFlow.Pages.Landlord.DashboardModel
+@page
+@model NestFlow.Pages.Admin.DashboardModel
 @{
     ViewData["Title"] = "Admin Site - Nestflow";
     Layout = "~/Pages/Shared/_AdminLayout.cshtml";
@@ -15,7 +15,7 @@
                 <i class="fas fa-door-open"></i>
             </div>
             <div class="nf-stat-content">
-                <div class="nf-stat-value">25</div>
+                <div class="nf-stat-value">@Model.TotalRooms</div>
                 <div class="nf-stat-label">Tổng số phòng</div>
             </div>
         </div>
@@ -26,7 +26,7 @@
                 <i class="fas fa-check-circle"></i>
             </div>
             <div class="nf-stat-content">
-                <div class="nf-stat-value">18</div>
+                <div class="nf-stat-value">@Model.RentedRooms</div>
                 <div class="nf-stat-label">Phòng đang cho thuê</div>
             </div>
         </div>
@@ -37,7 +37,7 @@
                 <i class="fas fa-home"></i>
             </div>
             <div class="nf-stat-content">
-                <div class="nf-stat-value">7</div>
+                <div class="nf-stat-value">@Model.EmptyRooms</div>
                 <div class="nf-stat-label">Phòng còn trống</div>
             </div>
         </div>
@@ -48,81 +48,97 @@
                 <i class="fas fa-newspaper"></i>
             </div>
             <div class="nf-stat-content">
-                <div class="nf-stat-value">12</div>
+                <div class="nf-stat-value">@Model.ActiveListings</div>
                 <div class="nf-stat-label">Tin đăng đang hiển thị</div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Tin đăng sắp hết hạn -->
-<div class="card mb-4">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> Tin đăng sắp hết hạn</h5>
+<div class="row g-4 mb-4">
+    <!-- Tin đăng sắp hết hạn -->
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header border-0 bg-white pt-4 pb-2">
+                <h5 class="mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> Tin đăng sắp hết hạn (7 ngày tới)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tiêu đề</th>
+                                <th>Ngày hết hạn</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.ExpiringListings.Any())
+                            {
+                                foreach (var listing in Model.ExpiringListings)
+                                {
+                                    <tr>
+                                        <td>@listing.Title</td>
+                                        <td>@listing.ExpiresAt?.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td><span class="badge bg-warning text-dark">Sắp hết hạn</span></td>
+                                        <td><a href="/Admin/Listings" class="btn btn-sm btn-outline-primary">Kiểm tra</a></td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-3">Không có tin đăng nào sắp hết hạn.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Tiêu đề</th>
-                        <th>Ngày hết hạn</th>
-                        <th>Trạng thái</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Phòng trọ sinh viên tại Hòa Lạc</td>
-                        <td>15/01/2026</td>
-                        <td><span class="badge bg-warning">Sắp hết hạn</span></td>
-                        <td><button class="btn btn-sm btn-primary">Gia hạn</button></td>
-                    </tr>
-                    <tr>
-                        <td>Căn hộ mini giá rẻ</td>
-                        <td>20/01/2026</td>
-                        <td><span class="badge bg-warning">Sắp hết hạn</span></td>
-                        <td><button class="btn btn-sm btn-primary">Gia hạn</button></td>
-                    </tr>
-                </tbody>
-            </table>
+
+    <!-- Biểu đồ loại phòng -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header border-0 bg-white pt-4 pb-2">
+                <h5 class="mb-0"><i class="fas fa-chart-pie text-info"></i> Tỉ lệ loại phòng</h5>
+            </div>
+            <div class="card-body p-3 text-center d-flex align-items-center justify-content-center">
+                <div style="width: 100%; max-width: 250px;">
+                    <canvas id="propertyTypeChart"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <!-- Hoạt động gần đây -->
-<div class="card">
-    <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-clock"></i> Hoạt động gần đây</h5>
+<div class="card mb-4">
+    <div class="card-header border-0 bg-white pt-4 pb-2">
+        <h5 class="mb-0"><i class="fas fa-clock text-secondary"></i> Nhật ký hoạt động mới nhất</h5>
     </div>
     <div class="card-body">
-        <div class="nf-activity-item mb-3 pb-3 border-bottom">
-            <div class="d-flex align-items-center gap-3">
-                <div class="nf-activity-icon"><i class="fas fa-user"></i></div>
-                <div class="flex-grow-1">
-                    <strong>Nguyễn Văn A</strong> đã liên hệ về phòng trọ #123
-                    <small class="text-muted d-block">2 giờ trước</small>
+        @if (Model.RecentActivities.Any())
+        {
+            foreach (var act in Model.RecentActivities)
+            {
+                <div class="nf-activity-item mb-3 pb-3 border-bottom">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="nf-activity-icon @act.Color bg-light"><i class="@act.Icon"></i></div>
+                        <div class="flex-grow-1">
+                            @Html.Raw(act.Message)
+                            <small class="text-muted d-block mt-1">@act.Time.ToString("dd/MM/yyyy HH:mm")</small>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-        <div class="nf-activity-item mb-3 pb-3 border-bottom">
-            <div class="d-flex align-items-center gap-3">
-                <div class="nf-activity-icon"><i class="fas fa-check"></i></div>
-                <div class="flex-grow-1">
-                    <strong>Phòng #05</strong> đã được đặt thành công
-                    <small class="text-muted d-block">5 giờ trước</small>
-                </div>
-            </div>
-        </div>
-        <div class="nf-activity-item">
-            <div class="d-flex align-items-center gap-3">
-                <div class="nf-activity-icon"><i class="fas fa-edit"></i></div>
-                <div class="flex-grow-1">
-                    Bạn đã cập nhật thông tin phòng trọ #08
-                    <small class="text-muted d-block">1 ngày trước</small>
-                </div>
-            </div>
-        </div>
+            }
+        }
+        else
+        {
+            <div class="text-center text-muted py-3">Chưa có hoạt động nào gần đây.</div>
+        }
     </div>
 </div>
 
@@ -168,7 +184,58 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        color: #e74c3c;
         flex-shrink: 0;
     }
 </style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const chartDataRaw = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PropertiesByType));
+            
+            const labels = Object.keys(chartDataRaw);
+            const data = Object.values(chartDataRaw);
+
+            if(labels.length > 0) {
+                const ctx = document.getElementById('propertyTypeChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: [
+                                '#4A90E2', // Blue
+                                '#50C878', // Emerald green
+                                '#FF6B6B', // Red
+                                '#FFA500', // Orange
+                                '#9b59b6', // Purple
+                                '#e74c3c'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: 15
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                // If no data, hide canvas and show text
+                document.getElementById('propertyTypeChart').style.display = 'none';
+                const parent = document.getElementById('propertyTypeChart').parentElement;
+                parent.innerHTML = '<span class="text-muted">Chưa có dữ liệu</span>';
+            }
+        });
+    </script>
+}
