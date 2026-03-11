@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using NestFlow.Application.DTOs;
 using NestFlow.Application.Services.Interfaces;
@@ -32,10 +32,15 @@ namespace NestFlow.Controllers
 
             if (!result.Success)
             {
+                // Nếu cần xác thực email
+                if (result.RequireVerification)
+                {
+                    return Ok(result); // Trả về 200 với requireVerification=true để client xử lý
+                }
                 return Unauthorized(result);
             }
 
-            // Set session
+            // Set session chỉ khi đăng nhập thành công và đã xác thực
             HttpContext.Session.SetInt32("UserId", (int)result.User!.UserId);
             HttpContext.Session.SetString("UserType", result.User.UserType);
             HttpContext.Session.SetString("Email", result.User.Email);
@@ -62,11 +67,7 @@ namespace NestFlow.Controllers
                 return BadRequest(result);
             }
 
-            // Set session sau khi đăng ký thành công
-            HttpContext.Session.SetInt32("UserId", (int)result.User!.UserId);
-            HttpContext.Session.SetString("UserType", result.User.UserType);
-            HttpContext.Session.SetString("Email", result.User.Email);
-
+            // Không set session ngay, yêu cầu xác thực email trước
             return Ok(result);
         }
 
@@ -217,5 +218,50 @@ namespace NestFlow.Controllers
             var result = await _authService.ResetPasswordAsync(resetPasswordDto);
             return Ok(result);
         }
+
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto verifyDto)
+        {
+            if (!ModelState.IsValid || string.IsNullOrEmpty(verifyDto.Email) || string.IsNullOrEmpty(verifyDto.Code))
+            {
+                return BadRequest(new AuthResponseDto { Success = false, Message = "Dữ liệu không hợp lệ" });
+            }
+
+            var result = await _authService.VerifyEmailAsync(verifyDto.Email, verifyDto.Code);
+
+            if (result.Success && result.User != null)
+            {
+                // Set session sau khi xác thực thành công
+                HttpContext.Session.SetInt32("UserId", (int)result.User.UserId);
+                HttpContext.Session.SetString("UserType", result.User.UserType);
+                HttpContext.Session.SetString("Email", result.User.Email);
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPost("resend-verification")]
+        public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto resendDto)
+        {
+            if (string.IsNullOrEmpty(resendDto.Email))
+            {
+                return BadRequest(new AuthResponseDto { Success = false, Message = "Email không hợp lệ" });
+            }
+
+            var result = await _authService.ResendVerificationCodeAsync(resendDto.Email);
+            return Ok(result);
+        }
+    }
+
+    // DTOs cho verify
+    public class VerifyEmailDto
+    {
+        public string Email { get; set; } = null!;
+        public string Code { get; set; } = null!;
+    }
+
+    public class ResendVerificationDto
+    {
+        public string Email { get; set; } = null!;
     }
 }

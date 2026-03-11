@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NestFlow.Models;
+using NestFlow.Application.Services.Interfaces;
 using System.Text;
 
 namespace NestFlow.Controllers
@@ -10,10 +11,12 @@ namespace NestFlow.Controllers
     public class InvoiceController : ControllerBase
     {
         private readonly NestFlowSystemContext _context;
+        private readonly INotificationService? _notificationService;
 
-        public InvoiceController(NestFlowSystemContext context)
+        public InvoiceController(NestFlowSystemContext context, INotificationService? notificationService = null)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         /// <summary>
@@ -206,6 +209,25 @@ namespace NestFlow.Controllers
 
                 _context.Invoices.Add(invoice);
                 await _context.SaveChangesAsync();
+
+                // Gửi thông báo cho chủ trọ
+                try
+                {
+                    if (_notificationService != null)
+                    {
+                        await _notificationService.CreateAndSendNotificationAsync(
+                            rental.LandlordId,
+                            "Tạo hóa đơn thành công",
+                            $"Bạn đã tạo thành công hóa đơn tháng {request.InvoiceMonth} cho Phòng {rental.Property?.Title}: {totalAmount:N0} VNĐ",
+                            "success",
+                            $"/Landlord/Invoices"
+                        );
+                    }
+                }
+                catch (Exception notiEx)
+                {
+                    Console.WriteLine($"Error sending invoice notification: {notiEx.Message}");
+                }
 
                 return Ok(new
                 {

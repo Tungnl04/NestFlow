@@ -1,4 +1,4 @@
-﻿using NestFlow.Application.DTOs;
+using NestFlow.Application.DTOs;
 
 namespace NestFlow.Application.Services.Interfaces
 {
@@ -15,5 +15,9 @@ namespace NestFlow.Application.Services.Interfaces
         Task<AuthResponseDto> ForgotPasswordAsync(string email);
 
         Task<AuthResponseDto> ResetPasswordAsync(ResetPasswordDto resetDto);
+
+        Task<AuthResponseDto> VerifyEmailAsync(string email, string code);
+
+        Task<AuthResponseDto> ResendVerificationCodeAsync(string email);
     }
 }

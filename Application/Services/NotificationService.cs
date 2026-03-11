@@ -56,6 +56,13 @@ public class NotificationService : INotificationService
             .ToListAsync();
     }
 
+    public async Task<int> GetUnreadCountAsync(long userId)
+    {
+        return await _context.Notifications
+            .Where(n => n.UserId == userId && n.IsRead != true)
+            .CountAsync();
+    }
+
     public async Task MarkAsReadAsync(long notificationId)
     {
         var notif = await _context.Notifications.FindAsync(notificationId);

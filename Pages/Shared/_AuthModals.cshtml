@@ -148,6 +148,46 @@
     </div>
 </div>
 
+<!-- Verify Email OTP Modal -->
+<div class="modal fade" id="verifyEmailModal" tabindex="-1" aria-labelledby="verifyEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0 bg-success text-white">
+                <h5 class="modal-title" id="verifyEmailModalLabel">
+                    <i class="fas fa-envelope-open-text me-2"></i>Xác thực Email
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-shield-alt text-success" style="font-size: 48px;"></i>
+                </div>
+                <p class="text-muted">Chúng tôi đã gửi mã xác thực 6 số đến email:</p>
+                <p class="fw-bold text-primary" id="verifyEmailDisplay"></p>
+
+                <form id="verifyEmailForm">
+                    <div class="d-flex justify-content-center gap-2 mb-3">
+                        <input type="text" class="form-control text-center fw-bold otp-input" maxlength="1" style="width:48px; height:56px; font-size:24px; border-radius:12px; border:2px solid #dee2e6;" required>
+                        <input type="text" class="form-control text-center fw-bold otp-input" maxlength="1" style="width:48px; height:56px; font-size:24px; border-radius:12px; border:2px solid #dee2e6;" required>
+                        <input type="text" class="form-control text-center fw-bold otp-input" maxlength="1" style="width:48px; height:56px; font-size:24px; border-radius:12px; border:2px solid #dee2e6;" required>
+                        <input type="text" class="form-control text-center fw-bold otp-input" maxlength="1" style="width:48px; height:56px; font-size:24px; border-radius:12px; border:2px solid #dee2e6;" required>
+                        <input type="text" class="form-control text-center fw-bold otp-input" maxlength="1" style="width:48px; height:56px; font-size:24px; border-radius:12px; border:2px solid #dee2e6;" required>
+                        <input type="text" class="form-control text-center fw-bold otp-input" maxlength="1" style="width:48px; height:56px; font-size:24px; border-radius:12px; border:2px solid #dee2e6;" required>
+                    </div>
+                    <small class="text-muted d-block mb-3">Mã có hiệu lực trong 15 phút</small>
+                    <div class="alert alert-danger d-none" id="verifyEmailError"></div>
+                    <button type="submit" class="btn btn-success w-100 mb-2">
+                        <i class="fas fa-check-circle me-1"></i>Xác thực
+                    </button>
+                </form>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="resendOtpBtn">
+                    <i class="fas fa-redo me-1"></i>Gửi lại mã
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // Handle modal switching when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {

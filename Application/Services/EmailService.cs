@@ -1,4 +1,4 @@
-﻿using MailKit.Net.Smtp;
+using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using NestFlow.Application.Services.Interfaces;
@@ -211,6 +211,59 @@ namespace NestFlow.Application.Services
                 Console.WriteLine($"Error sending email: {ex.Message}");
                 throw;
             }
+        }
+        public async Task SendEmailVerificationAsync(string toEmail, string code, string userName)
+        {
+            var subject = "Xác thực tài khoản NestFlow - Mã OTP";
+
+            var htmlBody = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }}
+        .code-box {{ background: white; border: 2px dashed #28a745; padding: 20px; text-align: center; margin: 20px 0; border-radius: 5px; }}
+        .code {{ font-size: 36px; font-weight: bold; color: #28a745; letter-spacing: 8px; }}
+        .warning {{ background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }}
+        .footer {{ text-align: center; margin-top: 20px; color: #666; font-size: 14px; }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <h1>🏠 NestFlow</h1>
+            <p>Xác thực tài khoản</p>
+        </div>
+        <div class='content'>
+            <p>Xin chào <strong>{userName ?? "bạn"}</strong>,</p>
+            <p>Cảm ơn bạn đã đăng ký tài khoản NestFlow! Vui lòng nhập mã xác thực bên dưới để hoàn tất đăng ký:</p>
+            
+            <div class='code-box'>
+                <div class='code'>{code}</div>
+            </div>
+
+            <div class='warning'>
+                <strong>⚠️ Lưu ý:</strong>
+                <ul style='margin: 10px 0 0 0; padding-left: 20px;'>
+                    <li>Mã xác thực có hiệu lực trong <strong>15 phút</strong></li>
+                    <li>Không chia sẻ mã này với bất kỳ ai</li>
+                </ul>
+            </div>
+
+            <p>Trân trọng,<br>Đội ngũ NestFlow</p>
+        </div>
+        <div class='footer'>
+            <p>Email này được gửi tự động, vui lòng không trả lời.</p>
+            <p>&copy; 2024 NestFlow. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>";
+
+            await SendEmailAsync(toEmail, subject, htmlBody);
         }
     }
 }
