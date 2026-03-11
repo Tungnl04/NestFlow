@@ -124,7 +124,7 @@ BEGIN TRY
          N'Phòng mẫu ' + CAST(@i AS NVARCHAR(10)) + ' - ' + @Type, 
          N'Mô phỏng mô tả cho phòng thứ ' + CAST(@i AS NVARCHAR(10)) + N'. Đầy đủ tiện nghi, khu vực an ninh.',
          @Type, (SELECT address FROM Buildings WHERE building_id = @BuildingId), 
-         @Ward, N'Thạch Thất', N'Hà Nội', @Price, @Area, @Price * 2, 
+         @Ward, N'Thạch Thất', N'Hà Nội', @Price, @Area, @Price, 
          CASE WHEN @i % 3 = 0 THEN 4 ELSE 2 END, 'available', GETDATE(), GETDATE(), 0);
 
         DECLARE @NewPropId BIGINT = SCOPE_IDENTITY();

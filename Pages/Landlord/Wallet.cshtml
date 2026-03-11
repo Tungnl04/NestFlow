@@ -66,11 +66,20 @@
     <!-- Withdraw Button -->
     <div class="row mb-4">
         <div class="col-12">
-            <button class="btn btn-primary btn-lg" id="btnOpenWithdrawModal"
-                @(Model.WalletInfo.AvailableBalance > 0 ? "data-bs-toggle=\"modal\" data-bs-target=\"#withdrawModal\"" : "")>
-                <i class="fas fa-money-bill-wave me-2"></i>
-                Tạo yêu cầu rút tiền
-            </button>
+            @if (Model.WalletInfo.AvailableBalance > 0)
+            {
+                <button class="btn btn-primary btn-lg" id="btnOpenWithdrawModal" data-bs-toggle="modal" data-bs-target="#withdrawModal">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    Tạo yêu cầu rút tiền
+                </button>
+            }
+            else
+            {
+                <button class="btn btn-primary btn-lg" id="btnOpenWithdrawModal">
+                    <i class="fas fa-money-bill-wave me-2"></i>
+                    Tạo yêu cầu rút tiền
+                </button>
+            }
         </div>
     </div>
 
@@ -363,15 +372,15 @@
                 console.log('Response data:', data);
 
                 if (response.ok && data.success) {
-                    alert('Yêu cầu rút tiền đã được gửi thành công!');
+                    showToast('Yêu cầu rút tiền đã được gửi thành công!', 'success', 'Thành công');
                     // Đóng modal trước khi reload
                     const modal = bootstrap.Modal.getInstance(document.getElementById('withdrawModal'));
                     if (modal) modal.hide();
-                    // Reload sau 500ms
-                    setTimeout(() => location.reload(), 500);
+                    // Reload sau 1.5s để xem toast
+                    setTimeout(() => location.reload(), 1500);
                 } else {
                     const errorMsg = data.message || data.error || 'Có lỗi xảy ra';
-                    alert('Lỗi: ' + errorMsg);
+                    showToast(errorMsg, 'error', 'Lỗi rút tiền');
                     if (data.details) {
                         console.error('Error details:', data.details);
                     }
@@ -380,7 +389,7 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Có lỗi xảy ra: ' + error.message);
+                showToast('Có lỗi xảy ra: ' + error.message, 'error', 'Lỗi hệ thống');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Gửi yêu cầu';
             }
