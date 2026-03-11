@@ -1,0 +1,279 @@
+@page
+@model NestFlow.Pages.Admin.RevenueModel
+@{
+    ViewData["Title"] = "Doanh thu hệ thống - Nestflow Admin";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">Theo dõi Doanh thu</h2>
+
+<!-- Thống kê tổng quan -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="nf-stat-card position-relative">
+            <div class="nf-stat-icon" style="background: #28a745;">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="nf-stat-content">
+                <div class="nf-stat-value" style="font-size: 1.5rem;">@Model.TotalRevenue.ToString("N0") đ</div>
+                <div class="nf-stat-label">Tổng Doanh Thu Web</div>
+            </div>
+            <div class="position-absolute" style="top: 15px; right: 15px;">
+                @if(Model.MoMGrowthPercentage > 0) {
+                    <span class="badge bg-success shadow-sm" title="So với tháng trước"><i class="fas fa-arrow-up"></i> @Model.MoMGrowthPercentage.ToString("F1")%</span>
+                } else if (Model.MoMGrowthPercentage < 0) {
+                    <span class="badge bg-danger shadow-sm" title="So với tháng trước"><i class="fas fa-arrow-down"></i> @Math.Abs(Model.MoMGrowthPercentage).ToString("F1")%</span>
+                } else {
+                    <span class="badge bg-secondary shadow-sm" title="So với tháng trước">0%</span>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="nf-stat-card">
+            <div class="nf-stat-icon" style="background: #4A90E2;">
+                <i class="fas fa-crown"></i>
+            </div>
+            <div class="nf-stat-content">
+                <div class="nf-stat-value" style="font-size: 1.5rem;">@Model.SubscriptionRevenue.ToString("N0") đ</div>
+                <div class="nf-stat-label">Từ Gói Đăng Tin</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="nf-stat-card">
+            <div class="nf-stat-icon" style="background: #FFA500;">
+                <i class="fas fa-handshake"></i>
+            </div>
+            <div class="nf-stat-content">
+                <div class="nf-stat-value" style="font-size: 1.5rem;">@Model.CommissionRevenue.ToString("N0") đ</div>
+                <div class="nf-stat-label">Từ Hoa Hồng Cọc</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="nf-stat-card">
+            <div class="nf-stat-icon" style="background: #6c757d;">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <div class="nf-stat-content">
+                <div class="nf-stat-value" style="font-size: 1.5rem;">@Model.TotalGMV.ToString("N0") đ</div>
+                <div class="nf-stat-label">Tổng Dòng Tiền (GMV)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Biểu đồ doanh thu 6 tháng -->
+    <div class="col-md-8">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="mb-0"><i class="fas fa-chart-line text-primary"></i> Tăng trưởng Doanh thu (6 tháng qua)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueLineChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biểu đồ tỉ trọng gói đăng tin -->
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm border-0">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="mb-0"><i class="fas fa-chart-pie text-warning"></i> Doanh thu Mua gói</h5>
+            </div>
+            <div class="card-body d-flex justify-content-center align-items-center">
+                <div style="width: 100%; min-height: 250px;">
+                    <canvas id="planPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bảng dữ liệu: Kéo thành 1 row chứa 2 bảng -->
+<div class="row g-4 mb-4">
+    <div class="col-md-7">
+        <!-- Lịch sử giao dịch gần nhất -->
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="mb-0"><i class="fas fa-list text-secondary"></i> Khoản thu gần đây</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>GD</th>
+                                <th>Khách/Landlord</th>
+                                <th>Tiền</th>
+                                <th>Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.RecentTransactions.Any())
+                            {
+                                foreach (var txn in Model.RecentTransactions)
+                                {
+                                    <tr>
+                                        <td>#@txn.PaymentId</td>
+                                        <td><strong>@txn.PayerName</strong></td>
+                                        <td class="text-success fw-bold">+@txn.Amount.ToString("N0")</td>
+                                        <td><span class="badge bg-light text-dark border">@txn.Type</span></td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="4" class="text-center text-muted">Chưa có giao dịch.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-5">
+        <!-- Top Landlords -->
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-header bg-white pt-4 pb-2 border-0">
+                <h5 class="mb-0"><i class="fas fa-medal text-warning"></i> Top 5 Landlord (Hoa hồng cọc)</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light"><tr><th class="ps-3">Hạng</th><th>Landlord</th><th>Hoa hồng</th></tr></thead>
+                    <tbody>
+                        @{int rank = 1;}
+                        @if (Model.TopEarningLandlords.Any()) {
+                            @foreach(var ll in Model.TopEarningLandlords) {
+                                <tr>
+                                    <td class="ps-3"><span class="badge bg-dark rounded-circle px-2 py-1">@rank</span></td>
+                                    <td><strong>@ll.LandlordName</strong></td>
+                                    <td class="text-success fw-bold">@ll.TotalCommission.ToString("N0") đ</td>
+                                </tr>
+                                rank++;
+                            }
+                        } else {
+                            <tr><td colspan="3" class="text-center py-4 text-muted">Chưa có dữ liệu</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .nf-stat-card {
+        background: #fff;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .nf-stat-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    .nf-stat-value {
+        font-weight: 700;
+        color: #333;
+    }
+    .nf-stat-label {
+        color: #666;
+        font-size: 0.9rem;
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const chartDataRaw = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenue));
+            
+            const labels = Object.keys(chartDataRaw);
+            const data = Object.values(chartDataRaw);
+
+            if(labels.length > 0) {
+                const ctx = document.getElementById('revenueLineChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Doanh thu (VNĐ)',
+                            data: data,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: true,
+                            pointBackgroundColor: '#28a745'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString('vi-VN') + ' đ';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Pie Chart for Revenue by Plan
+            const pieDataRaw = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueByPlan));
+            const pieLabels = Object.keys(pieDataRaw);
+            const pieData = Object.values(pieDataRaw);
+
+            if(pieLabels.length > 0) {
+                const pieCtx = document.getElementById('planPieChart').getContext('2d');
+                new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: pieLabels,
+                        datasets: [{
+                            data: pieData,
+                            backgroundColor: [
+                                '#4A90E2', '#FFA500', '#50C878', '#FF6B6B', '#9b59b6', '#34495e'
+                            ],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}

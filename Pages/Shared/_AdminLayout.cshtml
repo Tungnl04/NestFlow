@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -16,7 +16,7 @@
             <div class="container-fluid px-4">
 
                 <!-- Logo -->
-                <a class="navbar-brand" href="/Admin/Dashboard">
+                <a class="navbar-brand" href="/Home/Index">
                     <div class="nf-logo d-flex align-items-center gap-2">
                         <span class="nf-logo-icon">N</span>
                         <span class="nf-logo-text">Nestflow</span>
@@ -72,6 +72,12 @@
                         <a asp-page="/Admin/Posts" class="nf-sidebar-link">
                             <i class="fas fa-newspaper"></i>
                             <span>Tin đăng</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Revenue" class="nf-sidebar-link @(ViewContext.RouteData.Values["Page"]?.ToString() == "/Admin/Revenue" ? "active" : "")">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Doanh thu</span>
                         </a>
                     </li>
                     <li>
