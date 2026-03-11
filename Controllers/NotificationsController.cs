@@ -15,28 +15,45 @@ public class NotificationsController : ControllerBase
         _notificationService = notificationService;
     }
 
+    // Helper: lấy userId từ Session hoặc Claims
+    private long? GetCurrentUserId()
+    {
+        // 1. Session
+        var sessionId = HttpContext.Session.GetInt32("UserId");
+        if (sessionId.HasValue) return sessionId.Value;
+
+        // 2. Claims
+        var claimStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(claimStr) && long.TryParse(claimStr, out long claimId)) return claimId;
+
+        // 3. Query (dev/test)
+        if (Request.Query.ContainsKey("userId") && long.TryParse(Request.Query["userId"], out long qId)) return qId;
+
+        return null;
+    }
+
     // GET: api/Notifications
     [HttpGet]
     public async Task<IActionResult> GetMyNotifications()
     {
-        // TODO: Ensure Authorize attribute is used in production or assume middleware handles user context
-        // For now, allow passing userId via query for testing if auth is not fully ready, 
-        // OR try to get from User claims if available.
-        
-        // Setup simple logic: try get claim, else requires query param for Dev/Testing if Auth not fully integrated
-        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdStr) && Request.Query.ContainsKey("userId"))
-        {
-            userIdStr = Request.Query["userId"];
-        }
-
-        if (string.IsNullOrEmpty(userIdStr) || !long.TryParse(userIdStr, out long userId))
-        {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
             return Unauthorized("User ID not found.");
-        }
 
-        var notifs = await _notificationService.GetUserNotificationsAsync(userId);
+        var notifs = await _notificationService.GetUserNotificationsAsync(userId.Value);
         return Ok(notifs);
+    }
+
+    // GET: api/Notifications/unread-count
+    [HttpGet("unread-count")]
+    public async Task<IActionResult> GetUnreadCount()
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized("User ID not found.");
+
+        var count = await _notificationService.GetUnreadCountAsync(userId.Value);
+        return Ok(new { count });
     }
 
     // PUT: api/Notifications/5/read
@@ -49,23 +66,13 @@ public class NotificationsController : ControllerBase
 
     // PUT: api/Notifications/read-all
     [HttpPut("read-all")]
-    public async Task<IActionResult> MarkAllAsRead([FromQuery] long userId)
+    public async Task<IActionResult> MarkAllAsRead()
     {
-        // If userId is not provided in query, try to get from Claims
-        if (userId <= 0)
-        {
-             var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-             if (!string.IsNullOrEmpty(userIdStr) && long.TryParse(userIdStr, out long parsedId))
-             {
-                 userId = parsedId;
-             }
-        }
-
-        if (userId <= 0) {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
             return BadRequest("User ID required");
-        }
 
-        await _notificationService.MarkAllAsReadAsync(userId);
+        await _notificationService.MarkAllAsReadAsync(userId.Value);
         return Ok();
     }
     
@@ -73,7 +80,6 @@ public class NotificationsController : ControllerBase
     [HttpPost("test")]
     public async Task<IActionResult> SendTestNotification([FromQuery] long userId, [FromBody] TestNotificationRequest request)
     {
-        // DB only allows: 'booking', 'payment', 'message', 'review'
         await _notificationService.CreateAndSendNotificationAsync(userId, request.Title, request.Content, "message");
         return Ok("Sent");
     }

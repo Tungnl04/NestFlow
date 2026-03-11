@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <Folder Include="wwwroot\uploads\properties\a620a6d1-4763-4133-a263-96dc825cac05\" />
+    <Folder Include="wwwroot\uploads\properties\ee4719e0-6c27-47c7-9c4c-94b6272c50d7\" />
     <Folder Include="wwwroot\uploads\properties\f8a5ae43-56ad-4ad1-b8f9-e2e706c4fbd6\" />
   </ItemGroup>
 

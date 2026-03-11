@@ -133,21 +133,26 @@ namespace NestFlow.Application.Services
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Kiểm tra gói đăng ký và hạn mức
-                var subscription = await _context.LandlordSubscriptions
-                    .Include(s => s.Plan)
-                    .Where(s => s.LandlordId == listing.LandlordId && s.Status == "active" && s.EndAt > DateTime.UtcNow)
-                    .OrderByDescending(s => s.Plan.PriorityLevel)
-                    .FirstOrDefaultAsync();
+                // 1. Kiểm tra gói đăng ký CHỈ KHI đăng tin (active), cho phép lưu nháp không cần gói
+                NestFlow.Models.LandlordSubscription? subscription = null;
 
-                if (subscription == null)
+                if (listing.Status == "active")
                 {
-                    throw new InvalidOperationException("Quý khách hiện không có gói đăng tin nào còn hiệu lực. Vui lòng mua gói để tiếp tục.");
-                }
+                    subscription = await _context.LandlordSubscriptions
+                        .Include(s => s.Plan)
+                        .Where(s => s.LandlordId == listing.LandlordId && s.Status == "active" && s.EndAt > DateTime.UtcNow)
+                        .OrderByDescending(s => s.Plan.PriorityLevel)
+                        .FirstOrDefaultAsync();
 
-                if (subscription.QuotaRemaining <= 0)
-                {
-                    throw new InvalidOperationException("Quý khách đã sử dụng hết số lượt đăng tin của gói hiện tại.");
+                    if (subscription == null)
+                    {
+                        throw new InvalidOperationException("Quý khách hiện không có gói đăng tin nào còn hiệu lực. Vui lòng mua gói để tiếp tục.");
+                    }
+
+                    if (subscription.QuotaRemaining <= 0)
+                    {
+                        throw new InvalidOperationException("Quý khách đã sử dụng hết số lượt đăng tin của gói hiện tại.");
+                    }
                 }
 
                 // 2. Lưu Property trước để lấy PropertyId
@@ -187,7 +192,7 @@ namespace NestFlow.Application.Services
                 listing.LikeCount = 0;
 
                 // Xử lý status và quota
-                if (listing.Status == "active")
+                if (listing.Status == "active" && subscription != null)
                 {
                     subscription.QuotaRemaining--;
                     listing.PublishedAt = DateTime.UtcNow;

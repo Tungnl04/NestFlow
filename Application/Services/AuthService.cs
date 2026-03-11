@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NestFlow.Application.DTOs;
 using NestFlow.Application.Services.Interfaces;
 using NestFlow.Models;
@@ -49,6 +49,18 @@ namespace NestFlow.Application.Services
                     {
                         Success = false,
                         Message = "Tài khoản của bạn đã bị khóa"
+                    };
+                }
+
+                // Kiểm tra xác thực email
+                if (user.IsVerified != true)
+                {
+                    return new AuthResponseDto
+                    {
+                        Success = false,
+                        Message = "Tài khoản chưa được xác thực email. Vui lòng kiểm tra hộp thư.",
+                        RequireVerification = true,
+                        User = new UserInfoDto { Email = user.Email, FullName = user.FullName }
                     };
                 }
 
@@ -129,31 +141,43 @@ namespace NestFlow.Application.Services
                 _context.Wallets.Add(newWallet);
                 await _context.SaveChangesAsync();
 
-                // Gửi email chào mừng (không chặn luồng chính)
+                // Tạo mã OTP xác thực email
+                var random = new Random();
+                var verificationCode = random.Next(100000, 999999).ToString();
+
+                var verifyToken = new PasswordResetToken
+                {
+                    UserId = newUser.UserId,
+                    Token = verificationCode,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                    IsUsed = false,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.PasswordResetTokens.Add(verifyToken);
+                await _context.SaveChangesAsync();
+
+                // Gửi email OTP (không chặn luồng chính)
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.FullName);
+                        await _emailService.SendEmailVerificationAsync(newUser.Email, verificationCode, newUser.FullName);
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Error sending welcome email: {ex.Message}");
+                        Console.WriteLine($"Error sending verification email: {ex.Message}");
                     }
                 });
+
                 return new AuthResponseDto
                 {
                     Success = true,
-                    Message = "Đăng ký thành công",
+                    Message = "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.",
+                    RequireVerification = true,
                     User = new UserInfoDto
                     {
-                        UserId = newUser.UserId,
                         Email = newUser.Email,
-                        FullName = newUser.FullName,
-                        Phone = newUser.Phone,
-                        AvatarUrl = newUser.AvatarUrl,
-                        UserType = newUser.UserType,
-                        IsVerified = newUser.IsVerified
+                        FullName = newUser.FullName
                     }
                 };
             }
@@ -451,6 +475,120 @@ namespace NestFlow.Application.Services
                     Success = false,
                     Message = $"Đã xảy ra lỗi: {ex.Message}"
                 };
+            }
+        }
+
+        public async Task<AuthResponseDto> VerifyEmailAsync(string email, string code)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+                if (user == null)
+                {
+                    return new AuthResponseDto { Success = false, Message = "Email không tồn tại" };
+                }
+
+                if (user.IsVerified == true)
+                {
+                    return new AuthResponseDto { Success = true, Message = "Tài khoản đã được xác thực trước đó" };
+                }
+
+                // Tìm token hợp lệ
+                var token = await _context.PasswordResetTokens
+                    .Where(t => t.UserId == user.UserId
+                        && t.Token == code
+                        && !t.IsUsed
+                        && t.ExpiresAt > DateTime.UtcNow)
+                    .OrderByDescending(t => t.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (token == null)
+                {
+                    return new AuthResponseDto { Success = false, Message = "Mã xác thực không hợp lệ hoặc đã hết hạn" };
+                }
+
+                // Đánh dấu token đã dùng & xác thực user
+                token.IsUsed = true;
+                user.IsVerified = true;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return new AuthResponseDto
+                {
+                    Success = true,
+                    Message = "Xác thực email thành công! Bạn có thể đăng nhập ngay.",
+                    User = new UserInfoDto
+                    {
+                        UserId = user.UserId,
+                        Email = user.Email,
+                        FullName = user.FullName,
+                        Phone = user.Phone,
+                        AvatarUrl = user.AvatarUrl,
+                        UserType = user.UserType,
+                        IsVerified = true
+                    }
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AuthResponseDto { Success = false, Message = $"Đã xảy ra lỗi: {ex.Message}" };
+            }
+        }
+
+        public async Task<AuthResponseDto> ResendVerificationCodeAsync(string email)
+        {
+            try
+            {
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+                if (user == null)
+                {
+                    return new AuthResponseDto { Success = true, Message = "Nếu email tồn tại, mã mới đã được gửi" };
+                }
+
+                if (user.IsVerified == true)
+                {
+                    return new AuthResponseDto { Success = false, Message = "Tài khoản đã được xác thực" };
+                }
+
+                // Vô hiệu hóa tất cả token cũ
+                var oldTokens = await _context.PasswordResetTokens
+                    .Where(t => t.UserId == user.UserId && !t.IsUsed)
+                    .ToListAsync();
+                foreach (var t in oldTokens) t.IsUsed = true;
+
+                // Tạo mã mới
+                var random = new Random();
+                var newCode = random.Next(100000, 999999).ToString();
+
+                _context.PasswordResetTokens.Add(new PasswordResetToken
+                {
+                    UserId = user.UserId,
+                    Token = newCode,
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(15),
+                    IsUsed = false,
+                    CreatedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+
+                // Gửi email
+                try
+                {
+                    await _emailService.SendEmailVerificationAsync(user.Email, newCode, user.FullName);
+                }
+                catch (Exception emailEx)
+                {
+                    Console.WriteLine($"Error sending verification email: {emailEx.Message}");
+                }
+
+                return new AuthResponseDto
+                {
+                    Success = true,
+                    Message = "Mã xác thực mới đã được gửi đến email của bạn"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new AuthResponseDto { Success = false, Message = $"Đã xảy ra lỗi: {ex.Message}" };
             }
         }
     }

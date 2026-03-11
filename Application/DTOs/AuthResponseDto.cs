@@ -1,10 +1,11 @@
-﻿namespace NestFlow.Application.DTOs
+namespace NestFlow.Application.DTOs
 {
     public class AuthResponseDto
     {
         public bool Success { get; set; }
         public string Message { get; set; } = null!;
         public UserInfoDto? User { get; set; }
+        public bool RequireVerification { get; set; } = false;
     }
 
     public class UserInfoDto
