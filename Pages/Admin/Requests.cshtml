@@ -1,0 +1,265 @@
+@page
+@model NestFlow.Pages.Admin.RequestsModel
+@{
+    ViewData["Title"] = "Quản lý yêu cầu - Nestflow";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">Quản lý Yêu cầu rút tiền</h2>
+
+<!-- Bộ lọc -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="Pending" selected>Chờ xử lý</option>
+                    <option value="Approved">Đã duyệt</option>
+                    <option value="Rejected">Từ chối</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" id="filterBtn">
+                    <i class="fas fa-filter"></i> Lọc
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Danh sách -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-list"></i> Danh sách yêu cầu</h5>
+    </div>
+    <div class="card-body">
+        <div id="loadingIndicator" class="text-center py-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Mã YC</th>
+                        <th>Chủ trọ</th>
+                        <th>Số tiền (VNĐ)</th>
+                        <th>Ngân hàng</th>
+                        <th>Ngày yêu cầu</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="requestsTableBody">
+                    <!-- Dữ liệu JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xử lý -->
+<div class="modal fade" id="processModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="processModalTitle">Xử lý yêu cầu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn đang xử lý yêu cầu rút tiền của: <strong id="processLandlordName"></strong></p>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Số tiền:</label>
+                    <div class="fs-5 text-danger fw-bold" id="processAmount"></div>
+                </div>
+                <div class="mb-3 p-3 bg-light rounded">
+                    <div><strong>Ngân hàng:</strong> <span id="processBankName"></span></div>
+                    <div><strong>Số TK:</strong> <span id="processBankAccount"></span></div>
+                    <div><strong>Chủ TK:</strong> <span id="processAccountHolder"></span></div>
+                </div>
+                <div class="mb-3 border-top pt-3">
+                    <label class="form-label fw-bold" id="noteLabel">Ghi chú xử lý:</label>
+                    <textarea id="processNote" class="form-control" rows="3" placeholder="Nhập lý do hoặc lời nhắn..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn text-white w-25" id="confirmActionBtn"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentRequests = [];
+        let processAction = ''; // 'approve' or 'reject'
+        let currentWithdrawId = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadRequests();
+            document.getElementById('filterBtn').addEventListener('click', loadRequests);
+            document.getElementById('confirmActionBtn').addEventListener('click', processRequest);
+        });
+
+        async function loadRequests() {
+            const status = document.getElementById('statusFilter').value;
+            const tbody = document.getElementById('requestsTableBody');
+            const loading = document.getElementById('loadingIndicator');
+
+            tbody.innerHTML = '';
+            loading.style.display = 'block';
+
+            try {
+                let url = '/api/withdraw/admin/all';
+                if (status) url += `?status=${status}`;
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const text = await response.text();
+                    showToast(`Lỗi ${response.status}: ${text.substring(0, 50)}`, 'error');
+                    return;
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    currentRequests = result.data;
+                    renderTable(result.data);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Lỗi tải danh sách yêu cầu', error);
+                showToast('Lỗi khi tải danh sách: ' + error.message, 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function renderTable(requests) {
+            const tbody = document.getElementById('requestsTableBody');
+            if (!requests || requests.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Không có dữ liệu</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = requests.map(req => {
+                let statusBadge = '';
+                if (req.status === 'Pending') statusBadge = '<span class="badge bg-warning text-dark">Chờ xử lý</span>';
+                else if (req.status === 'Approved') statusBadge = '<span class="badge bg-success">Đã duyệt</span>';
+                else if (req.status === 'Rejected') statusBadge = '<span class="badge bg-danger">Từ chối</span>';
+
+                let actionHtml = '';
+                if (req.status === 'Pending') {
+                    actionHtml = `
+                        <button class="btn btn-sm btn-success me-1" onclick="openProcessModal(${req.withdrawId}, 'approve')" title="Duyệt chuyển tiền"><i class="fas fa-check"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="openProcessModal(${req.withdrawId}, 'reject')" title="Từ chối"><i class="fas fa-times"></i></button>
+                    `;
+                }
+
+                return `
+                    <tr>
+                        <td>#${req.withdrawId}</td>
+                        <td>
+                            <div><strong>${req.landlordName}</strong></div>
+                            <div class="small text-muted">${req.landlordPhone || ''} | ${req.landlordEmail}</div>
+                        </td>
+                        <td class="text-danger fw-bold">${parseInt(req.amount).toLocaleString('vi-VN')}</td>
+                        <td>
+                            <div class="small">NH: ${req.bankName}</div>
+                            <div class="small">TK: ${req.bankAccount}</div>
+                        </td>
+                        <td>${new Date(req.requestedAt).toLocaleString('vi-VN')}</td>
+                        <td>${statusBadge}</td>
+                        <td>${actionHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openProcessModal(id, action) {
+            currentWithdrawId = id;
+            processAction = action;
+
+            const req = currentRequests.find(r => r.withdrawId === id);
+            if (!req) return;
+
+            document.getElementById('processLandlordName').textContent = req.landlordName;
+            document.getElementById('processAmount').textContent = parseInt(req.amount).toLocaleString('vi-VN') + ' VNĐ';
+            document.getElementById('processBankName').textContent = req.bankName;
+            document.getElementById('processBankAccount').textContent = req.bankAccount;
+            document.getElementById('processAccountHolder').textContent = req.accountHolder;
+
+            const title = document.getElementById('processModalTitle');
+            const btn = document.getElementById('confirmActionBtn');
+            const noteLabel = document.getElementById('noteLabel');
+            document.getElementById('processNote').value = '';
+
+            if (action === 'approve') {
+                title.textContent = 'Duyệt yêu cầu rút tiền';
+                title.className = 'modal-title text-success';
+                btn.textContent = 'Duyệt chuyển tiền';
+                btn.className = 'btn text-white w-50 bg-success';
+                noteLabel.innerHTML = 'Ghi chú duyệt <span class="text-muted fw-normal">(Tuỳ chọn)</span>:';
+            } else {
+                title.textContent = 'Từ chối yêu cầu rút tiền';
+                title.className = 'modal-title text-danger';
+                btn.textContent = 'Xác nhận từ chối';
+                btn.className = 'btn text-white w-50 bg-danger';
+                noteLabel.innerHTML = 'Lý do từ chối <span class="text-danger">*</span>:';
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('processModal'));
+            modal.show();
+        }
+
+        async function processRequest() {
+            const note = document.getElementById('processNote').value.trim();
+            if (processAction === 'reject' && !note) {
+                showToast('Vui lòng nhập lý do từ chối', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('confirmActionBtn');
+            const originText = btn.textContent;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+            btn.disabled = true;
+
+            try {
+                const url = `/api/withdraw/${processAction}/${currentWithdrawId}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note: note || (processAction === 'approve' ? 'Đã duyệt' : 'Từ chối') })
+                });
+
+                let result;
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    result = await response.json();
+                } else {
+                    const text = await response.text();
+                    if (response.ok) {
+                        result = { success: true, message: 'Thao tác thành công' };
+                    } else {
+                        throw new Error(`Server returned ${response.status}: ${text}`);
+                    }
+                }
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('processModal')).hide();
+                    loadRequests(); // Tải lại danh sách
+                } else {
+                    showToast(result.message || 'Lỗi xử lý', 'error');
+                }
+            } catch (error) {
+                console.error('Process Request Error:', error);
+                showToast('Lỗi khi kết nối server: ' + error.message, 'error');
+            } finally {
+                btn.textContent = originText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+}

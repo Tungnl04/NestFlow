@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using NestFlow.Application.Services.Interfaces;
 using NestFlow.Models.ViewModels;
@@ -49,7 +49,7 @@ namespace NestFlow.Pages.Home
 
             // Check if user is landlord
             var userType = HttpContext.Session.GetString("UserType");
-            if (userType == "landlord")
+            if (userType?.ToLower() == "landlord")
             {
                 return RedirectToPage("/Home/Index");
             }

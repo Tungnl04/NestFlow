@@ -71,6 +71,9 @@ public class RentalReminderJob : BackgroundService
         // 2. Nhắc hợp đồng sắp hết hạn (Rental.EndDate trong 7 ngày tới, chỉ cho chủ trọ)
         await RemindExpiringContracts(context, notificationService, today);
 
+        // 3. Nhắc hóa đơn đến hạn / quá hạn cho Chủ trọ
+        await CheckInvoiceDueDates(context, notificationService, today);
+
         _logger.LogInformation("=== RentalReminderJob: Hoàn tất ===");
     }
 
@@ -157,6 +160,68 @@ public class RentalReminderJob : BackgroundService
         catch (Exception ex)
         {
             _logger.LogError($"Lỗi nhắc hợp đồng: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Nhắc hóa đơn đến hạn hoặc quá hạn cho Chủ trọ dựa trên bảng Invoices
+    /// </summary>
+    private async Task CheckInvoiceDueDates(
+        NestFlowSystemContext context,
+        INotificationService notificationService,
+        DateOnly today)
+    {
+        try
+        {
+            var pendingInvoices = await context.Invoices
+                .Include(i => i.Rental)
+                    .ThenInclude(r => r.Property)
+                .Where(i => i.Status == "pending" && i.DueDate.HasValue)
+                .ToListAsync();
+
+            int countDue = 0;
+            int countOverdue = 0;
+
+            foreach (var invoice in pendingInvoices)
+            {
+                if (invoice.Rental == null) continue;
+
+                var landlordId = invoice.Rental.LandlordId;
+
+                // Nếu hóa đơn đến hạn hôm nay
+                if (invoice.DueDate!.Value == today)
+                {
+                    await notificationService.CreateAndSendNotificationAsync(
+                        landlordId,
+                        "Hóa đơn đến hạn",
+                        $"Hóa đơn tháng {invoice.InvoiceMonth} của phòng {invoice.Rental.Property?.Title} " +
+                        $"đã đến hạn thanh toán hôm nay ({invoice.TotalAmount:N0} VNĐ)",
+                        "info",
+                        "/Landlord/Invoices"
+                    );
+                    countDue++;
+                }
+                // Nếu hóa đơn đã quá hạn
+                else if (invoice.DueDate!.Value < today)
+                {
+                    var daysOverdue = today.DayNumber - invoice.DueDate.Value.DayNumber;
+                    await notificationService.CreateAndSendNotificationAsync(
+                        landlordId,
+                        "🔴 Hóa đơn quá hạn",
+                        $"Hóa đơn tháng {invoice.InvoiceMonth} của phòng {invoice.Rental.Property?.Title} " +
+                        $"đã quá hạn {daysOverdue} ngày ({invoice.TotalAmount:N0} VNĐ)",
+                        "warning",
+                        "/Landlord/Invoices"
+                    );
+                    countOverdue++;
+                }
+            }
+
+            _logger.LogInformation($"Kiểm tra hóa đơn: {countDue} đến hạn, {countOverdue} quá hạn");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError($"Lỗi nhắc hóa đơn: {ex.Message}");
         }
     }
 }

@@ -160,8 +160,33 @@ namespace NestFlow.Controllers
                 }
                 catch (Exception emailEx)
                 {
-                    _logger.LogError($"Error sending email/notification: {emailEx.Message}");
+                    _logger.LogError($"Error sending email/notification to landlord: {emailEx.Message}");
                     // KHÔNG throw - vì withdraw request đã tạo thành công
+                }
+
+                // Gửi thông báo cho TẤT CẢ ADMIN
+                try
+                {
+                    if (_notificationService != null)
+                    {
+                        var landlordUser = await _context.Users.FindAsync(landlordId.Value);
+                        var admins = await _context.Users.Where(u => u.UserType != null && u.UserType.ToLower() == "admin").ToListAsync();
+                        foreach (var admin in admins)
+                        {
+                            await _notificationService.CreateAndSendNotificationAsync(
+                                admin.UserId,
+                                "Yêu cầu rút tiền mới",
+                                $"Chủ trọ {landlordUser?.FullName ?? landlordId.ToString()} vừa yêu cầu rút {request.Amount:N0} VNĐ",
+                                "warning",
+                                "/Admin/Requests"
+                            );
+                        }
+                        _logger.LogInformation($"Notification sent to {admins.Count} admins successfully");
+                    }
+                }
+                catch (Exception adminNotiEx)
+                {
+                    _logger.LogError($"Error notifying admins: {adminNotiEx.Message}");
                 }
 
                 _logger.LogInformation("=== END CreateWithdrawRequest SUCCESS ===");
@@ -219,7 +244,7 @@ namespace NestFlow.Controllers
 
                 // TODO: Kiểm tra quyền admin
                 var admin = await _context.Users.FindAsync((long)adminId.Value);
-                if (admin == null || admin.UserType != "Admin")
+                if (admin == null || admin.UserType?.ToLower() != "admin")
                 {
                     return Forbid();
                 }
@@ -322,7 +347,7 @@ namespace NestFlow.Controllers
 
                 // TODO: Kiểm tra quyền admin
                 var admin = await _context.Users.FindAsync((long)adminId.Value);
-                if (admin == null || admin.UserType != "Admin")
+                if (admin == null || admin.UserType?.ToLower() != "admin")
                 {
                     return Forbid();
                 }
@@ -469,7 +494,7 @@ namespace NestFlow.Controllers
 
                 // TODO: Kiểm tra quyền admin
                 var admin = await _context.Users.FindAsync((long)adminId.Value);
-                if (admin == null || admin.UserType != "Admin")
+                if (admin == null || admin.UserType?.ToLower() != "admin")
                 {
                     return Forbid();
                 }

@@ -589,7 +589,7 @@ namespace NestFlow.Controllers
                             "Có đơn đặt cọc mới",
                             $"Bạn có đơn đặt cọc mới cho phòng: {booking.Property.Title}. Số tiền: {booking.Property.Deposit:N0} VNĐ",
                             "info",
-                            $"/Landlord/Dashboard"
+                            $"/Landlord/Bookings"
                         );
                     }
                 }

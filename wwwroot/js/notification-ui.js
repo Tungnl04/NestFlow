@@ -28,7 +28,13 @@ async function checkAuthAndToggleBell() {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                     if (!userDropdown.classList.contains('d-none')) {
-                        bell.classList.remove('d-none');
+                        // Check role - hide if landlord
+                        const currentUser = window.NestFlowAuth ? window.NestFlowAuth.getCurrentUser() : null;
+                        if (currentUser && currentUser.userType && currentUser.userType.toLowerCase() === 'landlord') {
+                            bell.classList.add('d-none');
+                        } else {
+                            bell.classList.remove('d-none');
+                        }
                     } else {
                         bell.classList.add('d-none');
                     }
@@ -40,7 +46,12 @@ async function checkAuthAndToggleBell() {
 
         // Initial check
         if (!userDropdown.classList.contains('d-none')) {
-            bell.classList.remove('d-none');
+            const currentUser = window.NestFlowAuth ? window.NestFlowAuth.getCurrentUser() : null;
+            if (currentUser && currentUser.userType && currentUser.userType.toLowerCase() === 'landlord') {
+                bell.classList.add('d-none');
+            } else {
+                bell.classList.remove('d-none');
+            }
         }
     }
 }

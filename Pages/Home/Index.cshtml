@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model NestFlow.Pages.Home.IndexModel
 @{
     ViewData["Title"] = "Nestflow - Tìm phòng trọ tại Hòa Lạc";
@@ -104,30 +104,36 @@
     }
 
     <!-- Dòng 1: Tin mới nhất -->
-    <section class="mb-5">
-        <h3 class="nf-section-title mb-4">Tin mới nhất</h3>
-        <div class="row g-4">
-            @foreach (var room in Model.NewRooms)
-            {
-                <div class="col-md-3">
-                    <partial name="_RoomCard" model="room" />
-                </div>
-            }
-        </div>
-    </section>
+    @if (Model.NewRooms.Any())
+    {
+        <section class="mb-5">
+            <h3 class="nf-section-title mb-4">Tin mới nhất</h3>
+            <div class="row g-4">
+                @foreach (var room in Model.NewRooms)
+                {
+                    <div class="col-md-3">
+                        <partial name="_RoomCard" model="room" />
+                    </div>
+                }
+            </div>
+        </section>
+    }
 
     <!-- Dòng 2: Tin đăng cách 1 tháng -->
-    <section class="mb-5">
-        <h3 class="nf-section-title mb-4">Tin đăng cách 1 tháng</h3>
-        <div class="row g-4">
-            @foreach (var room in Model.OneMonthRooms)
-            {
-                <div class="col-md-3">
-                    <partial name="_RoomCard" model="room" />
-                </div>
-            }
-        </div>
-    </section>
+    @if (Model.OneMonthRooms.Any())
+    {
+        <section class="mb-5">
+            <h3 class="nf-section-title mb-4">Tin đăng cách 1 tháng</h3>
+            <div class="row g-4">
+                @foreach (var room in Model.OneMonthRooms)
+                {
+                    <div class="col-md-3">
+                        <partial name="_RoomCard" model="room" />
+                    </div>
+                }
+            </div>
+        </section>
+    }
 
     <!-- Dòng 3: Tin đăng cách 3 tháng -->
     @if (Model.ThreeMonthRooms.Any())
