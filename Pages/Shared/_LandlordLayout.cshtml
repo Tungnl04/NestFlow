@@ -118,9 +118,10 @@
                         </a>
                     </li>
                     <li>
-                        <a asp-page="/Landlord/Notifications" class="nf-sidebar-link">
+                        <a asp-page="/Landlord/Notifications" class="nf-sidebar-link position-relative">
                             <i class="fas fa-bell"></i>
                             <span>Thông báo</span>
+                            <span id="landlord-notif-badge" class="badge rounded-pill bg-danger position-absolute end-0 me-3 d-none">0</span>
                         </a>
                     </li>
                 </ul>
@@ -203,6 +204,7 @@
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script src="~/js/auth.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
@@ -224,7 +226,8 @@
             }
 
             if (landlordRoleDisplay && currentUser) {
-                if (currentUser.userType === 'admin') {
+                const type = currentUser.userType ? currentUser.userType.toLowerCase() : '';
+                if (type === 'admin') {
                     landlordRoleDisplay.textContent = 'Quản trị viên';
                     landlordRoleDisplay.className = 'nf-role-badge nf-role-admin-badge';
                 } else {
@@ -240,7 +243,59 @@
                     link.classList.add('active');
                 }
             });
+
+            // Initialize Notifications for Landlord
+            if (currentUser) {
+                updateNotifBadge();
+                setupSignalR(currentUser.userId);
+            }
         });
+
+        // --- Notification Logic ---
+        let connection = null;
+
+        async function updateNotifBadge() {
+            try {
+                const response = await fetch('/api/Notifications/unread-count');
+                if (response.ok) {
+                    const count = await response.json();
+                    const badge = document.getElementById('landlord-notif-badge');
+                    if (badge) {
+                        badge.textContent = count;
+                        if (count > 0) badge.classList.remove('d-none');
+                        else badge.classList.add('d-none');
+                    }
+                }
+            } catch (e) { console.error("Error updating badge:", e); }
+        }
+
+        function setupSignalR(userId) {
+            if (connection) return;
+
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl(`/notificationHub?userId=${userId}`)
+                .withAutomaticReconnect()
+                .build();
+
+            connection.start()
+                .then(() => console.log("SignalR Connected for Landlord Dashboard"))
+                .catch(err => console.error("SignalR Error:", err));
+
+            connection.on("ReceiveNotification", (notification) => {
+                // Update badge
+                updateNotifBadge();
+                
+                // Show toast
+                showToast(notification.content, 'info', notification.title);
+
+                // If on notifications page, reload list
+                if (window.location.pathname === '/Landlord/Notifications') {
+                    if (typeof loadNotifications === 'function') {
+                        loadNotifications();
+                    }
+                }
+            });
+        }
 
         async function logout() {
             const result = await window.NestFlowAuth.logout();

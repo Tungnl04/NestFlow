@@ -307,10 +307,13 @@ function getCurrentUser() {
 // Check user role
 function hasRole(role) {
     if (!currentUser) return false;
-    if (role === 'admin') return currentUser.userType === 'admin';
-    if (role === 'landlord') return ['landlord', 'admin'].includes(currentUser.userType);
-    if (role === 'renter') return currentUser.userType === 'renter';
-    if (role === 'tenant') return currentUser.userType === 'renter'; // Alias
+    const type = currentUser.userType ? currentUser.userType.toLowerCase() : '';
+    const r = role ? role.toLowerCase() : '';
+
+    if (r === 'admin') return type === 'admin';
+    if (r === 'landlord') return ['landlord', 'admin'].includes(type);
+    if (r === 'renter') return type === 'renter';
+    if (r === 'tenant') return type === 'renter'; // Alias
     return false;
 }
 

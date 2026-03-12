@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using NestFlow.Application.Services.Interfaces;
 using NestFlow.Application.DTOs;
 using NestFlow.Models;
@@ -37,7 +37,7 @@ namespace NestFlow.Application.Services
 
             if (!string.IsNullOrEmpty(userType))
             {
-                query = query.Where(u => u.UserType == userType);
+                query = query.Where(u => u.UserType != null && u.UserType.ToLower() == userType.ToLower());
             }
 
             if (!string.IsNullOrEmpty(status))
@@ -120,8 +120,8 @@ namespace NestFlow.Application.Services
         {
             var totalUsers = await _context.Users.CountAsync();
             var activeUsers = await _context.Users.CountAsync(u => u.Status == "active");
-            var landlords = await _context.Users.CountAsync(u => u.UserType == "landlord");
-            var renters = await _context.Users.CountAsync(u => u.UserType == "renter");
+            var landlords = await _context.Users.CountAsync(u => u.UserType != null && u.UserType.ToLower() == "landlord");
+            var renters = await _context.Users.CountAsync(u => u.UserType != null && u.UserType.ToLower() == "renter");
             var verifiedUsers = await _context.Users.CountAsync(u => u.IsVerified == true);
 
             var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);

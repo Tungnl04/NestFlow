@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model NestFlow.Pages.Landlord.NotificationsModel
 @{
     ViewData["Title"] = "Thông báo - Nestflow";
@@ -6,70 +6,200 @@
 }
 
 <div class="container-fluid px-4 py-4">
-            <h2 class="mb-4">Thông báo</h2>
-            <div class="card">
-                <div class="card-body">
-                    <div class="nf-notification-item mb-3 pb-3 border-bottom">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="nf-notification-icon bg-warning">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">Tin đăng sắp hết hạn</h6>
-                                <p class="mb-1">Tin đăng "Phòng trọ sinh viên tại Hòa Lạc" sẽ hết hạn vào ngày 15/01/2026</p>
-                                <small class="text-muted">2 giờ trước</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="nf-notification-item mb-3 pb-3 border-bottom">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="nf-notification-icon bg-primary">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">Có người quan tâm</h6>
-                                <p class="mb-1">Nguyễn Văn A đã liên hệ về phòng trọ #001</p>
-                                <small class="text-muted">5 giờ trước</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="nf-notification-item mb-3 pb-3 border-bottom">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="nf-notification-icon bg-success">
-                                <i class="fas fa-check-circle"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">Thanh toán thành công</h6>
-                                <p class="mb-1">Người thuê đã thanh toán tiền phòng tháng 2/2026</p>
-                                <small class="text-muted">1 ngày trước</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="nf-notification-item">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="nf-notification-icon bg-info">
-                                <i class="fas fa-info-circle"></i>
-                            </div>
-                            <div class="flex-grow-1">
-                                <h6 class="mb-1">Cập nhật gói dịch vụ</h6>
-                                <p class="mb-1">Gói VIP của bạn sẽ hết hạn vào ngày 01/02/2026</p>
-                                <small class="text-muted">2 ngày trước</small>
-                            </div>
-                        </div>
-                    </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Thông báo</h2>
+        <button class="btn btn-outline-primary btn-sm" onclick="markAllAsRead()">
+            <i class="fas fa-check-double me-1"></i> Đánh dấu tất cả là đã đọc
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div id="notifications-loader" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Đang tải...</span>
                 </div>
+                <p class="mt-2 text-muted">Đang tải thông báo...</p>
             </div>
+
+            <div id="empty-notifications" class="text-center py-5 d-none">
+                <i class="fas fa-bell-slash fa-3x text-light mb-3"></i>
+                <p class="text-muted">Bạn chưa có thông báo nào</p>
+            </div>
+
+            <div id="notifications-list" class="list-group list-group-flush">
+                <!-- Notifications will be loaded here -->
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            await loadNotifications();
+        });
+
+        async function loadNotifications() {
+            const loader = document.getElementById('notifications-loader');
+            const list = document.getElementById('notifications-list');
+            const emptyState = document.getElementById('empty-notifications');
+
+            try {
+                // Get current user to get userId
+                const authResult = await window.NestFlowAuth.initAuth();
+                const user = window.NestFlowAuth.getCurrentUser();
+                
+                if (!user) {
+                    loader.innerHTML = '<p class="text-danger">Vui lòng đăng nhập để xem thông báo</p>';
+                    return;
+                }
+
+                const response = await fetch(`/api/Notifications?userId=${user.userId}`);
+                if (response.ok) {
+                    const notifications = await response.json();
+                    loader.classList.add('d-none');
+
+                    if (notifications.length === 0) {
+                        emptyState.classList.remove('d-none');
+                    } else {
+                        list.innerHTML = '';
+                        notifications.forEach(n => {
+                            const item = renderNotificationItem(n);
+                            list.appendChild(item);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                loader.innerHTML = '<p class="text-danger">Lỗi khi tải thông báo. Vui lòng thử lại sau.</p>';
+            }
+        }
+
+        function renderNotificationItem(n) {
+            const a = document.createElement('a');
+            a.href = n.linkUrl || 'javascript:void(0)';
+            a.className = `list-group-item list-group-item-action border-0 p-4 ${n.isRead ? '' : 'nf-unread-item'}`;
+            
+            let iconClass = 'fa-bell';
+            let iconBg = 'bg-primary';
+
+            // Heuristic for icons based on title/type
+            const title = n.title.toLowerCase();
+            if (title.includes('hóa đơn') || title.includes('thanh toán')) {
+                iconClass = 'fa-file-invoice-dollar';
+                iconBg = 'bg-success';
+            } else if (title.includes('hạn') || title.includes('cảnh báo')) {
+                iconClass = 'fa-exclamation-triangle';
+                iconBg = 'bg-warning';
+            } else if (title.includes('đặt cọc') || title.includes('thuê')) {
+                iconClass = 'fa-hand-holding-usd';
+                iconBg = 'bg-info';
+            } else if (title.includes('ẩn') || title.includes('xóa') || title.includes('từ chối')) {
+                iconClass = 'fa-times-circle';
+                iconBg = 'bg-danger';
+            }
+
+            const timeStr = formatTime(n.createdAt);
+
+            a.innerHTML = `
+                <div class="d-flex align-items-start gap-4">
+                    <div class="nf-notification-icon ${iconBg} shadow-sm rounded-3">
+                        <i class="fas ${iconClass}"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0 fw-bold">${n.title}</h6>
+                            <small class="text-muted">${timeStr}</small>
+                        </div>
+                        <p class="mb-0 text-secondary">${n.content}</p>
+                    </div>
+                    ${n.isRead ? '' : '<span class="nf-unread-dot"></span>'}
+                </div>
+            `;
+            
+            return a;
+        }
+
+        async function markAllAsRead() {
+            try {
+                const response = await fetch('/api/Notifications/read-all', { method: 'PUT' });
+                if (response.ok) {
+                    // Update UI locally
+                    document.querySelectorAll('.nf-unread-item').forEach(el => el.classList.remove('nf-unread-item'));
+                    document.querySelectorAll('.nf-unread-dot').forEach(el => el.remove());
+                    
+                    // Update sidebar badge if exists
+                    const badge = document.getElementById('landlord-notif-badge');
+                    if (badge) {
+                        badge.textContent = '0';
+                        badge.classList.add('d-none');
+                    }
+
+                    window.NestFlowAuth.showToast('Đã đánh dấu tất cả là đã đọc', 'success');
+                }
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+            }
+        }
+
+        function formatTime(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
+
+            if (diffMins < 1) return 'Vừa xong';
+            if (diffMins < 60) return `${diffMins} phút trước`;
+            if (diffHours < 24) return `${diffHours} giờ trước`;
+            if (diffDays === 1) return 'Hôm qua';
+            if (diffDays < 7) return `${diffDays} ngày trước`;
+            return date.toLocaleDateString('vi-VN');
+        }
+    </script>
+}
 
 <style>
     .nf-notification-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
+        width: 48px;
+        height: 48px;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #fff;
         flex-shrink: 0;
+        font-size: 1.25rem;
+    }
+
+    .nf-unread-item {
+        background-color: #f0f7ff !important;
+        border-left: 4px solid #4A90E2 !important;
+    }
+
+    .nf-unread-dot {
+        width: 10px;
+        height: 10px;
+        background-color: #ff4d4f;
+        border-radius: 50%;
+        display: inline-block;
+        margin-left: 10px;
+        flex-shrink: 0;
+        align-self: center;
+    }
+
+    .list-group-item {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid #f0f0f0 !important;
+    }
+
+    .list-group-item:hover {
+        background-color: #fafafa;
+        transform: translateX(4px);
+    }
+
+    .nf-unread-item:hover {
+        background-color: #e6f4ff !important;
     }
 </style>

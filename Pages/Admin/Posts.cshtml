@@ -1,0 +1,253 @@
+@page
+@model NestFlow.Pages.Admin.PostsModel
+@{
+    ViewData["Title"] = "Quản lý Tin đăng - Nestflow";
+    Layout = "~/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="mb-4">Quản lý Tin đăng Hệ thống</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="active" selected>Đang hiển thị</option>
+                    <option value="draft">Bản nháp</option>
+                    <option value="inactive">Đã ẩn / Ngừng kinh doanh</option>
+                    <option value="expired">Hết hạn</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary w-100" id="filterBtn">
+                    <i class="fas fa-filter"></i> Lọc
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-newspaper"></i> Danh sách tin đăng</h5>
+    </div>
+    <div class="card-body">
+        <div id="loadingIndicator" class="text-center py-5" style="display: none;">
+            <div class="spinner-border text-primary" role="status"></div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Mã Tin</th>
+                        <th>Tiêu đề / Link</th>
+                        <th>Chủ trọ</th>
+                        <th>Đơn giá</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="postsTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="processModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="processModalTitle">Xử lý tin đăng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Mã Tin: <strong id="processPostId"></strong></p>
+                <p>Tiêu đề: <strong id="processPostTitle" class="text-primary"></strong></p>
+                <div class="mb-3 border-top pt-3">
+                    <label class="form-label fw-bold" id="noteLabel">Lý do xử lý <span class="text-danger">*</span>:</label>
+                    <textarea id="processNote" class="form-control" rows="3" placeholder="Ví dụ: Đăng sai thông tin hoặc vi phạm tiêu chuẩn cộng đồng..."></textarea>
+                    <div class="form-text">Lý do này sẽ được gửi thông báo trực tiếp đến Chủ trọ.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn text-white px-4" id="confirmActionBtn"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentPosts = [];
+        let processAction = ''; // 'hide' or 'delete'
+        let currentListingId = 0;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPosts();
+            document.getElementById('filterBtn').addEventListener('click', loadPosts);
+            document.getElementById('confirmActionBtn').addEventListener('click', processPost);
+        });
+
+        async function loadPosts() {
+            const status = document.getElementById('statusFilter').value;
+            const tbody = document.getElementById('postsTableBody');
+            const loading = document.getElementById('loadingIndicator');
+
+            tbody.innerHTML = '';
+            loading.style.display = 'block';
+
+            try {
+                let url = '/api/listings/admin/all';
+                if (status) url += `?status=${status}`;
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const text = await response.text();
+                    showToast(`Lỗi ${response.status}: ${text.substring(0, 50)}`, 'error');
+                    return;
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    currentPosts = result.data;
+                    renderTable(result.data);
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error loading posts:', error);
+                showToast('Lỗi khi tải danh sách', 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function renderTable(posts) {
+            const tbody = document.getElementById('postsTableBody');
+            if (!posts || posts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có dữ liệu</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = posts.map(req => {
+                let statusBadge = '';
+                if (req.status === 'active') statusBadge = '<span class="badge bg-success">Đang hiển thị</span>';
+                else if (req.status === 'inactive') statusBadge = '<span class="badge bg-secondary">Đã ẩn / Ngừng</span>';
+                else if (req.status === 'draft') statusBadge = '<span class="badge bg-info text-dark">Bản nháp</span>';
+                else if (req.status === 'expired') statusBadge = '<span class="badge bg-warning text-dark">Hết hạn</span>';
+                else statusBadge = `<span class="badge bg-dark">${req.status}</span>`;
+
+                let actionHtml = '';
+                if (req.status === 'active') {
+                    actionHtml = `
+                        <button class="btn btn-sm btn-warning me-1" onclick="openProcessModal(${req.listingId}, 'hide')" title="Ẩn tin đăng"><i class="fas fa-eye-slash"></i> Ẩn</button>
+                        <button class="btn btn-sm btn-danger" onclick="openProcessModal(${req.listingId}, 'delete')" title="Xóa tin đăng"><i class="fas fa-trash"></i> Xóa</button>
+                    `;
+                }
+
+                return `
+                    <tr>
+                        <td>#${req.listingId}</td>
+                        <td>
+                            <div class="fw-bold">${req.title}</div>
+                            <a href="/Room/Detail?id=${req.propertyId}" target="_blank" class="small text-primary text-decoration-none">
+                                <i class="fas fa-external-link-alt"></i> Xem bài đăng
+                            </a>
+                        </td>
+                        <td>
+                            <div><strong>${req.landlordName || 'N/A'}</strong></div>
+                            <div class="small text-muted">${req.landlordEmail}</div>
+                        </td>
+                        <td class="text-danger fw-bold">${parseInt(req.price).toLocaleString('vi-VN')}</td>
+                        <td>${statusBadge}</td>
+                        <td>${actionHtml}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openProcessModal(id, action) {
+            currentListingId = id;
+            processAction = action;
+
+            const req = currentPosts.find(r => r.listingId === id);
+            if (!req) return;
+
+            document.getElementById('processPostId').textContent = '#' + req.listingId;
+            document.getElementById('processPostTitle').textContent = req.title;
+
+            const title = document.getElementById('processModalTitle');
+            const btn = document.getElementById('confirmActionBtn');
+            document.getElementById('processNote').value = '';
+
+            if (action === 'hide') {
+                title.textContent = 'Xác nhận ẨN tin đăng';
+                title.className = 'modal-title text-warning text-dark';
+                btn.textContent = 'Ẩn tin này';
+                btn.classList.remove('bg-danger');
+                btn.classList.add('bg-warning', 'text-dark');
+            } else {
+                title.textContent = 'Xác nhận XÓA tin đăng';
+                title.className = 'modal-title text-danger';
+                btn.textContent = 'Xóa tin này';
+                btn.classList.remove('bg-warning', 'text-dark');
+                btn.classList.add('bg-danger');
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('processModal'));
+            modal.show();
+        }
+
+        async function processPost() {
+            const note = document.getElementById('processNote').value.trim();
+            if (!note) {
+                showToast('Vui lòng nhập lý do xử lý để báo cho Chủ trọ', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('confirmActionBtn');
+            const originText = btn.textContent;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ...';
+            btn.disabled = true;
+
+            try {
+                const url = `/api/listings/admin/${processAction}/${currentListingId}`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ note: note })
+                });
+
+                let result;
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    result = await response.json();
+                } else {
+                    const text = await response.text();
+                    if (response.ok) {
+                        result = { success: true, message: 'Thao tác thành công' };
+                    } else {
+                        throw new Error(`Server returned ${response.status}: ${text}`);
+                    }
+                }
+
+                if (result.success || response.ok) {
+                    showToast(result.message || 'Thành công', 'success');
+                    bootstrap.Modal.getInstance(document.getElementById('processModal')).hide();
+                    loadPosts();
+                } else {
+                    showToast(result.message || 'Lỗi xử lý', 'error');
+                }
+            } catch (error) {
+                console.error('Process Post Error:', error);
+                showToast('Lỗi kết nối server: ' + error.message, 'error');
+            } finally {
+                btn.textContent = originText;
+                btn.disabled = false;
+            }
+        }
+    </script>
+}
