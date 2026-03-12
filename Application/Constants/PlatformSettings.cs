@@ -9,13 +9,13 @@ namespace NestFlow.Application.Constants
         /// Tỷ lệ giảm giá cho user khi đặt cọc qua nền tảng (%)
         /// Ví dụ: 50 = giảm 50%, 10 = giảm 10%
         /// </summary>
-        public const decimal UserDiscountRate = 25.00m;
+        public const decimal UserDiscountRate = 10.00m;
 
         /// <summary>
         /// Tỷ lệ hoa hồng nền tảng thu từ landlord (%)
         /// Ví dụ: 50 = thu 50%, 30 = thu 30%
         /// </summary>
-        public const decimal PlatformCommissionRate = 50.00m;
+        public const decimal PlatformCommissionRate = 20.00m;
 
         /// <summary>
         /// Tên hiển thị của discount (dùng cho UI)
