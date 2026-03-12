@@ -302,11 +302,11 @@
         const bookingCancelled = urlParams.get('bookingCancelled');
 
         if (bookingError === 'wallet_lock_failed') {
-            alert('❌ Lỗi: Không thể khóa tiền vào ví chủ nhà.\n\nBooking của bạn đã được rollback về trạng thái Pending.\n\nVui lòng thử lại hoặc liên hệ admin.');
+            showErrorModal('Lỗi: Không thể khóa tiền vào ví chủ nhà. Booking của bạn đã được rollback về trạng thái Pending. Vui lòng thử lại hoặc liên hệ admin.');
         } else if (bookingSuccess === 'true') {
-            alert('✅ Đặt phòng thành công!\n\nChủ nhà sẽ xem xét và phản hồi sớm nhất.');
+            showSuccessModal('Đặt phòng thành công!', 'Chủ nhà sẽ xem xét và phản hồi sớm nhất.');
         } else if (bookingCancelled === 'true') {
-            alert('❌ Thanh toán đã bị hủy.\n\nVui lòng thử lại nếu bạn muốn đặt phòng.');
+            showErrorModal('Thanh toán đã bị hủy. Vui lòng thử lại nếu bạn muốn đặt phòng.');
         }
 
         // 1. Check current status
@@ -437,5 +437,80 @@
                 "showZoomCtrl": true
             });
         }
+
+        // Hàm hiển thị modal thành công
+        function showSuccessModal(title, message, callback) {
+            const modal = document.getElementById('successModal');
+            document.getElementById('successModalTitle').textContent = title;
+            document.getElementById('successModalMessage').textContent = message;
+            
+            const successModal = new bootstrap.Modal(modal);
+            successModal.show();
+            
+            // Xử lý callback khi đóng modal
+            if (callback) {
+                modal.addEventListener('hidden.bs.modal', callback, { once: true });
+            }
+        }
+
+        // Hàm hiển thị modal lỗi
+        function showErrorModal(message) {
+            const modal = document.getElementById('errorModal');
+            document.getElementById('errorModalMessage').textContent = message;
+            
+            const errorModal = new bootstrap.Modal(modal);
+            errorModal.show();
+        }
     </script>
 }
+
+<!-- Modal thành công -->
+<div class="modal fade" id="successModal" tabindex="-1" aria-labelledby="successModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="successModalLabel">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span id="successModalTitle">Thành công</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-check-circle text-success" style="font-size: 4rem;"></i>
+                </div>
+                <p class="mb-0" id="successModalMessage">Thao tác thành công!</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                    <i class="fas fa-check me-2"></i>Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal lỗi -->
+<div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="errorModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Có lỗi xảy ra
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-triangle text-danger" style="font-size: 4rem;"></i>
+                </div>
+                <p class="mb-0" id="errorModalMessage">Đã xảy ra lỗi!</p>
+            </div>
+            <div class="modal-footer justify-content-center">
+                <button type="button" class="btn btn-danger" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

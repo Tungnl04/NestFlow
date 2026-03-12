@@ -36,33 +36,54 @@ namespace NestFlow.Controllers
         }
 
         /// <summary>
-        /// Helper: Tính toán commission và số tiền
+        /// Helper: Tính toán commission và số tiền theo logic đúng
+        /// 
+        /// Logic thanh toán:
+        /// P = Giá phòng (Deposit)
+        /// C = % hoa hồng chủ trọ trả cho nền tảng  
+        /// D = % nền tảng trích từ hoa hồng làm mã giảm giá cho user
+        /// 
+        /// Commission = P × C
+        /// Discount = P × D  
+        /// UserPayment = P - Discount
+        /// HostReceive = P - Commission
+        /// PlatformRevenue = Commission - Discount
+        /// 
+        /// Điều kiện: D ≤ C
         /// </summary>
         private (decimal userPayAmount, decimal landlordAmount, decimal platformCommission, decimal userDiscount) CalculateCommission(Property property)
         {
-            var depositAmount = (decimal)(property.Deposit ?? 0);
+            // P = Giá phòng
+            var P = (decimal)(property.Deposit ?? 0);
             
-            // Tính commission
-            var commissionRate = property.CommissionRate ?? 50.00m; // Default 50%
-            var platformCommission = depositAmount * (commissionRate / 100);
+            // C = % hoa hồng chủ trọ trả cho nền tảng
+            var C = property.CommissionRate ?? 50.00m; // Default 50%
             
-            // Tính user discount dựa trên Deposit và PlatformSettings.UserDiscountRate (%)
-            var discountRate = NestFlow.Application.Constants.PlatformSettings.UserDiscountRate;
-            var userDiscount = depositAmount * (discountRate / 100);
+            // D = % nền tảng trích từ hoa hồng làm mã giảm giá cho user
+            var D = NestFlow.Application.Constants.PlatformSettings.UserDiscountRate;
             
-            // Đảm bảo discount không vượt quá commission
-            if (userDiscount > platformCommission)
+            // Điều kiện bắt buộc: D ≤ C
+            if (D > C)
             {
-                userDiscount = platformCommission;
+                D = C; // Giới hạn không vượt quá hoa hồng
             }
             
-            // Số tiền user phải trả
-            var userPayAmount = depositAmount - userDiscount;
+            // Bước 1: Tính hoa hồng nền tảng
+            var Commission = P * (C / 100);
             
-            // Số tiền landlord sẽ nhận (sau khi trừ commission)
-            var landlordAmount = depositAmount - platformCommission;
+            // Bước 2: Tính mã giảm giá cho người dùng
+            var Discount = P * (D / 100);
             
-            return (userPayAmount, landlordAmount, platformCommission, userDiscount);
+            // Bước 3: Giá người dùng thực trả
+            var UserPayment = P - Discount;
+            
+            // Bước 4: Tiền chủ trọ nhận
+            var HostReceive = P - Commission;
+            
+            // Bước 5: Tiền nền tảng giữ lại
+            var PlatformRevenue = Commission - Discount;
+            
+            return (UserPayment, HostReceive, PlatformRevenue, Discount);
         }
 
         /// <summary>
@@ -158,14 +179,22 @@ namespace NestFlow.Controllers
                 // Tính commission bằng helper method
                 var (userPayAmount, landlordAmount, platformCommission, userDiscount) = CalculateCommission(property);
 
-                Console.WriteLine($"Commission calculation:");
-                Console.WriteLine($"  Deposit gốc:        {depositAmount:N0} VNĐ");
-                Console.WriteLine($"  Commission rate:    {property.CommissionRate ?? 50}%");
-                Console.WriteLine($"  Commission amount:  {platformCommission:N0} VNĐ");
-                Console.WriteLine($"  User discount:      {userDiscount:N0} VNĐ");
-                Console.WriteLine($"  User trả:           {userPayAmount:N0} VNĐ");
-                Console.WriteLine($"  Landlord nhận:      {landlordAmount:N0} VNĐ");
-                Console.WriteLine($"  Platform giữ:       {(platformCommission - userDiscount):N0} VNĐ");
+                Console.WriteLine($"=== LOGIC ĐÚNG: Thanh toán theo công thức ===");
+                Console.WriteLine($"  P (Giá phòng):                {depositAmount:N0} VNĐ");
+                Console.WriteLine($"  C (% hoa hồng chủ trọ):       {property.CommissionRate ?? 50}%");
+                Console.WriteLine($"  D (% giảm giá user):          {NestFlow.Application.Constants.PlatformSettings.UserDiscountRate}%");
+                Console.WriteLine($"");
+                Console.WriteLine($"  Commission = P × C:           {(depositAmount * ((property.CommissionRate ?? 50) / 100)):N0} VNĐ");
+                Console.WriteLine($"  Discount = P × D:             {userDiscount:N0} VNĐ");
+                Console.WriteLine($"  UserPayment = P - Discount:   {userPayAmount:N0} VNĐ");
+                Console.WriteLine($"  HostReceive = P - Commission: {landlordAmount:N0} VNĐ");
+                Console.WriteLine($"  PlatformRevenue = Comm - Disc: {platformCommission:N0} VNĐ");
+                Console.WriteLine($"");
+                Console.WriteLine($"=== DÒNG TIỀN ===");
+                Console.WriteLine($"  👤 User trả:        {userPayAmount:N0} VNĐ");
+                Console.WriteLine($"  🏠 Chủ trọ nhận:    {landlordAmount:N0} VNĐ");
+                Console.WriteLine($"  🏢 Nền tảng giữ:    {platformCommission:N0} VNĐ");
+                Console.WriteLine($"  🎁 User được giảm:  {userDiscount:N0} VNĐ");
 
                 var amount = (int)userPayAmount;
 
@@ -234,19 +263,27 @@ namespace NestFlow.Controllers
                 if (useWallet)
                 {
                     // Thanh toán bằng ví - Không cần PayOS
-                    // Khóa tiền vào ví landlord ngay (chỉ lock số tiền landlord nhận)
+                    // Cộng tiền vào ví landlord
                     var landlordWallet = await _walletService.GetOrCreateWalletAsync(property.LandlordId);
-                    var lockSuccess = await _walletService.LockBalanceAsync(
+                    var addLandlordSuccess = await _walletService.AddAvailableBalanceAsync(
                         landlordWallet.WalletId,
-                        landlordAmount, // Lock số tiền landlord nhận, không phải amount user trả
+                        landlordAmount, // Số tiền landlord nhận
                         "booking",
                         booking.BookingId,
-                        $"Đặt cọc booking #{booking.BookingId} - {property.Title}"
+                        $"Nhận cọc booking #{booking.BookingId} - {property.Title}"
                     );
 
-                    if (!lockSuccess)
+                    // Cộng tiền vào ví nền tảng
+                    var addPlatformSuccess = await _walletService.AddToPlatformWalletAsync(
+                        platformCommission, // Số tiền nền tảng nhận
+                        "booking_commission",
+                        booking.BookingId,
+                        $"Hoa hồng booking #{booking.BookingId} - {property.Title}"
+                    );
+
+                    if (!addLandlordSuccess || !addPlatformSuccess)
                     {
-                        Console.WriteLine($"CRITICAL ERROR: Failed to lock balance for wallet payment booking {booking.BookingId}");
+                        Console.WriteLine($"CRITICAL ERROR: Failed to add balance for wallet payment booking {booking.BookingId}");
                         
                         // Rollback: Xóa booking và hoàn tiền
                         _context.Bookings.Remove(booking);
@@ -260,12 +297,14 @@ namespace NestFlow.Controllers
                         return BadRequest(new
                         {
                             success = false,
-                            message = "Không thể khóa tiền vào ví chủ nhà. Đã hoàn tiền vào ví của bạn.",
-                            error = "wallet_lock_failed"
+                            message = "Không thể cộng tiền vào ví. Đã hoàn tiền vào ví của bạn.",
+                            error = "wallet_add_failed"
                         });
                     }
 
-                    Console.WriteLine($"Successfully locked {amount} VND for wallet payment booking {booking.BookingId}");
+                    Console.WriteLine($"Successfully processed wallet payment for booking {booking.BookingId}:");
+                    Console.WriteLine($"  - Landlord received: {landlordAmount:N0} VND");
+                    Console.WriteLine($"  - Platform received: {platformCommission:N0} VND");
 
                     // Tạo payment record
                     var payment = new Models.Payment
@@ -498,26 +537,34 @@ namespace NestFlow.Controllers
                 await _context.SaveChangesAsync();
                 Console.WriteLine("Booking and payment status saved");
 
-                // KHÓA TIỀN VÀO VÍ LANDLORD (chờ approve)
+                // CỘNG TIỀN VÀO VÍ LANDLORD VÀ PLATFORM
                 Console.WriteLine($"Getting wallet for landlord {booking.Property.LandlordId}...");
                 var wallet = await _walletService.GetOrCreateWalletAsync(booking.Property.LandlordId);
                 Console.WriteLine($"Wallet: WalletId={wallet.WalletId}, Available={wallet.AvailableBalance}, Locked={wallet.LockedBalance}");
                 
-                // Tính lại commission để biết landlord nhận bao nhiêu
-                var (_, landlordAmountToLock, _, _) = CalculateCommission(booking.Property);
+                // Tính lại commission để biết landlord và platform nhận bao nhiêu
+                var (_, landlordAmountToAdd, platformCommissionToAdd, _) = CalculateCommission(booking.Property);
                 
-                Console.WriteLine($"Locking balance: Amount={landlordAmountToLock}...");
-                var lockSuccess = await _walletService.LockBalanceAsync(
+                Console.WriteLine($"Adding to landlord balance: Amount={landlordAmountToAdd}...");
+                var addLandlordSuccess = await _walletService.AddAvailableBalanceAsync(
                     wallet.WalletId,
-                    landlordAmountToLock, // Lock số tiền landlord nhận, không phải deposit gốc
+                    landlordAmountToAdd, // Số tiền landlord nhận
                     "booking",
                     booking.BookingId,
-                    $"Đặt cọc booking #{booking.BookingId} - {booking.Property.Title}"
+                    $"Nhận cọc booking #{booking.BookingId} - {booking.Property.Title}"
                 );
 
-                if (!lockSuccess)
+                Console.WriteLine($"Adding to platform wallet: Amount={platformCommissionToAdd}...");
+                var addPlatformSuccess = await _walletService.AddToPlatformWalletAsync(
+                    platformCommissionToAdd, // Số tiền nền tảng nhận
+                    "booking_commission",
+                    booking.BookingId,
+                    $"Hoa hồng booking #{booking.BookingId} - {booking.Property.Title}"
+                );
+
+                if (!addLandlordSuccess || !addPlatformSuccess)
                 {
-                    Console.WriteLine($"CRITICAL ERROR: Failed to lock balance for booking {booking.BookingId}");
+                    Console.WriteLine($"CRITICAL ERROR: Failed to add balance for booking {booking.BookingId}");
                     
                     // Rollback booking status về Pending
                     booking.Status = "Pending";
@@ -528,10 +575,12 @@ namespace NestFlow.Controllers
                     await _context.SaveChangesAsync();
                     
                     Console.WriteLine($"Rolled back booking {booking.BookingId} to Pending status");
-                    return Redirect($"/Room/Detail?id={booking.PropertyId}&bookingError=wallet_lock_failed");
+                    return Redirect($"/Room/Detail?id={booking.PropertyId}&bookingError=wallet_add_failed");
                 }
 
-                Console.WriteLine($"Successfully locked {booking.Property.Deposit ?? 0} VND for booking {booking.BookingId}");
+                Console.WriteLine($"Successfully processed PayOS payment for booking {booking.BookingId}:");
+                Console.WriteLine($"  - Landlord received: {landlordAmountToAdd:N0} VND");
+                Console.WriteLine($"  - Platform received: {platformCommissionToAdd:N0} VND");
 
                 // Send notification to RENTER
                 if (booking.Renter != null && !string.IsNullOrEmpty(booking.Renter.Email))

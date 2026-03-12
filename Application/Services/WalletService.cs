@@ -273,6 +273,103 @@ namespace NestFlow.Application.Services
             }
         }
 
+        /// <summary>
+        /// Cộng tiền trực tiếp vào số dư khả dụng
+        /// </summary>
+        public async Task<bool> AddAvailableBalanceAsync(long walletId, decimal amount, string relatedType, long relatedId, string note)
+        {
+            try
+            {
+                _logger.LogInformation($"=== START AddAvailableBalanceAsync ===");
+                _logger.LogInformation($"WalletId: {walletId}, Amount: {amount}, Type: {relatedType}, Id: {relatedId}");
+                
+                var wallet = await _context.Wallets.FindAsync(walletId);
+                if (wallet == null)
+                {
+                    _logger.LogError($"Wallet {walletId} not found");
+                    return false;
+                }
+
+                // Tăng available balance
+                wallet.AvailableBalance += amount;
+                wallet.UpdatedAt = DateTime.Now;
+
+                // Tạo transaction log
+                var transaction = new WalletTransaction
+                {
+                    WalletId = walletId,
+                    Direction = "in",
+                    Amount = amount,
+                    RelatedType = relatedType,
+                    RelatedId = relatedId,
+                    Status = "completed",
+                    Note = note,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.WalletTransactions.Add(transaction);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"✅ Successfully added {amount} VND to available balance of wallet {walletId}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"=== ERROR AddAvailableBalanceAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Trừ tiền trực tiếp từ số dư khả dụng
+        /// </summary>
+        public async Task<bool> DeductAvailableBalanceAsync(long walletId, decimal amount, string relatedType, long relatedId, string note)
+        {
+            try
+            {
+                var wallet = await _context.Wallets.FindAsync(walletId);
+                if (wallet == null)
+                {
+                    _logger.LogError($"Wallet {walletId} not found");
+                    return false;
+                }
+
+                if (wallet.AvailableBalance < amount)
+                {
+                    _logger.LogError($"Insufficient available balance in wallet {walletId}");
+                    return false;
+                }
+
+                // Giảm available balance
+                wallet.AvailableBalance -= amount;
+                wallet.UpdatedAt = DateTime.Now;
+
+                // Tạo transaction log
+                var transaction = new WalletTransaction
+                {
+                    WalletId = walletId,
+                    Direction = "out",
+                    Amount = amount,
+                    RelatedType = relatedType,
+                    RelatedId = relatedId,
+                    Status = "completed",
+                    Note = note,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.WalletTransactions.Add(transaction);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation($"Deducted {amount} VND from available balance of wallet {walletId}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error deducting balance: {ex.Message}");
+                return false;
+            }
+        }
+
         public async Task<decimal> GetAvailableBalanceAsync(long landlordId)
         {
             var wallet = await _context.Wallets
@@ -285,6 +382,29 @@ namespace NestFlow.Application.Services
             var wallet = await _context.Wallets
                 .FirstOrDefaultAsync(w => w.LandlordId == landlordId);
             return wallet?.LockedBalance ?? 0;
+        }
+
+        /// <summary>
+        /// Cộng tiền vào ví nền tảng (Platform Wallet)
+        /// Platform wallet có landlord_id = 12 (Platform User ID)
+        /// </summary>
+        public async Task<bool> AddToPlatformWalletAsync(decimal amount, string relatedType, long relatedId, string note)
+        {
+            try
+            {
+                const long PLATFORM_LANDLORD_ID = 12; // ID của Platform User
+                
+                // Lấy hoặc tạo ví nền tảng
+                var platformWallet = await GetOrCreateWalletAsync(PLATFORM_LANDLORD_ID);
+                
+                // Cộng tiền vào ví nền tảng
+                return await AddAvailableBalanceAsync(platformWallet.WalletId, amount, relatedType, relatedId, note);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error adding to platform wallet: {ex.Message}");
+                return false;
+            }
         }
     }
 }

@@ -11,5 +11,8 @@ namespace NestFlow.Application.Services.Interfaces
         Task<bool> RefundToRenterAsync(long renterId, decimal amount, string relatedType, long relatedId, string note);
         Task<decimal> GetAvailableBalanceAsync(long landlordId);
         Task<decimal> GetLockedBalanceAsync(long landlordId);
+        Task<bool> AddAvailableBalanceAsync(long walletId, decimal amount, string relatedType, long relatedId, string note);
+        Task<bool> DeductAvailableBalanceAsync(long walletId, decimal amount, string relatedType, long relatedId, string note);
+        Task<bool> AddToPlatformWalletAsync(decimal amount, string relatedType, long relatedId, string note);
     }
 }
